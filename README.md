@@ -45,6 +45,10 @@ Developed by a student team as part of INF451.
 | 2 – Personal answers | US7 Advisor Appointment Scheduling |
 | 2 – Personal answers | US8 Multi-Language Support |
 
+## Sprint backlog
+
+The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The prototype implements the stories of sprints 1 and 2 (US1–US8).
+
 ## Demo accounts
 
 Password for every account: `demo123`
@@ -79,6 +83,7 @@ style.css    Styles, light and dark theme tokens, responsive layout
 i18n.js      Interface strings (EN / KK / RU), bot replies and FAQ content
 app.js       Demo accounts and data, state, chat engine and intent matching
 ui.js        Views, dashboard, staff board, analytics, notifications, tour, login, theme
+docs/SPRINTS.md   Sprint backlog: all user stories with QA scenarios
 ```
 
 ## Tech
