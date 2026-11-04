@@ -11,7 +11,9 @@ Developed by a student team as part of INF451.
 ## Features
 
 **Student side**
-- Chat assistant that answers in the language of the question (English, Kazakh, Russian), with a source for every answer and Helpful / Not helpful feedback
+- Chat assistant that answers in the language of the question (English, Kazakh, Russian), with a source for every answer
+- Helpful / Not helpful rating under every answer with an optional short comment; each rating is saved with the question, the answer and the time
+- Visitor mode ("Continue as visitor"): general questions, FAQ and the campus map without an account; visitor ratings are stored anonymously, personal features ask the visitor to sign in
 - Personal answers from the signed-in student's data: course registration check (holds and prerequisites), tuition balance and state grant status, advisor appointments
 - FAQ page with search; the chat bot uses the same answers
 - Campus map and room finder: ask "Where is room F305?" (also in Kazakh and Russian) and get building, floor, room type and a hint; for a number without a building ("room 305") the bot asks which building, and for a near miss ("H1") it suggests the existing room; a Campus map page shows the buildings D–I and barrels A1–C2 and highlights the chosen place
@@ -25,6 +27,7 @@ Developed by a student team as part of INF451.
 **Staff side**
 - Kanban ticket board (Open / In progress / Resolved) with priority (Low / Medium / High) and a 24-hour reply SLA with an "Overdue" marker
 - Ticket drawer with the conversation, status and priority controls, and reply field
+- Review queue: answers rated "Not helpful" with the question, answer, comment and time, and a "Mark reviewed" button
 - Analytics: tickets by status and office, overdue count, share of Helpful answers, top 5 questions, average rating and latest reviews
 - Announcements: publish or unpublish a notice shown to students
 
@@ -46,10 +49,11 @@ Developed by a student team as part of INF451.
 | 2 – Personal answers | US7 Advisor Appointment Scheduling |
 | 2 – Personal answers | US8 Multi-Language Support |
 | 4 – Campus, feedback and knowledge base | US13 Campus Navigation & Room Finder |
+| 4 – Campus, feedback and knowledge base | US14 Answer Feedback & Rating |
 
 ## Sprint backlog
 
-The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The prototype implements the stories of sprints 1 and 2 (US1–US8) and US13 (Campus Navigation & Room Finder).
+The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The prototype implements the stories of sprints 1 and 2 (US1–US8) and from sprint 4 US13 (Campus Navigation & Room Finder) and US14 (Answer Feedback & Rating).
 
 ## Demo accounts
 
@@ -63,7 +67,7 @@ Password for every account: `demo123`
 | `249900004` | Student | Tuition with an unpaid balance, no holds |
 | `staff` | Staff | Ticket board, analytics, announcements |
 
-The login screen also lists these accounts; click one to fill in the login.
+The login screen also lists these accounts; click one to fill in the login. **Continue as visitor** opens the chat without an account.
 
 ## How to run
 

@@ -16,6 +16,8 @@ const ACCOUNTS={
   staff:{role:'staff',full:'Help Desk Staff',name:'Help Desk Staff',ini:'HS',color:'#3b4a5f'}
 };
 Object.entries(ACCOUNTS).forEach(([k,a])=>{a.login=k;a.id=k;a.first=a.name.split('.')[0]});
+/* visitor without an account: general questions only, nothing personal is stored (US14) */
+const GUEST={role:'guest',login:'guest',id:null,ini:'?',color:'#5a6a80'};
 const HOLD_INFO={library:['Library','Overdue book blocks registration'],finance:['Finance','Unpaid tuition blocks registration']};
 const OFFICES=["Registrar","IT Support","Finance","Student Affairs"];
 
@@ -40,15 +42,31 @@ const seedAnn=()=>[{id:1,text:'Registration for Spring 2027 opens on 16.11.2026.
 /* demo history for Analytics: questions asked and Helpful / Not helpful ratings. Real activity is added on top. */
 const seedEvents=()=>{const n=Date.now(),ev=[];let k=0;
   Object.entries({reg:9,bill:7,pw:6,adv:5,wifi:4,adddrop:3,hours:2,fb:2}).forEach(([i,c])=>{for(let j=0;j<c;j++)ev.push({k:'q',i,at:n-(k++)*5*HR})});
-  for(let j=0;j<18;j++)ev.push({k:'fb',v:j%5!==0,at:n-j*3*HR});
-  return ev};
+  for(let j=0;j<18;j++)if(j%5)ev.push({k:'fb',v:true,at:n-j*3*HR});
+  return ev.concat(seedReview())};
+/* "Not helpful" ratings with question, answer and comment, so the staff Review queue is not empty on first launch */
+const seedReview=()=>{const n=Date.now();return[
+  {k:'fb',v:false,at:n-3*HR,role:'guest',uid:null,q:'Where is the library?',a:'The campus map does not include services such as the library, canteen, gym or registrar yet. Please ask at the information desk.',c:'Please add the library to the map.'},
+  {k:'fb',v:false,at:n-15*HR,role:'student',uid:'249900003',q:'Can I pay tuition in installments?',a:"I'm not sure about that, so I won't guess. Contact the Student Service Center.",c:'No answer about installments.'},
+  {k:'fb',v:false,at:n-30*HR,role:'student',uid:'249900001',q:'How do I reset my password?',a:'Open the Student Portal login page and choose “Forgot password”.',c:''},
+  {k:'fb',v:false,at:n-45*HR,role:'guest',uid:null,q:'What are the Student Service Center hours?',a:'Mon–Fri 9:00–18:00.',c:'Is it open on Saturday?',rev:n-40*HR}]};
 const fresh=()=>({v:4,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{}});
-const loadSt=s=>{s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};return s};
+const loadSt=s=>{s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};
+  if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
 let st=fresh();
 try{const s=JSON.parse(localStorage.getItem('hd-state')||'null');if(s&&s.v===4&&s.tickets)st=loadSt(s)}catch(e){}
 function note(uid,type,o){st.notes.push(Object.assign({uid,type,at:Date.now(),read:false},o))}
-function logQ(i){st.events.push({k:'q',i,at:Date.now(),uid:U&&U.login});save()}
-function fbEvent(f,up){if(!f._ev){f._ev={k:'fb',v:up,at:Date.now(),uid:U&&U.login};st.events.push(f._ev)}else f._ev.v=up;save()}
+/* visitors are anonymous: no ID is stored with their questions or ratings */
+const uidOf=()=>U&&U.role!=='guest'?U.login:null;
+function logQ(i){st.events.push({k:'q',i,at:Date.now(),uid:uidOf()});save()}
+/* a rating keeps the question, the bot answer and the time; the comment is added later */
+/* looked up by id, because another tab may replace st in the meantime */
+const fbFind=f=>f._id&&st.events.find(e=>e.id===f._id);
+function fbEvent(f,up){const e=fbFind(f);
+  if(e){e.v=up;e.at=Date.now();delete e.rev}
+  else st.events.push({id:f._id=Date.now()+'-'+Math.random().toString(36).slice(2,6),k:'fb',v:up,at:Date.now(),role:U.role,uid:uidOf(),q:f._q,a:f._a,c:''});
+  save()}
+function fbComment(f,c){const e=fbFind(f);if(e){e.c=c;save()}}
 const isMine=t=>t.uid===U.login;
 /* chat history is kept per student ID (rendered rows only, without buttons) */
 function rec(c,h){if(!U||U.role!=='student')return;
@@ -90,7 +108,8 @@ function sys(t){const d=document.createElement('div');d.className='sys';d.textCo
 function put(el){const l=$('log');l.appendChild(el);const ty=l.querySelector('.typing');if(ty&&ty!==el)l.appendChild(ty);scroll()}
 /* bot replies are queued: "Help Desk is typing…" for 0.6–1.2 s, then the message. chatEpoch drops replies after a login change or reset. */
 let chatEpoch=0,botChain=Promise.resolve();
-function bot(o,L){const e=chatEpoch;
+let curQ='';                /* the question being answered, saved with a rating */
+function bot(o,L){const e=chatEpoch;if(o.fb&&o.q==null)o.q=curQ;
   botChain=botChain.then(()=>new Promise(res=>{
     if(e!==chatEpoch)return res();
     const ty=document.createElement('div');ty.className='row typing';
@@ -113,13 +132,25 @@ function botNow(o,L){
   if(o.acts){const a=document.createElement('div');a.className='acts';
     o.acts.forEach(([lab,fn])=>{const b=document.createElement('button');b.textContent=lab;
       b.onclick=()=>{a.querySelectorAll('button').forEach(x=>x.disabled=true);fn(lab)};a.appendChild(b)});bub.appendChild(a)}
-  if(o.fb){const f=document.createElement('div');f.className='fb';
-    [T[L].helpful,T[L].notHelpful].forEach((lab,i)=>{const b=document.createElement('button');b.textContent=lab;b.setAttribute('aria-pressed','false');
-      b.onclick=()=>{f.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');fbEvent(f,i===0);
-        if(i===1){bot({text:fill(T[L].fb,{c:SSC}),acts:[[T[L].mkT,()=>startTicket(L)],[T[L].talk,()=>human(L)]]},L)}};
+  if(o.fb){const f=document.createElement('div');f.className='fb';f._q=o.q||'';f._a=plainAnswer(o);
+    [[T[L].helpful,true],[T[L].notHelpful,false]].forEach(([lab,up])=>{const b=document.createElement('button');b.type='button';b.className='fbv';b.textContent=lab;b.setAttribute('aria-pressed','false');
+      b.onclick=()=>{f.querySelectorAll('.fbv').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');fbEvent(f,up);fbMore(f,up,L)};
       f.appendChild(b)});bub.appendChild(f)}
   put(r);
 }
+const plainAnswer=o=>[o.title,o.text,o.html&&o.html.replace(/<[^>]+>/g,' '),...(o.list||[]).map(x=>x.t??x),...(o.ol||[]),o.after]
+  .filter(Boolean).join(' · ').replace(/\s+/g,' ').trim().slice(0,600);
+/* after a rating: optional comment field (inline, so the next question is never delayed) and, for "Not helpful", next steps */
+function fbMore(f,up,L){
+  let x=f.querySelector('.fbx');
+  if(!x){x=document.createElement('div');x.className='fbx';
+    x.innerHTML='<span class="fbok">'+esc(trL('fb.saved',L))+'</span><form class="fbc"><input maxlength="200" autocomplete="off" placeholder="'+esc(trL('fb.ph',L))+'" aria-label="'+esc(trL('fb.ph',L))+'"><button type="submit">'+esc(trL('fb.send',L))+'</button></form><div class="fbn"></div>';
+    x.querySelector('form').onsubmit=e=>{e.preventDefault();const c=e.target.querySelector('input').value.trim();if(!c)return;
+      fbComment(f,c);const t=document.createElement('span');t.className='fbok';t.textContent=trL('fb.thanks',L);e.target.replaceWith(t);x.querySelector('.fbok').remove();$('q').focus()};
+    f.appendChild(x)}
+  const n=x.querySelector('.fbn');n.innerHTML='';
+  const acts=up?[]:U.role==='student'?[[T[L].mkT,()=>startTicket(L)],[T[L].talk,()=>human(L)]]:U.role==='guest'?[[trL('guest.exit',L),toLogin]]:[];
+  acts.forEach(([lab,fn])=>{const b=document.createElement('button');b.type='button';b.className='link';b.textContent=lab;b.onclick=fn;n.appendChild(b)})}
 const later=(fn,ms=380)=>setTimeout(fn,ms);
 
 /* ---------- Campus map: the only source of places the bot may name (US13). Nothing outside this list exists. ---------- */
@@ -218,13 +249,16 @@ const I=[
  ['greet',/^(hi|hello|hey|привет|здравств|сәлем|салем)/i]
 ];
 function answer(t){
-  const L=detect(t); lastLang=L; const S=T[L];
+  const L=detect(t); lastLang=L; curQ=t;
   if(mode==='desc'){pendingDesc=t;mode=null;return later(()=>askOffice(L))}
   const c=campusIntent(t);
   if(c){logQ('campus');return later(()=>H.campus(L,c))}
   const hit=(I.find(([,re])=>re.test(t))||['fb'])[0];logQ(hit);
+  if(U.role==='guest'&&PERSONAL.includes(hit))return later(()=>guestOnly(L));
   later(()=>H[hit](L));
 }
+/* intents that use a student's own data; a visitor is asked to sign in instead */
+const PERSONAL=['reg','bill','adv','ticket','human'];
 const H={
  greet:L=>bot({text:T[L].greet},L),
  reg:L=>{const S=T[L],h=U.hold&&S.holds[U.hold];bot({title:S.regT,text:h?h[0]:S.noHold,
@@ -259,7 +293,8 @@ const H={
      bot({text:trL('cm.nf',L,{r:id}),after:sim.length?trL('cm.dym',L,{r:sim.join(' / ')}):'',src,
        acts:sim.length?sim.map(k=>[k,()=>roomCard(k,L)]):null,fb:true},L)})},
  offices:L=>{const f=FAQ.find(x=>x.id==='offices');bot({text:f.a(L),src:T[L].S[f.src],fb:true},L)},
- fb:L=>bot({text:fill(T[L].fb,{c:SSC}),acts:[[T[L].mkT,()=>startTicket(L)],[T[L].talk,()=>human(L)]]},L)
+ fb:L=>U.role==='guest'?bot({text:trL('g.nf',L,{c:SSC}),acts:[[trL('g.faq',L),()=>show('faq')],[trL('cm.title',L),()=>openMap()]],fb:true},L):
+   bot({text:fill(T[L].fb,{c:SSC}),fb:true,acts:[[T[L].mkT,()=>startTicket(L)],[T[L].talk,()=>human(L)]]},L)
 };
 function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
   if(r.b)rows.push(trL('cm.building',L)+': '+r.b);
@@ -272,7 +307,8 @@ function it(L,k){const S=T[L];
   later(()=>bot({text:S.helped,acts:[[S.yes,()=>bot({text:S.yesR},L)],[S.no,()=>bot({text:S.noR,acts:[[S.mkT,()=>startTicket(L,'IT Support')],[S.talk,()=>human(L)]]},L)]]},L),250);
 }
 let presetOffice=null;
-function startTicket(L,office){presetOffice=office||null;mode='desc';bot({text:T[L].tAsk},L);$('q').focus()}
+const guestOnly=L=>bot({text:trL('g.only',L),acts:[[trL('guest.exit',L),toLogin]]},L);
+function startTicket(L,office){if(U.role==='guest')return guestOnly(L);presetOffice=office||null;mode='desc';bot({text:T[L].tAsk},L);$('q').focus()}
 function askOffice(L){
   if(presetOffice) return makeTicket(presetOffice,L);
   bot({text:T[L].tOff,acts:OFFICES.map(o=>[o,()=>makeTicket(o,L)])},L);
@@ -286,7 +322,7 @@ function book(d,L){
   st.appts=st.appts.filter(a=>a.who!==U.login).concat({who:U.login,at:d.getTime(),with:U.advisor});note(U.login,'appt',{at:d.getTime()});save();sync();
   bot({text:fill(T[L].booked,{s:fmt(d,L),a:U.advisor}),src:T[L].S.adv},L);
 }
-function human(L){
+function human(L){if(U.role==='guest')return guestOnly(L);
   bot({text:T[L].queue},L);
   setTimeout(()=>{sys(T[L].joined);bot({text:T[L].staff,staff:true},L)},2200);
 }

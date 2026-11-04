@@ -292,7 +292,38 @@ const D={
  'login.submit':["Sign in","Кіру","Войти"],
  'login.demo':["Demo accounts","Демо-аккаунттар","Демо-аккаунты"],
  'login.note':["Password for all: demo123. Click an ID to fill it in. Staff login: staff. All data is fictional.","Барлығына құпиясөз: demo123. ID-ді басып, формаға қойыңыз. Қызметкер логині: staff. Барлық дерек ойдан шығарылған.","Пароль у всех: demo123. Нажмите на ID, чтобы подставить его. Логин сотрудника: staff. Все данные вымышлены."],
- 'login.err':["Wrong ID or password. Pick a demo account below; the password is demo123.","ID немесе құпиясөз қате. Төмендегі демо-аккаунтты таңдаңыз; құпиясөз: demo123.","Неверный ID или пароль. Выберите демо-аккаунт ниже; пароль: demo123."]
+ 'login.err':["Wrong ID or password. Pick a demo account below; the password is demo123.","ID немесе құпиясөз қате. Төмендегі демо-аккаунтты таңдаңыз; құпиясөз: demo123.","Неверный ID или пароль. Выберите демо-аккаунт ниже; пароль: demo123."],
+ 'login.or':["or","немесе","или"],
+ 'login.guest':["Continue as visitor","Қонақ ретінде жалғастыру","Продолжить как гость"],
+ 'login.guest.s':["General questions, FAQ and the campus map without signing in. Your ratings are saved anonymously.","Кірмей-ақ жалпы сұрақтар, FAQ және кампус картасы. Бағаларыңыз анонимді сақталады.","Общие вопросы, FAQ и карта кампуса без входа. Ваши оценки сохраняются анонимно."],
+
+ 'guest.name':["Visitor","Қонақ","Гость"],
+ 'guest.sub':["Anonymous visitor · general questions only","Анонимді қонақ · тек жалпы сұрақтар","Анонимный гость · только общие вопросы"],
+ 'guest.exit':["Sign in","Кіру","Войти"],
+ 'g.greet':["Hello! You are using Help Desk as a visitor. Ask about the FAQ, university offices or the campus map, for example “Where is room F305?”. Tickets, balance and appointments need a student sign-in.","Сәлем! Сіз Help Desk-ті қонақ ретінде қолданып отырсыз. FAQ, университет бөлімдері немесе кампус картасы туралы сұраңыз, мысалы «F305 қайда?». Өтінім, баланс және кездесулер үшін студент ретінде кіру керек.","Здравствуйте! Вы пользуетесь Help Desk как гость. Спрашивайте про FAQ, отделы университета или карту кампуса, например «Где кабинет F305?». Для заявок, баланса и записей нужно войти как студент."],
+ 'g.only':["This needs your student account: tickets, balance, registration and appointments are personal. Please sign in to use them.","Бұл үшін студенттік аккаунт керек: өтінім, баланс, тіркелу және кездесулер жеке деректерге байланысты. Оларды қолдану үшін кіріңіз.","Для этого нужен студенческий аккаунт: заявки, баланс, регистрация и записи — личные функции. Войдите, чтобы ими пользоваться."],
+ 'g.nf':["I'm not sure about that, so I won't guess. Try the FAQ or the campus map, or contact the Student Service Center: {c}.","Бұл сұраққа нақты жауабым жоқ, сондықтан болжам жасамаймын. FAQ не кампус картасын қараңыз немесе Студенттерге қызмет көрсету орталығына хабарласыңыз: {c}.","Точного ответа у меня нет, и я не буду гадать. Посмотрите FAQ или карту кампуса либо обратитесь в Центр обслуживания студентов: {c}."],
+ 'g.faq':["Open FAQ","FAQ ашу","Открыть FAQ"],
+
+ 'fb.ph':["Add a short comment (optional)","Қысқа пікір қосыңыз (міндетті емес)","Короткий комментарий (необязательно)"],
+ 'fb.send':["Send","Жіберу","Отправить"],
+ 'fb.saved':["Thanks, your rating is saved.","Рахмет, бағаңыз сақталды.","Спасибо, оценка сохранена."],
+ 'fb.thanks':["Thank you! Your comment was sent to the Help Desk team.","Рахмет! Пікіріңіз Help Desk командасына жіберілді.","Спасибо! Ваш комментарий передан команде Help Desk."],
+
+ 'nav.review':["Review queue","Тексеру кезегі","Очередь проверки"],
+ 'rv.title':["Review queue","Тексеру кезегі","Очередь проверки"],
+ 'rv.hint':["Answers rated “Not helpful” in the chat. Check the answer, fix the content if needed and mark the item as reviewed.","Чатта «Көмектеспеді» деп бағаланған жауаптар. Жауапты тексеріп, қажет болса мазмұнды түзетіңіз де, тексерілді деп белгілеңіз.","Ответы, которые в чате оценили как «Не помогло». Проверьте ответ, при необходимости исправьте контент и отметьте как проверенный."],
+ 'rv.q':["Question","Сұрақ","Вопрос"],
+ 'rv.a':["Answer","Жауап","Ответ"],
+ 'rv.c':["Comment","Пікір","Комментарий"],
+ 'rv.nocom':["No comment","Пікір жоқ","Без комментария"],
+ 'rv.mark':["Mark reviewed","Тексерілді деп белгілеу","Отметить как проверенный"],
+ 'rv.done':["Reviewed","Тексерілді","Проверено"],
+ 'rv.todo':["To review","Тексеруге","На проверку"],
+ 'rv.none':["No “Not helpful” ratings yet.","«Көмектеспеді» бағалары әзірше жоқ.","Оценок «Не помогло» пока нет."],
+ 'rv.student':["Student","Студент","Студент"],
+ 'rv.staff':["Staff","Қызметкер","Сотрудник"],
+ 'rv.guest':["Visitor (anonymous)","Қонақ (анонимді)","Гость (анонимно)"]
 };
 let ui='en';
 try{const s=localStorage.getItem('hd-ui');if(LANGS.includes(s))ui=s}catch(e){}

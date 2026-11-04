@@ -52,6 +52,9 @@
       <label class="fld"><span data-i18n="login.pass">Password</span><input id="l-pass" name="password" type="password" autocomplete="current-password" required placeholder="demo123"></label>
       <p class="err" id="login-err" role="alert" hidden></p>
       <button type="submit" class="primary" data-i18n="login.submit">Sign in</button>
+      <div class="orline"><span data-i18n="login.or">or</span></div>
+      <button type="button" class="ghost2 guestbtn" id="guest-btn" data-i18n="login.guest">Continue as visitor</button>
+      <p class="demo-note guest-note" data-i18n="login.guest.s">General questions, FAQ and the campus map without signing in. Your ratings are saved anonymously.</p>
       <div class="demoacc">
         <h3 data-i18n="login.demo">Demo accounts</h3>
         <div class="accs" id="accounts"></div>
@@ -72,10 +75,11 @@
       <svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
     <nav class="tabs" id="tabs" aria-label="Sections">
-      <button id="nav-chat" class="only-student" data-view="chat" data-i18n="nav.chat">Chat</button>
+      <button id="nav-chat" class="no-staff" data-view="chat" data-i18n="nav.chat">Chat</button>
       <button id="nav-tickets" class="only-student" data-view="tickets"><span data-i18n="nav.tickets">My tickets</span> <span class="count" id="c-t">0</span></button>
       <button id="nav-appts" class="only-student" data-view="appts"><span data-i18n="nav.appts">Appointments</span> <span class="count" id="c-a">0</span></button>
       <button id="nav-staff" class="only-staff" data-view="staff"><span data-i18n="nav.board">Ticket board</span> <span class="count" id="c-s">0</span></button>
+      <button id="nav-review" class="only-staff" data-view="review"><span data-i18n="nav.review">Review queue</span> <span class="count" id="c-r">0</span></button>
       <button id="nav-analytics" class="only-staff" data-view="analytics" data-i18n="nav.analytics">Analytics</button>
       <button id="nav-ann" class="only-staff" data-view="ann" data-i18n="nav.ann">Announcements</button>
       <button id="nav-campus" data-view="campus" data-i18n="nav.campus">Campus map</button>
@@ -106,7 +110,7 @@
             </div>
           </div>
           <button type="button" class="mi only-student" id="tour-again" data-i18n="tour.again">Show tour again</button>
-          <button type="button" class="mi" id="nav-reset" data-i18n="menu.reset">Reset demo</button>
+          <button type="button" class="mi no-guest" id="nav-reset" data-i18n="menu.reset">Reset demo</button>
           <button type="button" class="mi" id="logout" data-i18n="menu.logout">Log out</button>
         </div>
       </div>
@@ -231,6 +235,14 @@
       <div class="board" id="s-board"></div>
       <div class="scrim" id="s-scrim" hidden></div>
       <div class="drawer" id="s-detail" role="dialog" aria-label="Ticket" hidden></div>
+    </section>
+
+    <section class="view page" id="v-review" hidden>
+      <div class="wrap">
+        <h2 data-i18n="rv.title">Review queue</h2>
+        <p class="hint" data-i18n="rv.hint">Answers rated “Not helpful” in the chat. Check the answer, fix the content if needed and mark the item as reviewed.</p>
+        <div id="rv-list"></div>
+      </div>
     </section>
 
     <section class="view page" id="v-analytics" hidden>

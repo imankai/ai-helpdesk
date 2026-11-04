@@ -6,7 +6,7 @@ const noteText=n=>n.type==='reply'?tr('n.reply',{n:n.n}):n.type==='status'?tr('n
   n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
 
 /* ---------- views ---------- */
-const VIEWS=['home','chat','tickets','appts','campus','faq','staff','analytics','ann','about'];
+const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','ann','about'];
 const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
 /* priority and SLA: first reply is due 24 h after creation; tickets that are resolved or already answered have no SLA */
 const PRIO=['high','medium','low'],SLA=24*3600e3;
@@ -41,7 +41,7 @@ function sync(){
     ap.map(a=>'<tr id="ap-'+a.at+'"><td>'+fmt(a.at,ui)+'</td><td>'+esc(a.with)+'</td><td>'+tr('ap.before')+'</td><td><button class="link" data-cancel="'+st.appts.indexOf(a)+'">'+tr('ap.cancel')+'</button></td></tr>').join('')+'</tbody></table></div>'
     :'<div class="empty">'+tr('ap.none')+'</div>';
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{st.appts.splice(+b.dataset.cancel,1);save();sync()});
-  renderStaff();renderAnalytics();renderFaq();renderBell();renderAnn();renderBanners();renderCampus();
+  renderStaff();renderReview();renderAnalytics();renderFaq();renderBell();renderAnn();renderBanners();renderCampus();
 }
 
 /* ---------- campus map page: schematic SVG, colours by room type, selection highlights building / barrel and floor ---------- */
@@ -194,6 +194,20 @@ $('s-detail').onsubmit=e=>{e.preventDefault();
   note(t.uid,'reply',{n:t.n});
   $('reply').value='';save();sync()};
 
+/* ---------- staff: review queue of answers rated "Not helpful" (US14) ---------- */
+function renderReview(){
+  const ev=st.events||[],list=ev.filter(e=>e.k==='fb'&&!e.v&&e.q).sort((a,b)=>!!a.rev-!!b.rev||b.at-a.at);
+  $('c-r').textContent=list.filter(e=>!e.rev).length;
+  const who=e=>e.role==='guest'?tr('rv.guest'):e.role==='staff'?tr('rv.staff'):tr('rv.student')+(e.uid?' · ID '+esc(e.uid):'');
+  $('rv-list').innerHTML=list.length?list.map(e=>'<article class="rvi'+(e.rev?' done':'')+'"><div class="rvh"><span class="chip'+(e.rev?' done':' warn')+'">'+tr(e.rev?'rv.done':'rv.todo')+'</span>'+
+    '<span class="who">'+who(e)+'</span><small>'+dt(e.at)+'</small></div>'+
+    '<dl><dt>'+tr('rv.q')+'</dt><dd>'+esc(e.q)+'</dd><dt>'+tr('rv.a')+'</dt><dd>'+esc(e.a||'—')+'</dd><dt>'+tr('rv.c')+'</dt><dd>'+(e.c?esc(e.c):'<em>'+tr('rv.nocom')+'</em>')+'</dd></dl>'+
+    (e.rev?'':'<button type="button" class="ghost2" data-rv="'+ev.indexOf(e)+'">'+tr('rv.mark')+'</button>')+'</article>').join('')
+    :'<div class="empty">'+tr('rv.none')+'</div>';
+}
+$('rv-list').onclick=e=>{const b=e.target.closest('[data-rv]');if(!b)return;
+  const x=st.events[+b.dataset.rv];if(x){x.rev=Date.now();save();sync()}};
+
 /* ---------- staff: analytics, computed from tickets and recorded chat events ---------- */
 function renderAnalytics(){
   const tk=st.tickets,ev=st.events||[];
@@ -236,7 +250,7 @@ $('ann-list').onclick=e=>{const b=e.target.closest('[data-ann]');if(!b)return;
 const ANN_ICON={info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',warning:'<path d="M12 4 21 19H3z"/><path d="M12 10v4M12 17h.01"/>'};
 function renderBanners(){
   const ds=(U&&st.dismiss[U.login])||[];
-  const h=(U&&U.role==='student'?st.ann.filter(a=>a.active&&!ds.includes(a.id)).sort((a,b)=>b.at-a.at):[]).map(a=>
+  const h=(U&&U.role!=='staff'?st.ann.filter(a=>a.active&&!ds.includes(a.id)).sort((a,b)=>b.at-a.at):[]).map(a=>
     '<div class="banner '+a.level+'" role="status"><svg class="i" viewBox="0 0 24 24">'+ANN_ICON[a.level]+'</svg><span><b>'+tr('ann.'+a.level)+':</b> '+esc(a.text)+'</span>'+
     '<button type="button" class="bx" data-dis="'+a.id+'" aria-label="'+esc(tr('ann.close'))+'">×</button></div>').join('');
   $('ban-home').innerHTML=h;$('ban-chat').innerHTML=h;
@@ -372,7 +386,9 @@ $('about').onclick=e=>{const b=e.target.closest('[data-tab]');if(b){aboutTab=b.d
 function buildQuick(){$('quick').innerHTML='';
   tr('quick').forEach(q=>{const b=document.createElement('button');b.type='button';b.textContent=q;b.onclick=()=>ask(q);$('quick').appendChild(b)})}
 function fillMenu(){if(!U)return;
+  if(U.role==='guest'){$('who-name').textContent=$('mn-name').textContent=tr('guest.name');$('mn-sub').textContent=tr('guest.sub');$('logout').textContent=tr('guest.exit');return}
   $('mn-sub').textContent=U.role==='staff'?tr('menu.staff'):U.major+', '+yearLbl(U.year)+' · ID '+U.id}
+const homeView=()=>U.role==='staff'?'staff':U.role==='guest'?'chat':'home';
 function applyUI(){
   document.documentElement.lang=ui;
   document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=tr(e.dataset.i18n));
@@ -387,13 +403,13 @@ function setUI(l){ui=l;try{localStorage.setItem('hd-ui',l)}catch(_){}applyUI()}
 let sess=null;
 try{sess=JSON.parse(sessionStorage.getItem('hd-session')||'null')}catch(e){}
 function applyAuth(){
-  U=sess&&ACCOUNTS[sess.login]||null;
+  U=sess&&(sess.login==='guest'?GUEST:ACCOUNTS[sess.login])||null;
   if(!U){sess=null;document.body.className='auth-out';sync();return}
   document.body.className='auth-in role-'+U.role;
   $('who-av').textContent=U.ini;$('who-av').style.background=U.color;$('who-name').textContent=U.name;
-  $('mn-name').textContent=U.full;fillMenu();
+  $('mn-name').textContent=U.full;$('logout').textContent=tr('menu.logout');fillMenu();
   chatEpoch++;mode=null;loadChat();
-  sync();show(U.role==='staff'?'staff':'home');
+  sync();show(homeView());
   if(U.role==='student'&&!tourDone().includes(U.login))setTimeout(()=>{if(U&&$('tour').hidden)tourStart()},500);
 }
 const loginErr=m=>{$('login-err').textContent=m;$('login-err').hidden=!m};
@@ -407,7 +423,10 @@ $('login-form').oninput=()=>loginErr('');
 $('accounts').innerHTML=Object.values(ACCOUNTS).map(a=>'<button type="button" class="acc" data-login="'+a.login+'"><span class="av sm" style="background:'+a.color+';color:#fff">'+a.ini+'</span>'+a.login+'<em>'+esc(a.name)+'</em></button>').join('');
 $('accounts').onclick=e=>{const b=e.target.closest('[data-login]');if(!b)return;
   $('l-name').value=b.dataset.login;loginErr('');$('l-pass').focus()};
-$('logout').onclick=()=>{closeUserMenu();closeBell();if(tourI>=0)tourEnd();sess=null;try{sessionStorage.removeItem('hd-session')}catch(_){}applyAuth()};
+/* log out; for a visitor this is "Sign in" and returns to the login screen */
+function toLogin(){closeUserMenu();closeBell();if(tourI>=0)tourEnd();chatEpoch++;sess=null;try{sessionStorage.removeItem('hd-session')}catch(_){}applyAuth()}
+$('logout').onclick=toLogin;
+$('guest-btn').onclick=()=>{loginErr('');sess={login:'guest'};try{sessionStorage.setItem('hd-session',JSON.stringify(sess))}catch(_){}applyAuth()};
 
 /* ---------- wiring ---------- */
 $('form').onsubmit=e=>{e.preventDefault();const t=$('q').value.trim();if(!t)return;$('q').value='';renderSugg();userMsg(t);answer(t)};
@@ -431,11 +450,11 @@ $('sugg').onclick=e=>{const b=e.target.closest('[data-sq]');if(!b)return;
 setInterval(()=>{if(U&&U.role==='staff')sync()},60000);   /* keeps SLA countdowns fresh */
 document.querySelectorAll('nav.tabs [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));
 document.querySelectorAll('[data-qk]').forEach(b=>b.onclick=()=>ask(tr(b.dataset.qk)));
-$('brand').onclick=()=>{if(U)show(U.role==='staff'?'staff':'home')};
+$('brand').onclick=()=>{if(U)show(homeView())};
 $('ask-form').onsubmit=e=>{e.preventDefault();const t=$('ask-q').value.trim();if(!t)return;$('ask-q').value='';ask(t)};
 $('menu-btn').onclick=()=>{const o=document.querySelector('.bar').classList.toggle('open');$('menu-btn').setAttribute('aria-expanded',String(o))};
 $('nav-reset').onclick=()=>{closeUserMenu();st=fresh();sel=null;save();chatEpoch++;mode=null;$('log').innerHTML='';boot();sync()};
-function boot(){botNow({text:T[ui].greet},ui)}
+function boot(){botNow({text:U&&U.role==='guest'?tr('g.greet'):T[ui].greet},ui)}
 /* another browser tab changed the data */
 window.addEventListener('storage',e=>{if(e.key!=='hd-state')return;
   try{const s=JSON.parse(e.newValue);if(s&&s.tickets){st=loadSt(s);sync()}}catch(_){}});
