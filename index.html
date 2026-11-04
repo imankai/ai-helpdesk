@@ -78,6 +78,7 @@
       <button id="nav-staff" class="only-staff" data-view="staff"><span data-i18n="nav.board">Ticket board</span> <span class="count" id="c-s">0</span></button>
       <button id="nav-analytics" class="only-staff" data-view="analytics" data-i18n="nav.analytics">Analytics</button>
       <button id="nav-ann" class="only-staff" data-view="ann" data-i18n="nav.ann">Announcements</button>
+      <button id="nav-campus" data-view="campus" data-i18n="nav.campus">Campus map</button>
       <button id="nav-faq" data-view="faq" data-i18n="nav.faq">FAQ</button>
       <button id="nav-about" data-view="about" data-i18n="nav.about">About</button>
     </nav>
@@ -198,6 +199,29 @@
         <p class="hint" data-i18n="faq.hint">Search the answers the assistant uses in the chat.</p>
         <input id="faq-q" class="faqsearch" type="search" autocomplete="off" data-i18n-ph="faq.ph" placeholder="Search questions…" aria-label="Search">
         <div id="faq-list"></div>
+      </div>
+    </section>
+
+    <section class="view page" id="v-campus" hidden>
+      <div class="wrap">
+        <h2 data-i18n="cm.title">Campus map</h2>
+        <p class="hint" data-i18n="cm.hint">A schematic layout: the positions of the buildings are illustrative, not an exact map.</p>
+        <div class="cmwrap">
+          <div class="cmmap" id="cm-svg"></div>
+          <div class="cmside">
+            <form class="cmform" id="cm-form">
+              <input id="cm-q" autocomplete="off" data-i18n-ph="cm.ph" placeholder="Room number, e.g. F305" aria-label="Room number">
+              <button type="submit" class="primary sm" data-i18n="cm.find">Find</button>
+            </form>
+            <ul class="cmlegend" data-i18n-aria="cm.legend" aria-label="Room types">
+              <li><i class="sw classroom"></i><span data-i18n="cm.t.classroom">Classroom</span></li>
+              <li><i class="sw lecture"></i><span data-i18n="cm.t.lecture">Lecture hall</span></li>
+              <li><i class="sw office"></i><span data-i18n="cm.t.office">Teacher's office</span></li>
+              <li><i class="sw study"></i><span data-i18n="cm.t.study">Study room</span></li>
+            </ul>
+            <div id="cm-panel" aria-live="polite"></div>
+          </div>
+        </div>
       </div>
     </section>
 

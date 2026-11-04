@@ -14,6 +14,7 @@ Developed by a student team as part of INF451.
 - Chat assistant that answers in the language of the question (English, Kazakh, Russian), with a source for every answer and Helpful / Not helpful feedback
 - Personal answers from the signed-in student's data: course registration check (holds and prerequisites), tuition balance and state grant status, advisor appointments
 - FAQ page with search; the chat bot uses the same answers
+- Campus map and room finder: ask "Where is room F305?" (also in Kazakh and Russian) and get building, floor, room type and a hint; for a number without a building ("room 305") the bot asks which building, and for a near miss ("H1") it suggests the existing room; a Campus map page shows the buildings D–I and barrels A1–C2 and highlights the chosen place
 - Similar-question suggestions while typing in the chat, and a "Help Desk is typing…" indicator
 - Help tickets with status tracking, staff replies and a 1–5 star rating of resolved tickets
 - Advisor appointment booking with reminders
@@ -44,10 +45,11 @@ Developed by a student team as part of INF451.
 | 2 – Personal answers | US6 Financial Aid & Billing Q&A |
 | 2 – Personal answers | US7 Advisor Appointment Scheduling |
 | 2 – Personal answers | US8 Multi-Language Support |
+| 4 – Campus, feedback and knowledge base | US13 Campus Navigation & Room Finder |
 
 ## Sprint backlog
 
-The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The prototype implements the stories of sprints 1 and 2 (US1–US8).
+The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The prototype implements the stories of sprints 1 and 2 (US1–US8) and US13 (Campus Navigation & Room Finder).
 
 ## Demo accounts
 

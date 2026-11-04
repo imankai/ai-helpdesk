@@ -6,7 +6,7 @@ const noteText=n=>n.type==='reply'?tr('n.reply',{n:n.n}):n.type==='status'?tr('n
   n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
 
 /* ---------- views ---------- */
-const VIEWS=['home','chat','tickets','appts','faq','staff','analytics','ann','about'];
+const VIEWS=['home','chat','tickets','appts','campus','faq','staff','analytics','ann','about'];
 const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
 /* priority and SLA: first reply is due 24 h after creation; tickets that are resolved or already answered have no SLA */
 const PRIO=['high','medium','low'],SLA=24*3600e3;
@@ -41,8 +41,69 @@ function sync(){
     ap.map(a=>'<tr id="ap-'+a.at+'"><td>'+fmt(a.at,ui)+'</td><td>'+esc(a.with)+'</td><td>'+tr('ap.before')+'</td><td><button class="link" data-cancel="'+st.appts.indexOf(a)+'">'+tr('ap.cancel')+'</button></td></tr>').join('')+'</tbody></table></div>'
     :'<div class="empty">'+tr('ap.none')+'</div>';
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{st.appts.splice(+b.dataset.cancel,1);save();sync()});
-  renderStaff();renderAnalytics();renderFaq();renderBell();renderAnn();renderBanners();
+  renderStaff();renderAnalytics();renderFaq();renderBell();renderAnn();renderBanners();renderCampus();
 }
+
+/* ---------- campus map page: schematic SVG, colours by room type, selection highlights building / barrel and floor ---------- */
+let campus={b:null,room:null,f:null,nf:null};
+function campusSelect(id){
+  const r=CAMPUS.get(id);
+  campus=r?{b:r.b,room:id,f:r.f,nf:null}:{b:null,room:null,f:null,nf:id};
+}
+function openMap(id){
+  if(id)campusSelect(id);
+  $('cm-q').value=id||'';
+  renderCampus();show('campus');
+}
+function campusSvg(){
+  const bw=150,bh=146,x0=250,y0=24,gx=170,gy=166;
+  const roomsOf=(b,f)=>[...CAMPUS.values()].filter(r=>r.b===b&&r.f===f);
+  let s='<svg viewBox="0 0 770 350" class="campus" role="img" aria-label="'+esc(tr('cm.title'))+'">';
+  /* barrels */
+  s+='<rect class="zone" x="6" y="6" width="226" height="238" rx="6"/><text class="zt" x="18" y="28">'+tr('cm.barrels')+'</text>';
+  ['A1','A2','B1','B2','C1','C2'].forEach((id,i)=>{
+    const x=16+(i%2)*108,y=44+Math.floor(i/2)*66;
+    s+='<g class="brl'+(campus.room===id?' sel':'')+'" data-r="'+id+'" tabindex="0" role="button" aria-label="'+id+'"><rect class="seg lecture" x="'+x+'" y="'+y+'" width="96" height="54" rx="27"/><text class="bt" x="'+(x+48)+'" y="'+(y+33)+'" text-anchor="middle">'+id+'</text></g>'});
+  /* buildings D–I, three floors each; a band is split into segments by room type */
+  CAMPUS_BLDS.forEach((b,i)=>{
+    const x=x0+(i%3)*gx,y=y0+Math.floor(i/3)*gy,sel=campus.b===b&&!campus.room;
+    s+='<g class="bld'+(campus.b===b?' sel':'')+'" data-b="'+b+'" tabindex="0" role="button" aria-label="'+esc(tr('cm.building'))+' '+b+'"><rect class="frame" x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="6"/>'+
+      '<text class="bl-t" x="'+(x+12)+'" y="'+(y+21)+'">'+b+'</text>';
+    if(b==='H')s+='<rect class="seg lecture" x="'+(x+56)+'" y="'+(y+6)+'" width="86" height="18" rx="3"/><text class="tab-t" x="'+(x+99)+'" y="'+(y+19)+'" text-anchor="middle">H01–H03</text>';
+    [3,2,1].forEach((f,k)=>{
+      const fy=y+32+k*38,rooms=roomsOf(b,f);let cx=x+22;const inner=bw-30;
+      s+='<g class="fl'+(campus.b===b&&campus.f===f?' sel':'')+'"><text class="fl-n" x="'+(x+10)+'" y="'+(fy+21)+'">'+f+'</text>';
+      CAMPUS_TYPES.forEach(t=>{const n=rooms.filter(r=>r.t===t).length;if(!n)return;
+        const w=inner*n/rooms.length;s+='<rect class="seg '+t+'" x="'+cx.toFixed(1)+'" y="'+fy+'" width="'+Math.max(w-2,2).toFixed(1)+'" height="30" rx="3"/>';cx+=w});
+      s+='<rect class="fb" x="'+(x+4)+'" y="'+(fy-3)+'" width="'+(bw-8)+'" height="36" rx="4"/></g>'});
+    s+='</g>'});
+  return s+'</svg>'}
+function renderCampus(){
+  $('cm-svg').innerHTML=campusSvg();
+  const p=$('cm-panel'),chip=r=>'<button type="button" class="rm '+r.t+'" data-r="'+r.id+'">'+esc(r.id)+'</button>';
+  const typeName=r=>tr('cm.t.'+r.t)+(r.barrel?' ('+tr('cm.t.barrel')+')':'');
+  if(campus.nf){p.innerHTML='<div class="cmcard nf"><p>'+esc(tr('cm.nf',{r:campus.nf}))+'</p></div>';return}
+  if(campus.room){const r=CAMPUS.get(campus.room);
+    const hint=r.barrel?tr('cm.hint.barrel',{id:r.id}):r.f?tr('cm.hint.floor',{b:r.b,f:r.f,r:floorSummary(r.b,r.f,ui)}):tr('cm.hint.nofloor',{id:r.id,b:r.b});
+    p.innerHTML='<div class="cmcard"><h3>'+esc(r.id)+'</h3><dl>'+
+      (r.b?'<dt>'+tr('cm.building')+'</dt><dd>'+r.b+'</dd>':'')+(r.f?'<dt>'+tr('cm.floor')+'</dt><dd>'+r.f+'</dd>':'')+
+      '<dt>'+tr('cm.type')+'</dt><dd><i class="sw '+r.t+'"></i> '+esc(typeName(r))+'</dd></dl><p>'+esc(hint)+'</p></div>';return}
+  if(campus.b){const rooms=[...CAMPUS.values()].filter(r=>r.b===campus.b);
+    const nofl=rooms.filter(r=>!r.f);
+    p.innerHTML='<div class="cmcard"><h3>'+tr('cm.building')+' '+campus.b+'</h3>'+
+      [3,2,1].map(f=>{const rs=rooms.filter(r=>r.f===f);return rs.length?'<div class="cmfl"><b>'+tr('cm.fl',{n:f})+'</b><div class="chips">'+rs.map(chip).join('')+'</div></div>':''}).join('')+
+      (nofl.length?'<div class="cmfl"><b>'+tr('cm.p.lecture').replace(/^./,c=>c.toUpperCase())+'</b><div class="chips">'+nofl.map(chip).join('')+'</div></div>':'')+'</div>';return}
+  p.innerHTML='<div class="cmcard"><p>'+esc(tr('cm.pick'))+'</p></div>';
+}
+$('cm-svg').onclick=e=>{const g=e.target.closest('[data-r],[data-b]');if(!g)return;
+  if(g.dataset.r)campusSelect(g.dataset.r);else campus={b:g.dataset.b,room:null,f:null,nf:null};
+  $('cm-q').value=g.dataset.r||'';renderCampus()};
+$('cm-svg').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.closest&&e.target.closest('[data-r],[data-b]')&&e.target.closest('[data-r],[data-b]').dispatchEvent(new MouseEvent('click',{bubbles:true}))}};
+$('cm-panel').onclick=e=>{const b=e.target.closest('[data-r]');if(b){campusSelect(b.dataset.r);$('cm-q').value=b.dataset.r;renderCampus()}};
+$('cm-form').onsubmit=e=>{e.preventDefault();
+  const v=$('cm-q').value.trim();
+  if(!v){campus={b:null,room:null,f:null,nf:null};renderCampus();return}
+  const t=roomTokens(v,true);campusSelect(t[0]||v.toUpperCase());renderCampus()};
 
 /* ---------- rating of resolved tickets ---------- */
 function rateBlock(t){

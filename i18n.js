@@ -195,6 +195,42 @@ const D={
  'an.overdue.s':["no reply within 24 h","24 сағатта жауап жоқ","нет ответа за 24 ч"],
  'sugg.title':["Similar questions","Ұқсас сұрақтар","Похожие вопросы"],
 
+ 'nav.campus':["Campus map","Кампус картасы","Карта кампуса"],
+ 'i.campus':["Campus navigation","Кампус бойынша бағыт","Навигация по кампусу"],
+ 'cm.title':["Campus map","Кампус картасы","Карта кампуса"],
+ 'cm.hint':["A schematic layout: the positions of the buildings are illustrative, not an exact map.","Схема: корпустардың орналасуы шартты, нақты карта емес.","Условная схема: расположение корпусов показано примерно, это не точная карта."],
+ 'cm.ph':["Room number, e.g. F305","Бөлме нөмірі, мысалы F305","Номер помещения, например F305"],
+ 'cm.find':["Find","Табу","Найти"],
+ 'cm.pick':["Pick a building or barrel on the map, or type a room number.","Картадан корпусты немесе бөшкені таңдаңыз не бөлме нөмірін енгізіңіз.","Выберите корпус или бочку на схеме либо введите номер помещения."],
+ 'cm.legend':["Room types","Бөлме түрлері","Типы помещений"],
+ 'cm.barrels':["Barrels","Бөшкелер","Бочки"],
+ 'cm.map':["Show on map","Картада көрсету","Показать на карте"],
+ 'cm.src':["Campus map","Кампус картасы","Карта кампуса"],
+ 'cm.building':["Building","Корпус","Корпус"],
+ 'cm.floor':["Floor","Қабат","Этаж"],
+ 'cm.type':["Type","Түрі","Тип"],
+ 'cm.fl':["Floor {n}","{n}-қабат","{n} этаж"],
+ 'cm.t.classroom':["Classroom","Аудитория","Аудитория"],
+ 'cm.t.lecture':["Lecture hall","Дәріс залы","Лекционный зал"],
+ 'cm.t.office':["Teacher's office","Оқытушы кабинеті","Кабинет преподавателя"],
+ 'cm.t.study':["Study room","Оқу кабинеті","Кабинет для учёбы"],
+ 'cm.t.barrel':["barrel","бөшке","бочка"],
+ 'cm.p.classroom':["classrooms","аудиториялар","аудитории"],
+ 'cm.p.lecture':["lecture halls","дәріс залдары","лекционные залы"],
+ 'cm.p.office':["teacher's offices","оқытушы кабинеттері","кабинеты преподавателей"],
+ 'cm.p.study':["study rooms","оқу кабинеттері","кабинеты для учёбы"],
+ 'cm.p.barrel':["barrels","бөшкелер","бочки"],
+ 'cm.hint.floor':["Go to building {b}, floor {f}. Rooms on this floor: {r}.","{b} корпусқа барып, {f}-қабатқа көтеріліңіз. Осы қабаттағы бөлмелер: {r}.","Идите в корпус {b}, этаж {f}. Помещения на этаже: {r}."],
+ 'cm.hint.nofloor':["{id} is in building {b}; the campus map gives no floor for it.","{id} {b} корпусында; картада оның қабаты көрсетілмеген.","{id} находится в корпусе {b}; на карте для него этаж не указан."],
+ 'cm.hint.barrel':["{id} is a separate lecture hall (a “barrel”), not inside buildings D–I.","{id} — жеке дәріс залы («бөшке»), D–I корпустарының ішінде емес.","{id} — отдельный лекционный зал («бочка»), не в корпусах D–I."],
+ 'cm.nf':["I could not find room {r} in the campus map. Please check the room number or contact the information desk.","{r} бөлмесі кампус картасынан табылмады. Бөлме нөмірін тексеріңіз немесе information desk-ке хабарласыңыз.","Помещение {r} не найдено на карте кампуса. Проверьте номер или обратитесь в information desk."],
+ 'cm.svc':["The campus map does not include services such as the library, canteen, gym or registrar yet. Please ask at the information desk.","Кампус картасында кітапхана, асхана, спортзал немесе registrar сияқты қызметтер әзірге жоқ. Information desk-ке хабарласыңыз.","На карте кампуса пока нет таких сервисов, как библиотека, столовая, спортзал или registrar. Обратитесь в information desk."],
+ 'cm.listh':["{t} on the campus map","Кампус картасында: {t}","На карте кампуса: {t}"],
+ 'cm.which':["Which building? Room {r} exists in {b}.","Қай корпус? {r} бөлмесі мына корпустарда бар: {b}.","В каком корпусе? Помещение {r} есть в корпусах {b}."],
+ 'cm.bld':["Building {b}","{b} корпусы","Корпус {b}"],
+ 'cm.dym':["Did you mean {r}?","Мүмкін, {r} деп айтқыңыз келді ме?","Возможно, вы имели в виду {r}?"],
+ 'cm.numnote':["A room number is the building letter plus the number, e.g. D104.","Бөлме нөмірі — корпус әрпі мен нөмір, мысалы D104.","Номер помещения — буква корпуса и номер, например D104."],
+
  'typing':["Help Desk is typing…","Help Desk жазып жатыр…","Help Desk печатает…"],
 
  'tour.skip':["Skip","Өткізу","Пропустить"],
@@ -260,8 +296,10 @@ const D={
 };
 let ui='en';
 try{const s=localStorage.getItem('hd-ui');if(LANGS.includes(s))ui=s}catch(e){}
-const tr=(k,v)=>{const a=D[k];if(!a)return k;let s=a[LANGS.indexOf(ui)]||a[0];
+/* trL: text in a given language (the chat bot uses it with the language of the question); tr: text in the interface language */
+const trL=(k,L,v)=>{const a=D[k];if(!a)return k;let s=a[LANGS.indexOf(L)]||a[0];
   if(v&&typeof s==='string')s=s.replace(/\{(\w+)\}/g,(_,x)=>v[x]??'');return s};
+const tr=(k,v)=>trL(k,ui,v);
 
 /* ---------- Bot replies (chat engine in app.js); the bot answers in the language of the question ---------- */
 const SSC="8 (727) 000-00-00 · ssc@university.demo";

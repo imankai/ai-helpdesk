@@ -122,6 +122,84 @@ function botNow(o,L){
 }
 const later=(fn,ms=380)=>setTimeout(fn,ms);
 
+/* ---------- Campus map: the only source of places the bot may name (US13). Nothing outside this list exists. ---------- */
+const CAMPUS=(()=>{
+  const m=new Map(),add=(id,b,f,t,barrel)=>m.set(id,{id,b,f,t,barrel:!!barrel});
+  const rng=(b,f,a,z,t)=>{for(let n=a;n<=z;n++)add(b+n,b,f,t)};
+  for(const b of ['D','E','F','G']){          /* id = building + floor + number */
+    rng(b,1,101,108,'classroom');
+    rng(b,2,201,204,'classroom');rng(b,2,205,209,'office');
+    rng(b,3,301,304,'classroom');rng(b,3,305,309,'office')}
+  ['H01','H02','H03'].forEach(id=>add(id,'H',null,'lecture'));
+  rng('H',1,101,103,'classroom');
+  rng('H',2,201,203,'classroom');rng('H',2,204,209,'office');
+  rng('H',3,301,303,'classroom');rng('H',3,304,309,'office');
+  rng('I',1,101,103,'classroom');add('I110','I',1,'lecture');add('I111','I',1,'lecture');
+  rng('I',2,201,203,'classroom');rng('I',2,204,208,'office');add('I209','I',2,'study');add('I210','I',2,'lecture');add('I211','I',2,'lecture');
+  rng('I',3,301,303,'classroom');rng('I',3,304,308,'office');add('I309','I',3,'study');add('I310','I',3,'lecture');add('I311','I',3,'lecture');
+  ['A1','A2','B1','B2','C1','C2'].forEach(id=>add(id,null,null,'lecture',true));   /* "barrels": separate lecture halls */
+  return m})();
+const CAMPUS_BLDS=['D','E','F','G','H','I'];
+const CAMPUS_TYPES=['classroom','lecture','office','study'];
+const roomNum=id=>parseInt(id.replace(/^[A-Z]/,''),10);
+/* compress sorted ids into runs: D101,D102,D103 -> "D101–D103" */
+function runs(ids){
+  ids=ids.slice().sort((a,b)=>roomNum(a)-roomNum(b));const out=[];
+  for(let i=0;i<ids.length;){let j=i;while(j+1<ids.length&&roomNum(ids[j+1])===roomNum(ids[j])+1)j++;
+    out.push(j>i?ids[i]+'–'+ids[j]:ids[i]);i=j+1}
+  return out}
+/* what is on one floor, e.g. "F301–F304 classrooms, F305–F309 teacher's offices" */
+function floorSummary(b,f,L){
+  const rooms=[...CAMPUS.values()].filter(r=>r.b===b&&r.f===f);
+  return CAMPUS_TYPES.map(t=>({t,ids:rooms.filter(r=>r.t===t).map(r=>r.id)})).filter(g=>g.ids.length)
+    .sort((a,b)=>Math.min(...a.ids.map(roomNum))-Math.min(...b.ids.map(roomNum)))     /* in room-number order */
+    .map(g=>runs(g.ids).join(', ')+' '+(g.ids.length===1?trL('cm.t.'+g.t,L).toLowerCase():trL('cm.p.'+g.t,L))).join(', ')}
+/* lines for "Where are the lecture halls?": buildings with identical layouts are merged (D, E, F, G) */
+function typeSummary(type,L){
+  const lines=[];
+  if(type!=='barrel'){
+    const per={};
+    for(const r of CAMPUS.values())if(r.t===type&&r.b)((per[r.b]=per[r.b]||{})[r.f||0]=per[r.b][r.f||0]||[]).push(r.id);
+    const groups={};
+    for(const b of CAMPUS_BLDS)if(per[b]){const sig=JSON.stringify(Object.entries(per[b]).map(([f,ids])=>[f,ids.map(i=>i.slice(1))]));(groups[sig]=groups[sig]||[]).push(b)}
+    for(const [sig,bs] of Object.entries(groups)){
+      const b0=bs[0],parts=Object.keys(per[b0]).sort((x,y)=>(+x||9)-(+y||9)).map(f=>
+        +f?trL('cm.fl',L,{n:f})+': '+runs(per[b0][f].map(i=>i.slice(1))).join(', '):runs(per[b0][f]).join(', '));
+      lines.push(bs.join(', ')+' · '+parts.join('; '))}}
+  if(type==='barrel'||type==='lecture'){
+    const ids=[...CAMPUS.values()].filter(r=>r.barrel).map(r=>r.id);
+    lines.push(ids.join(', ')+' ('+trL('cm.p.barrel',L)+')')}
+  return lines}
+/* recognise room numbers: F305, f305, F 305, F-305, H01, A1 (letters A–I; Cyrillic look-alikes accepted) */
+const HOMO={'А':'A','В':'B','С':'C','Е':'E','Н':'H','І':'I'};
+const LOC=/where|find|locat|room|hall|office|barrel|how (do i )?(get|find|reach)|где|кабинет|аудитори|зал|бочк|как (пройти|найти|добраться)|қайда|бөшке|бөлме|қалай/i;
+function roomTokens(text,force){
+  const s=text.toUpperCase().replace(/[АВСЕНІ]/g,c=>HOMO[c]),out=[],re=/(^|[^A-Z0-9А-ЯЁӘІҢҒҮҰҚӨҺ])([A-I])([\s-]?)(\d{1,3})(?!\d)/g;
+  let m;while((m=re.exec(s))){if(m[3]===' '&&!force)continue;out.push(m[2]+m[4])}
+  return out}
+/* [а-яё]* is used instead of \w* because \w does not match Cyrillic */
+const TYPEQ=[['study',/study room|кабинет[а-яё]* для уч[её]б|уч[её]бн[а-яё]* кабинет|оқу кабинет|оқуға арналған/i],
+  ['office',/teacher'?s?'? offices?|кабинет[а-яё]* преподавател|преподавательск|оқытушы|мұғалім/i],
+  ['lecture',/lecture|лекци|дәріс/i],['classroom',/classroom|аудитори/i],['barrel',/barrel|бочк|бөшке/i]];
+const SVC=/library|canteen|cafeteria|dining|gym\b|sport|registrar|dorm|clinic|медпункт|библиотек|столов|буфет|спортзал|общежити|регистратор|кітапхана|асхана|жатақхана|спорт/i;
+/* a 2-3 digit number with no building letter next to a room word, e.g. "room 305", "кабинет 305", "305 бөлме";
+   the room word is required so that sums like "pay 450 000" are not read as rooms */
+const RW='(?:rooms?|lecture halls?|halls?|offices?|кабинет[а-яё]*|комнат[а-яё]*|аудитори[а-яё]*|ауд\\.?|бөлме[а-яәіңғүұқөһ]*|№)';
+function bareNum(text){const m=new RegExp(RW+'\\s*(?:№|no\\.?|#)?\\s*(\\d{2,3})(?!\\d|[:.,]\\d)|(?:^|[^\\w.,:])(\\d{2,3})\\s*-?\\s*'+RW,'i').exec(text);
+  return m?m[1]||m[2]:null}
+/* map rooms similar to an unknown id: the same number zero-padded (H1 -> H01), else up to 3 rooms that start with it (I11 -> I110, I111) */
+function similarRooms(id){const b=id[0],n=id.slice(1),same=[...CAMPUS.keys()].filter(k=>k[0]===b&&k!==id);
+  const pad=same.filter(k=>+k.slice(1)===+n);if(pad.length)return pad;
+  const pre=same.filter(k=>k.slice(1).startsWith(n));return pre.length<=3?pre:[]}
+function campusIntent(t){
+  const loc=LOC.test(t),ids=roomTokens(t,loc);
+  if(ids.length)return{k:'rooms',ids:[...new Set(ids)].slice(0,3)};
+  if(!loc)return null;
+  const n=bareNum(t);if(n)return{k:'bare',n};
+  const ty=TYPEQ.find(([,re])=>re.test(t));
+  if(ty)return{k:'type',type:ty[0]};
+  return SVC.test(t)?{k:'svc'}:null}
+
 /* ---------- intents ---------- */
 /* Keyword patterns per intent in English, Kazakh and Russian. They only classify the question; displayed text lives in i18n.js. */
 const I=[
@@ -142,6 +220,8 @@ const I=[
 function answer(t){
   const L=detect(t); lastLang=L; const S=T[L];
   if(mode==='desc'){pendingDesc=t;mode=null;return later(()=>askOffice(L))}
+  const c=campusIntent(t);
+  if(c){logQ('campus');return later(()=>H.campus(L,c))}
   const hit=(I.find(([,re])=>re.test(t))||['fb'])[0];logQ(hit);
   later(()=>H[hit](L));
 }
@@ -163,9 +243,30 @@ const H={
  adddrop:L=>bot({text:T[L].adddrop,src:T[L].S.cal,fb:true},L),
  sched:L=>bot({text:T[L].sched,src:T[L].S.portal,fb:true},L),
  hours:L=>bot({text:T[L].hours,src:T[L].S.ssc,fb:true},L),
+ campus:(L,c)=>{
+   const src=trL('cm.src',L),cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+   if(c.k==='svc')return bot({text:trL('cm.svc',L),src,fb:true},L);
+   if(c.k==='type'){const t=c.type;
+     return bot({title:trL('cm.listh',L,{t:cap(trL('cm.p.'+t,L))}),list:typeSummary(t,L),after:t==='barrel'?'':trL('cm.numnote',L),src,
+       acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L)}
+   if(c.k==='bare'){const n=c.n,bs=CAMPUS_BLDS.filter(b=>CAMPUS.has(b+n));   /* buildings come from the map only */
+     if(!bs.length)return bot({text:trL('cm.nf',L,{r:n}),src,fb:true},L);
+     if(bs.length===1)return roomCard(bs[0]+n,L);
+     return bot({text:trL('cm.which',L,{r:n,b:bs.join(', ')}),src,acts:bs.map(b=>[trL('cm.bld',L,{b}),()=>roomCard(b+n,L)])},L)}
+   c.ids.forEach(id=>{
+     if(CAMPUS.has(id))return roomCard(id,L);
+     const sim=similarRooms(id);
+     bot({text:trL('cm.nf',L,{r:id}),after:sim.length?trL('cm.dym',L,{r:sim.join(' / ')}):'',src,
+       acts:sim.length?sim.map(k=>[k,()=>roomCard(k,L)]):null,fb:true},L)})},
  offices:L=>{const f=FAQ.find(x=>x.id==='offices');bot({text:f.a(L),src:T[L].S[f.src],fb:true},L)},
  fb:L=>bot({text:fill(T[L].fb,{c:SSC}),acts:[[T[L].mkT,()=>startTicket(L)],[T[L].talk,()=>human(L)]]},L)
 };
+function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
+  if(r.b)rows.push(trL('cm.building',L)+': '+r.b);
+  if(r.f)rows.push(trL('cm.floor',L)+': '+r.f);
+  rows.push(trL('cm.type',L)+': '+trL('cm.t.'+r.t,L)+(r.barrel?' ('+trL('cm.t.barrel',L)+')':''));
+  const hint=r.barrel?trL('cm.hint.barrel',L,{id}):r.f?trL('cm.hint.floor',L,{b:r.b,f:r.f,r:floorSummary(r.b,r.f,L)}):trL('cm.hint.nofloor',L,{id,b:r.b});
+  bot({title:id,list:rows,after:hint,src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap(id)]],fb:true},L)}
 function it(L,k){const S=T[L];
   bot({ol:S[k],src:S.S.it},L);
   later(()=>bot({text:S.helped,acts:[[S.yes,()=>bot({text:S.yesR},L)],[S.no,()=>bot({text:S.noR,acts:[[S.mkT,()=>startTicket(L,'IT Support')],[S.talk,()=>human(L)]]},L)]]},L),250);
