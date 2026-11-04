@@ -81,6 +81,7 @@
       <button id="nav-staff" class="only-staff" data-view="staff"><span data-i18n="nav.board">Ticket board</span> <span class="count" id="c-s">0</span></button>
       <button id="nav-review" class="only-staff" data-view="review"><span data-i18n="nav.review">Review queue</span> <span class="count" id="c-r">0</span></button>
       <button id="nav-analytics" class="only-staff" data-view="analytics" data-i18n="nav.analytics">Analytics</button>
+      <button id="nav-kb" class="only-staff" data-view="kb" data-i18n="nav.kb">Knowledge base</button>
       <button id="nav-ann" class="only-staff" data-view="ann" data-i18n="nav.ann">Announcements</button>
       <button id="nav-campus" data-view="campus" data-i18n="nav.campus">Campus map</button>
       <button id="nav-faq" data-view="faq" data-i18n="nav.faq">FAQ</button>
@@ -242,6 +243,28 @@
         <h2 data-i18n="rv.title">Review queue</h2>
         <p class="hint" data-i18n="rv.hint">Answers rated “Not helpful” in the chat. Check the answer, fix the content if needed and mark the item as reviewed.</p>
         <div id="rv-list"></div>
+      </div>
+    </section>
+
+    <section class="view page" id="v-kb" hidden>
+      <div class="wrap">
+        <h2 data-i18n="kb.title">Knowledge base</h2>
+        <p class="hint" data-i18n="kb.hint">FAQ and office entries that the chat bot and the FAQ page use.</p>
+        <div class="kbbar">
+          <input id="kb-q" class="faqsearch" type="search" autocomplete="off" data-i18n-ph="kb.ph" placeholder="Search entries…" data-i18n-aria="kb.ph" aria-label="Search entries">
+          <button type="button" class="primary" id="kb-add" data-i18n="kb.add">Add entry</button>
+        </div>
+        <div id="kb-list"></div>
+      </div>
+      <div class="scrim" id="kb-scrim" hidden></div>
+      <div class="drawer" id="kb-detail" role="dialog" aria-label="Knowledge base entry" hidden></div>
+    </section>
+
+    <section class="view page" id="v-denied" hidden>
+      <div class="wrap denied">
+        <h2 data-i18n="den.title">Access denied</h2>
+        <p data-i18n="den.p">This section is available to Help Desk staff only.</p>
+        <button type="button" class="ghost2" id="den-back" data-i18n="den.back">Go back</button>
       </div>
     </section>
 

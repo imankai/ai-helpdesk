@@ -41,7 +41,11 @@ const seedTickets=()=>{const n=Date.now();return[
 const seedAnn=()=>[{id:1,text:'Registration for Spring 2027 opens on 16.11.2026. Clear all holds before that date.',level:'info',active:true,at:Date.now()-6*HR}];
 /* demo history for Analytics: questions asked and Helpful / Not helpful ratings. Real activity is added on top. */
 const seedEvents=()=>{const n=Date.now(),ev=[];let k=0;
-  Object.entries({reg:9,bill:7,pw:6,adv:5,wifi:4,adddrop:3,hours:2,fb:2}).forEach(([i,c])=>{for(let j=0;j<c;j++)ev.push({k:'q',i,at:n-(k++)*5*HR})});
+  Object.entries({reg:9,bill:7,pw:6,adv:5,wifi:4,adddrop:3,hours:2}).forEach(([i,c])=>{for(let j=0;j<c;j++)ev.push({k:'q',i,at:n-(k++)*5*HR})});
+  /* questions the bot could not answer keep their text for the "Unanswered & not helpful" list */
+  ['Is there a summer school this year?','Can I pay tuition in installments?','Is there a summer school this year?','How do I get a student ID card?']
+    .forEach((t,j)=>ev.push({k:'q',i:'fb',t,at:n-(4+j*40)*HR}));
+  [6,30,80,200,400].forEach(h=>ev.push({k:'esc',at:n-h*HR}));   /* "Talk to staff" escalations */
   for(let j=0;j<18;j++)if(j%5)ev.push({k:'fb',v:true,at:n-j*3*HR});
   return ev.concat(seedReview())};
 /* "Not helpful" ratings with question, answer and comment, so the staff Review queue is not empty on first launch */
@@ -50,15 +54,42 @@ const seedReview=()=>{const n=Date.now();return[
   {k:'fb',v:false,at:n-15*HR,role:'student',uid:'249900003',q:'Can I pay tuition in installments?',a:"I'm not sure about that, so I won't guess. Contact the Student Service Center.",c:'No answer about installments.'},
   {k:'fb',v:false,at:n-30*HR,role:'student',uid:'249900001',q:'How do I reset my password?',a:'Open the Student Portal login page and choose “Forgot password”.',c:''},
   {k:'fb',v:false,at:n-45*HR,role:'guest',uid:null,q:'What are the Student Service Center hours?',a:'Mon–Fri 9:00–18:00.',c:'Is it open on Saturday?',rev:n-40*HR}]};
-const fresh=()=>({v:4,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{}});
-const loadSt=s=>{s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};
+/* ---------- knowledge base (US16): FAQ and office entries edited by staff, with versions.
+   The bot, chat suggestions and the FAQ page read only the active version of published entries. ---------- */
+/* built-in FAQ entries linked to a chat intent; for a signed-in student the personal answer (registration check, balance) wins */
+const KB_INTENT={reg:'reg',adddrop:'adddrop',sched:'sched',pay:'bill',grant:'bill',pw:'pw',wifi:'wifi',portal:'portal',hours:'hours',offices:'offices'};
+const KB_CATS=['reg','pay','grant','it','off'],KB_SRCS=['reg','bill','adv','it','cal','ssc','portal'];
+const KB_OFFICES=[
+ ['registrar',{en:["What does the Registrar do?","Registrar office"],kk:["Registrar не істейді?","Registrar бөлімі"],ru:["Чем занимается Registrar?","Отдел Registrar"]},
+  {en:"Registrar handles course registration, enrollment certificates and transcripts. Send a request with a Help Desk ticket (office: Registrar) or contact the Student Service Center: "+SSC+".",
+   kk:"Registrar курстарға тіркелу, оқу орнынан анықтама және транскрипт мәселелерімен айналысады. Help Desk арқылы өтінім жіберіңіз (бөлім: Registrar) немесе Студенттерге қызмет көрсету орталығына хабарласыңыз: "+SSC+".",
+   ru:"Registrar занимается регистрацией на курсы, справками с места учёбы и транскриптами. Отправьте заявку через Help Desk (отдел: Registrar) или обратитесь в Центр обслуживания студентов: "+SSC+"."}],
+ ['itsupport',{en:["What does IT Support do?","IT Support office"],kk:["IT Support не істейді?","IT Support бөлімі"],ru:["Чем занимается IT Support?","Отдел IT Support"]},
+  {en:"IT Support helps with university accounts, passwords, Wi-Fi and the Student Portal. Try the self-help steps in the chat first; if they do not help, create a ticket for IT Support.",
+   kk:"IT Support университет аккаунттары, құпиясөз, Wi-Fi және Student Portal бойынша көмектеседі. Алдымен чаттағы нұсқаулықты қолданып көріңіз; көмектеспесе, IT Support-қа өтінім ашыңыз.",
+   ru:"IT Support помогает с университетскими аккаунтами, паролями, Wi-Fi и Student Portal. Сначала попробуйте шаги самопомощи в чате; если не помогло, создайте заявку в IT Support."}],
+ ['finance',{en:["What does the Finance office do?","Finance office"],kk:["Finance бөлімі не істейді?","Finance бөлімі"],ru:["Чем занимается отдел Finance?","Отдел Finance"]},
+  {en:"Finance handles tuition payments, billing questions and payment deadlines. Ask the assistant for your balance or create a ticket for Finance.",
+   kk:"Finance оқу ақысын төлеу, есепшот сұрақтары және төлем мерзімдерімен айналысады. Қалдықты көмекшіден сұраңыз немесе Finance-қа өтінім ашыңыз.",
+   ru:"Finance занимается оплатой обучения, вопросами по счетам и сроками оплаты. Спросите у ассистента свой баланс или создайте заявку в Finance."}],
+ ['affairs',{en:["What does Student Affairs do?","Student Affairs office"],kk:["Student Affairs не істейді?","Student Affairs бөлімі"],ru:["Чем занимается Student Affairs?","Отдел Student Affairs"]},
+  {en:"Student Affairs handles dormitory places and student life questions. Create a ticket for Student Affairs or contact the Student Service Center: "+SSC+".",
+   kk:"Student Affairs жатақхана орындары және студенттік өмір сұрақтарымен айналысады. Student Affairs-қа өтінім ашыңыз немесе Студенттерге қызмет көрсету орталығына хабарласыңыз: "+SSC+".",
+   ru:"Student Affairs занимается местами в общежитии и вопросами студенческой жизни. Создайте заявку в Student Affairs или обратитесь в Центр обслуживания студентов: "+SSC+"."}]];
+function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
+  const mk=(id,kind,intent,cat,src,q,a)=>({id,kind,intent:intent||null,status:'published',vn:1,vers:[{n:1,act:'create',by,at,cat,src,q,a}],log:[]});
+  const per=f=>Object.fromEntries(LANGS.map(l=>[l,f(l)])),lines=v=>Array.isArray(v)?v.join('\n'):v;
+  return FAQ.map(f=>mk(f.id,'faq',KB_INTENT[f.id],f.cat,f.src,per(l=>[f.q(l)]),per(l=>lines(f.a(l)))))
+    .concat(KB_OFFICES.map(([id,q,a])=>mk(id,'office',null,'off','ssc',q,a)))}
+const fresh=()=>({v:4,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb()});
+const loadSt=s=>{s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
   if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
 let st=fresh();
 try{const s=JSON.parse(localStorage.getItem('hd-state')||'null');if(s&&s.v===4&&s.tickets)st=loadSt(s)}catch(e){}
 function note(uid,type,o){st.notes.push(Object.assign({uid,type,at:Date.now(),read:false},o))}
 /* visitors are anonymous: no ID is stored with their questions or ratings */
 const uidOf=()=>U&&U.role!=='guest'?U.login:null;
-function logQ(i){st.events.push({k:'q',i,at:Date.now(),uid:uidOf()});save()}
+function logQ(i,t){const e={k:'q',i,at:Date.now(),uid:uidOf()};if(t)e.t=t.slice(0,200);st.events.push(e);save()}
 /* a rating keeps the question, the bot answer and the time; the comment is added later */
 /* looked up by id, because another tab may replace st in the meantime */
 const fbFind=f=>f._id&&st.events.find(e=>e.id===f._id);
@@ -253,12 +284,39 @@ function answer(t){
   if(mode==='desc'){pendingDesc=t;mode=null;return later(()=>askOffice(L))}
   const c=campusIntent(t);
   if(c){logQ('campus');return later(()=>H.campus(L,c))}
-  const hit=(I.find(([,re])=>re.test(t))||['fb'])[0];logQ(hit);
-  if(U.role==='guest'&&PERSONAL.includes(hit))return later(()=>guestOnly(L));
-  later(()=>H[hit](L));
+  const hit=(I.find(([,re])=>re.test(t))||['fb'])[0];
+  /* knowledge base: a close match on question variants first, then the entry linked to the detected intent */
+  const e=kbMatch(t)||kbByIntent(hit);
+  if(e&&!(e.intent&&PERSONAL.includes(e.intent)&&U.role==='student')){logQ(e.intent||'kb:'+e.id);return later(()=>kbAnswer(e,L))}
+  let k=e?e.intent:hit;
+  if(!H[k]||k==='campus')k='fb';      /* general intents answer only from published entries; archived = not answered */
+  logQ(k,k==='fb'?t:'');
+  if(U.role==='guest'&&PERSONAL.includes(k))return later(()=>guestOnly(L));
+  later(()=>H[k](L));
 }
 /* intents that use a student's own data; a visitor is asked to sign in instead */
 const PERSONAL=['reg','bill','adv','ticket','human'];
+const kbData=e=>e.vers.find(v=>v.n===e.vn);
+const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published');
+const kbByIntent=i=>kbLive().find(e=>e.intent===i)||null;
+/* languages that still lack a question variant or an answer; publishing is blocked while any is missing */
+const kbMissing=d=>LANGS.filter(l=>!(d.q[l]||[]).some(s=>s.trim())||!(d.a[l]||'').trim());
+const kbToks=s=>(s.toLowerCase().match(/\p{L}+/gu)||[]).filter(w=>w.length>=3&&!STOP.includes(w));
+/* same word or the same word with a one-letter ending (пароль / пароля), but not register / registrar */
+const tokEq=(a,b)=>{if(a===b)return true;const m=Math.max(a.length,b.length);if(Math.min(a.length,b.length)<5)return false;
+  let i=0;while(i<m&&a[i]===b[i])i++;return i>=m-1};
+function kbMatch(t){const u=kbToks(t);if(!u.length)return null;let best=null,bs=0;
+  for(const e of kbLive()){const d=kbData(e);
+    for(const l of LANGS)for(const v of d.q[l]){const vt=kbToks(v);if(!vt.length||(vt.length===1&&u.length>2))continue;
+      const n=vt.filter(w=>u.some(x=>tokEq(w,x))).length,s=n/vt.length;
+      if(s>=0.75&&s>bs){bs=s;best=e}}}
+  return best}
+const IT_K=['pw','wifi','portal'];
+function kbAnswer(e,L){const d=kbData(e),S=T[L],lines=d.a[L].split('\n').map(s=>s.trim()).filter(Boolean),it=IT_K.includes(e.intent);
+  const o={src:S.S[d.src]||'',fb:!it};if(lines.length>1)o.ol=lines;else o.text=lines[0];
+  bot(o,L);
+  /* IT self-help keeps its "Did this help?" step with a ticket for IT Support */
+  if(it)later(()=>bot({text:S.helped,acts:[[S.yes,()=>bot({text:S.yesR},L)],[S.no,()=>bot({text:S.noR,acts:[[S.mkT,()=>startTicket(L,'IT Support')],[S.talk,()=>human(L)]]},L)]]},L),250)}
 const H={
  greet:L=>bot({text:T[L].greet},L),
  reg:L=>{const S=T[L],h=U.hold&&S.holds[U.hold];bot({title:S.regT,text:h?h[0]:S.noHold,
@@ -271,12 +329,8 @@ const H={
  adv:L=>{const S=T[L],ap=myAppts();
    if(ap.length){return bot({text:fill(S.hasAppt,{s:fmt(ap[0].at,L)}),src:S.S.adv,fb:true},L)}
    bot({text:fill(S.adv,{a:U.advisor}),src:S.S.adv,acts:slots(L).map(d=>[fmt(d,L),()=>book(d,L)])},L)},
- pw:L=>it(L,'pw'),wifi:L=>it(L,'wifi'),portal:L=>it(L,'portal'),
  ticket:L=>startTicket(L),
  human:L=>human(L),
- adddrop:L=>bot({text:T[L].adddrop,src:T[L].S.cal,fb:true},L),
- sched:L=>bot({text:T[L].sched,src:T[L].S.portal,fb:true},L),
- hours:L=>bot({text:T[L].hours,src:T[L].S.ssc,fb:true},L),
  campus:(L,c)=>{
    const src=trL('cm.src',L),cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
    if(c.k==='svc')return bot({text:trL('cm.svc',L),src,fb:true},L);
@@ -292,7 +346,6 @@ const H={
      const sim=similarRooms(id);
      bot({text:trL('cm.nf',L,{r:id}),after:sim.length?trL('cm.dym',L,{r:sim.join(' / ')}):'',src,
        acts:sim.length?sim.map(k=>[k,()=>roomCard(k,L)]):null,fb:true},L)})},
- offices:L=>{const f=FAQ.find(x=>x.id==='offices');bot({text:f.a(L),src:T[L].S[f.src],fb:true},L)},
  fb:L=>U.role==='guest'?bot({text:trL('g.nf',L,{c:SSC}),acts:[[trL('g.faq',L),()=>show('faq')],[trL('cm.title',L),()=>openMap()]],fb:true},L):
    bot({text:fill(T[L].fb,{c:SSC}),fb:true,acts:[[T[L].mkT,()=>startTicket(L)],[T[L].talk,()=>human(L)]]},L)
 };
@@ -302,10 +355,6 @@ function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
   rows.push(trL('cm.type',L)+': '+trL('cm.t.'+r.t,L)+(r.barrel?' ('+trL('cm.t.barrel',L)+')':''));
   const hint=r.barrel?trL('cm.hint.barrel',L,{id}):r.f?trL('cm.hint.floor',L,{b:r.b,f:r.f,r:floorSummary(r.b,r.f,L)}):trL('cm.hint.nofloor',L,{id,b:r.b});
   bot({title:id,list:rows,after:hint,src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap(id)]],fb:true},L)}
-function it(L,k){const S=T[L];
-  bot({ol:S[k],src:S.S.it},L);
-  later(()=>bot({text:S.helped,acts:[[S.yes,()=>bot({text:S.yesR},L)],[S.no,()=>bot({text:S.noR,acts:[[S.mkT,()=>startTicket(L,'IT Support')],[S.talk,()=>human(L)]]},L)]]},L),250);
-}
 let presetOffice=null;
 const guestOnly=L=>bot({text:trL('g.only',L),acts:[[trL('guest.exit',L),toLogin]]},L);
 function startTicket(L,office){if(U.role==='guest')return guestOnly(L);presetOffice=office||null;mode='desc';bot({text:T[L].tAsk},L);$('q').focus()}
@@ -323,6 +372,7 @@ function book(d,L){
   bot({text:fill(T[L].booked,{s:fmt(d,L),a:U.advisor}),src:T[L].S.adv},L);
 }
 function human(L){if(U.role==='guest')return guestOnly(L);
+  st.events.push({k:'esc',at:Date.now()});save();      /* counted as an escalation in Analytics */
   bot({text:T[L].queue},L);
   setTimeout(()=>{sys(T[L].joined);bot({text:T[L].staff,staff:true},L)},2200);
 }

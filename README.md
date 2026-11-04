@@ -28,7 +28,9 @@ Developed by a student team as part of INF451.
 - Kanban ticket board (Open / In progress / Resolved) with priority (Low / Medium / High) and a 24-hour reply SLA with an "Overdue" marker
 - Ticket drawer with the conversation, status and priority controls, and reply field
 - Review queue: answers rated "Not helpful" with the question, answer, comment and time, and a "Mark reviewed" button
-- Analytics: tickets by status and office, overdue count, share of Helpful answers, top 5 questions, average rating and latest reviews
+- Analytics with a period filter (Today / Last 7 days / Last 30 days / All time): questions asked, share of unanswered questions, tickets, escalations to staff, average rating, top 5 questions and an "Unanswered & not helpful" list with a "Create FAQ entry" button; only aggregated data, no student names or IDs
+- Knowledge base: FAQ and office entries with search, Add / Edit / Archive; an entry is published only when the question and the answer are filled in English, Kazakh and Russian; every change is kept as a version with author and date, with "Roll back"; the bot and the FAQ page use the published entries right away
+- Staff sections open by address (for example `#analytics`); students and visitors see "Access denied" and no data
 - Announcements: publish or unpublish a notice shown to students
 
 **General**
@@ -50,10 +52,12 @@ Developed by a student team as part of INF451.
 | 2 – Personal answers | US8 Multi-Language Support |
 | 4 – Campus, feedback and knowledge base | US13 Campus Navigation & Room Finder |
 | 4 – Campus, feedback and knowledge base | US14 Answer Feedback & Rating |
+| 4 – Campus, feedback and knowledge base | US15 Help Desk Analytics Dashboard |
+| 4 – Campus, feedback and knowledge base | US16 Knowledge Base Content Management |
 
 ## Sprint backlog
 
-The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The prototype implements the stories of sprints 1 and 2 (US1–US8) and from sprint 4 US13 (Campus Navigation & Room Finder) and US14 (Answer Feedback & Rating).
+The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The prototype implements the stories of sprints 1 and 2 (US1–US8) and the stories of sprint 4 (US13–US16).
 
 ## Demo accounts
 
@@ -65,7 +69,7 @@ Password for every account: `demo123`
 | `249900002` | Student | Studies on a state grant, no balance, no holds |
 | `249900003` | Student | Tuition paid in full, no holds |
 | `249900004` | Student | Tuition with an unpaid balance, no holds |
-| `staff` | Staff | Ticket board, analytics, announcements |
+| `staff` | Staff | Ticket board, review queue, analytics, knowledge base, announcements |
 
 The login screen also lists these accounts; click one to fill in the login. **Continue as visitor** opens the chat without an account.
 
@@ -86,7 +90,7 @@ Notes:
 ```
 index.html   Page structure: login, header, all views, tour overlay
 style.css    Styles, light and dark theme tokens, responsive layout
-i18n.js      Interface strings (EN / KK / RU), bot replies and FAQ content
+i18n.js      Interface strings (EN / KK / RU), bot replies and the initial FAQ content
 app.js       Demo accounts and data, state, chat engine and intent matching
 ui.js        Views, dashboard, staff board, analytics, notifications, tour, login, theme
 docs/SPRINTS.md   Sprint backlog: all user stories with QA scenarios

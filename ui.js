@@ -6,7 +6,11 @@ const noteText=n=>n.type==='reply'?tr('n.reply',{n:n.n}):n.type==='status'?tr('n
   n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
 
 /* ---------- views ---------- */
-const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','ann','about'];
+const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','kb','ann','about','denied'];
+/* each view is linked to #name in the address; staff-only views show "Access denied" to anyone else and render no data for them */
+const STAFF_VIEWS=['staff','review','analytics','kb','ann'];
+const ROLE_VIEWS={student:['home','chat','tickets','appts','campus','faq','about'],guest:['chat','campus','faq','about'],staff:STAFF_VIEWS.concat('campus','faq','about')};
+const isStaff=()=>U&&U.role==='staff';
 const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
 /* priority and SLA: first reply is due 24 h after creation; tickets that are resolved or already answered have no SLA */
 const PRIO=['high','medium','low'],SLA=24*3600e3;
@@ -21,6 +25,8 @@ function slaLabel(t){
   return '<span class="sla'+(left<4*3600e3?' soon':'')+'">'+(left<3600e3?tr('sla.m',{n:Math.max(1,Math.floor(left/60000))}):tr('sla.h',{n:Math.floor(left/3600e3)}))+'</span>';
 }
 function show(v){
+  if(U&&!ROLE_VIEWS[U.role].includes(v))v=STAFF_VIEWS.includes(v)?'denied':homeView();
+  if(U&&v!=='denied')try{if(location.hash!=='#'+v)history.replaceState(null,'','#'+v)}catch(_){}
   VIEWS.forEach(x=>{$('v-'+x).hidden=x!==v;const b=$('nav-'+x);if(b)x===v?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
   document.querySelector('.bar').classList.remove('open');$('menu-btn').setAttribute('aria-expanded','false');
   if(v==='chat')$('q').focus();
@@ -41,7 +47,7 @@ function sync(){
     ap.map(a=>'<tr id="ap-'+a.at+'"><td>'+fmt(a.at,ui)+'</td><td>'+esc(a.with)+'</td><td>'+tr('ap.before')+'</td><td><button class="link" data-cancel="'+st.appts.indexOf(a)+'">'+tr('ap.cancel')+'</button></td></tr>').join('')+'</tbody></table></div>'
     :'<div class="empty">'+tr('ap.none')+'</div>';
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{st.appts.splice(+b.dataset.cancel,1);save();sync()});
-  renderStaff();renderReview();renderAnalytics();renderFaq();renderBell();renderAnn();renderBanners();renderCampus();
+  renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderBanners();renderCampus();
 }
 
 /* ---------- campus map page: schematic SVG, colours by room type, selection highlights building / barrel and floor ---------- */
@@ -154,6 +160,7 @@ function renderHome(mine,ap){
 /* ---------- staff: kanban board with a ticket drawer ---------- */
 let sel=null, shown=null;
 function renderStaff(){
+  if(!isStaff()){$('s-board').innerHTML=$('s-detail').innerHTML='';$('s-detail').hidden=$('s-scrim').hidden=true;return}
   const keep=shown===sel&&$('reply')?$('reply').value:'';
   const all=st.tickets.slice().sort((a,b)=>b.at-a.at);
   $('c-s').textContent=all.filter(t=>t.status!=='Resolved').length;
@@ -196,6 +203,7 @@ $('s-detail').onsubmit=e=>{e.preventDefault();
 
 /* ---------- staff: review queue of answers rated "Not helpful" (US14) ---------- */
 function renderReview(){
+  if(!isStaff()){$('rv-list').innerHTML='';return}
   const ev=st.events||[],list=ev.filter(e=>e.k==='fb'&&!e.v&&e.q).sort((a,b)=>!!a.rev-!!b.rev||b.at-a.at);
   $('c-r').textContent=list.filter(e=>!e.rev).length;
   const who=e=>e.role==='guest'?tr('rv.guest'):e.role==='staff'?tr('rv.staff'):tr('rv.student')+(e.uid?' · ID '+esc(e.uid):'');
@@ -209,34 +217,133 @@ $('rv-list').onclick=e=>{const b=e.target.closest('[data-rv]');if(!b)return;
   const x=st.events[+b.dataset.rv];if(x){x.rev=Date.now();save();sync()}};
 
 /* ---------- staff: analytics, computed from tickets and recorded chat events ---------- */
+let anPer='all',anItems=[];
+const AN_PER=['today','7','30','all'];
+function anSince(){if(anPer==='all')return 0;if(anPer==='today'){const d=new Date();d.setHours(0,0,0,0);return d.getTime()}return Date.now()-anPer*864e5}
+/* label of a question group: a chat intent, or a knowledge base entry added by staff */
+function qLabel(i){if(!i.startsWith('kb:'))return tr('i.'+i);
+  const e=st.kb.find(x=>x.id===i.slice(3)),d=e&&kbData(e);return d?d.q[ui][0]||d.q.en[0]:i.slice(3)}
 function renderAnalytics(){
-  const tk=st.tickets,ev=st.events||[];
-  const up=ev.filter(e=>e.k==='fb'&&e.v).length,dn=ev.filter(e=>e.k==='fb'&&!e.v).length;
-  const rated=tk.filter(t=>t.rating),avg=rated.length?(rated.reduce((a,t)=>a+t.rating.stars,0)/rated.length).toFixed(1):'—';
-  const qs=ev.filter(e=>e.k==='q'),cnt={};
-  qs.forEach(e=>{if(e.i!=='greet')cnt[e.i]=(cnt[e.i]||0)+1});
+  if(!isStaff()){$('an').innerHTML='';return}
+  const t0=anSince(),inP=at=>at>=t0,ev=(st.events||[]).filter(e=>inP(e.at)),tk=st.tickets.filter(t=>inP(t.at));
+  const fbs=ev.filter(e=>e.k==='fb'),up=fbs.filter(e=>e.v).length,dn=fbs.length-up;
+  const rated=st.tickets.filter(t=>t.rating&&inP(t.rating.at)),avg=rated.length?(rated.reduce((a,t)=>a+t.rating.stars,0)/rated.length).toFixed(1):'—';
+  const qs=ev.filter(e=>e.k==='q'&&e.i!=='greet'),un=qs.filter(e=>e.i==='fb'),escN=ev.filter(e=>e.k==='esc').length,cnt={};
+  qs.forEach(e=>{cnt[e.i]=(cnt[e.i]||0)+1});
   const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  /* unanswered questions and "Not helpful" ratings, grouped by question text; only the text is kept, never who asked */
+  const grp={},add=(t,k,at)=>{const key=t.trim().toLowerCase(),x=grp[key]=grp[key]||{t:t.trim(),un:0,nh:0,at:0};x[k]++;x.at=Math.max(x.at,at)};
+  un.forEach(e=>{if(e.t)add(e.t,'un',e.at)});fbs.forEach(e=>{if(!e.v&&e.q)add(e.q,'nh',e.at)});
+  anItems=Object.values(grp).sort((a,b)=>b.un+b.nh-a.un-a.nh||b.at-a.at).slice(0,10);
   const bars=(rows,cls)=>{const max=Math.max(1,...rows.map(r=>r[1]));
     return rows.map(([l,n,c])=>'<div class="brow"><span>'+esc(l)+'</span><div class="track"><i class="'+(c||cls||'')+'" style="width:'+Math.round(100*n/max)+'%"></i></div><b>'+n+'</b></div>').join('')};
-  const over=tk.filter(isOverdue).length;
+  const over=st.tickets.filter(isOverdue).length,none='<div class="empty">'+tr('an.un.none')+'</div>';
   const kpi=(k,v,s,c)=>'<div class="stat'+(c?' '+c:'')+'"><span class="k">'+k+'</span><b class="v">'+v+'</b><span class="s">'+(s||'&nbsp;')+'</span></div>';
   $('an').innerHTML=
-    '<div class="stats">'+kpi(tr('an.total'),tk.length)+kpi(tr('an.open'),tk.filter(t=>t.status!=='Resolved').length)+
-      kpi(tr('an.overdue'),over,tr('an.overdue.s'),over?'alert':'ok')+
-      kpi(tr('an.helpful'),up+dn?Math.round(100*up/(up+dn))+'%':'—',up+dn?tr('an.helpful.s',{u:up,n:up+dn}):tr('an.nodata'))+kpi(tr('an.questions'),qs.length)+
-      kpi(tr('an.rating'),rated.length?avg+' ★':'—',rated.length?tr('an.rating.s',{n:rated.length}):tr('an.nodata'))+'</div>'+
+    '<div class="tabs2 anper" role="group" aria-label="'+esc(tr('an.period'))+'">'+AN_PER.map(p=>'<button type="button" data-per="'+p+'" aria-pressed="'+(anPer===p)+'">'+tr('an.p.'+p)+'</button>').join('')+'</div>'+
+    '<div class="stats">'+kpi(tr('an.questions'),qs.length)+
+      kpi(tr('an.unans'),qs.length?Math.round(100*un.length/qs.length)+'%':'—',qs.length?tr('an.unans.s',{u:un.length,n:qs.length}):tr('an.nodata'),un.length?'alert':'')+
+      kpi(tr('an.tickets'),tk.length,tr('an.tickets.s',{n:tk.filter(t=>t.status!=='Resolved').length}))+
+      kpi(tr('an.esc'),escN,tr('an.esc.s'))+
+      kpi(tr('an.rating'),rated.length?avg+' ★':'—',rated.length?tr('an.rating.s',{n:rated.length}):tr('an.nodata'))+
+      kpi(tr('an.helpful'),up+dn?Math.round(100*up/(up+dn))+'%':'—',up+dn?tr('an.helpful.s',{u:up,n:up+dn}):tr('an.nodata'))+
+      kpi(tr('an.overdue'),over,tr('an.overdue.now'),over?'alert':'ok')+'</div>'+
+    '<section class="blk"><h3 class="sect">'+tr('an.top')+'</h3>'+(top.length?bars(top.map(([i,n])=>[qLabel(i),n]),'o'):none)+'</section>'+
+    '<section class="blk"><h3 class="sect">'+tr('an.un.title')+'</h3><p class="hint">'+tr('an.un.hint')+'</p>'+(anItems.length?anItems.map((x,i)=>
+      '<div class="unq"><div><b>'+esc(x.t)+'</b><span class="chips">'+(x.un?'<span class="chip warn">'+tr('an.un.un',{n:x.un})+'</span>':'')+(x.nh?'<span class="chip">'+tr('an.un.nh',{n:x.nh})+'</span>':'')+'<small>'+dt(x.at)+'</small></span></div>'+
+      '<button type="button" class="ghost2" data-newq="'+i+'">'+tr('an.un.create')+'</button></div>').join(''):none)+'</section>'+
     '<div class="duo">'+
       '<section class="blk"><h3 class="sect">'+tr('an.bystatus')+'</h3>'+bars(STATUS.map((s,i)=>[tr('st.'+s),tk.filter(t=>t.status===s).length,['o','p','g'][i]]))+'</section>'+
       '<section class="blk"><h3 class="sect">'+tr('an.byoffice')+'</h3>'+bars(OFFICES.map(o=>[o,tk.filter(t=>t.office===o).length]),'p')+'</section>'+
     '</div>'+
-    '<section class="blk"><h3 class="sect">'+tr('an.top')+'</h3>'+(top.length?bars(top.map(([i,n])=>[tr('i.'+i),n]),'o'):'<div class="empty">'+tr('an.nodata')+'</div>')+'</section>'+
     '<section class="blk"><h3 class="sect">'+tr('an.reviews')+'</h3>'+(rated.length?rated.slice().sort((a,b)=>b.rating.at-a.rating.at).slice(0,5).map(t=>
-      '<div class="rev"><span class="stars">'+stars(t.rating.stars)+'</span> <b>'+esc(t.who)+'</b> <span class="mono">#'+t.n+'</span> <small>'+dt(t.rating.at)+'</small>'+
-      (t.rating.comment?'<p>'+esc(t.rating.comment)+'</p>':'')+'</div>').join(''):'<div class="empty">'+tr('an.nodata')+'</div>')+'</section>';
+      '<div class="rev"><span class="stars">'+stars(t.rating.stars)+'</span> <span class="chip">'+esc(t.office)+'</span> <small>'+dt(t.rating.at)+'</small>'+
+      (t.rating.comment?'<p>'+esc(t.rating.comment)+'</p>':'')+'</div>').join(''):none)+'</section>';
 }
+$('an').onclick=e=>{const p=e.target.closest('[data-per]');if(p){anPer=p.dataset.per;return renderAnalytics()}
+  const c=e.target.closest('[data-newq]');if(c){const t=anItems[+c.dataset.newq].t;show('kb');kbOpen(null,t)}};
+
+/* ---------- staff: knowledge base (US16) ---------- */
+let kbQ='',kbDr=null;             /* kbDr: {mode:'edit'|'hist', id} while the drawer is open */
+const kbLast=e=>e.vers.concat(e.log).reduce((a,x)=>x.at>a.at?x:a);
+const kbText=d=>LANGS.map(l=>d.q[l].join(' ')+' '+d.a[l]).join(' ').toLowerCase();
+function renderKb(){
+  if(!isStaff()){$('kb-list').innerHTML='';kbClose();return}
+  const q=kbQ.trim().toLowerCase(),list=st.kb.filter(e=>!q||kbText(kbData(e)).includes(q)).sort((a,b)=>(a.status==='archived')-(b.status==='archived'));
+  $('kb-list').innerHTML=list.length?list.map(e=>{const d=kbData(e),l=kbLast(e),arch=e.status==='archived';
+    return '<article class="kbi'+(arch?' arch':'')+'"><div class="kbh"><span class="chip">'+tr('kb.'+e.kind)+'</span><span class="tag">'+tr('cat.'+d.cat)+'</span>'+
+      '<span class="chip'+(arch?'':' done')+'">'+tr(arch?'kb.arch':'kb.pub')+'</span><small>v'+e.vn+' · '+esc(l.by)+' · '+dt(l.at)+'</small></div>'+
+      '<h3>'+esc(d.q[ui][0]||d.q.en[0]||'')+'</h3><p>'+esc(d.a[ui].replace(/\n/g,' · ').slice(0,170))+(d.a[ui].length>170?'…':'')+'</p>'+
+      '<div class="btns"><button type="button" class="ghost2" data-kbe="'+e.id+'">'+tr('kb.edit')+'</button><button type="button" class="ghost2" data-kbh="'+e.id+'">'+tr('kb.hist')+'</button>'+
+      '<button type="button" class="ghost2" data-kba="'+e.id+'">'+tr(arch?'kb.restore':'kb.archive')+'</button></div></article>'}).join('')
+    :'<div class="empty">'+tr('kb.none')+'</div>';
+}
+const LANG_NAME={en:'English',kk:'Қазақша',ru:'Русский'};
+/* editor: question variants and answer in EN / KK / RU, category, source; prefill is a question from Analytics */
+function kbOpen(id,prefill){
+  const e=id&&st.kb.find(x=>x.id===id),d=e?kbData(e):{kind:'faq',cat:'reg',src:'ssc',q:{en:[],kk:[],ru:[]},a:{en:'',kk:'',ru:''}};
+  if(prefill)d.q[detect(prefill)]=[prefill];
+  const opt=(arr,cur,lab)=>arr.map(x=>'<option value="'+x+'"'+(x===cur?' selected':'')+'>'+esc(lab(x))+'</option>').join('');
+  kbDr={mode:'edit',id:e?e.id:null};
+  $('kb-detail').innerHTML='<div class="panel"><div class="ph"><h3>'+tr(e?'kb.editT':'kb.new')+'</h3><button type="button" class="ghost x" data-kbx aria-label="'+tr('d.close')+'">×</button></div>'+
+    '<form id="kb-form" novalidate><div class="selrow">'+
+      '<label class="fld inline">'+tr('kb.kind')+'<select name="kind">'+opt(['faq','office'],e?e.kind:'faq',k=>tr('kb.'+k))+'</select></label>'+
+      '<label class="fld inline">'+tr('kb.cat')+'<select name="cat">'+opt(KB_CATS,d.cat,c=>tr('cat.'+c))+'</select></label>'+
+      '<label class="fld inline">'+tr('kb.src')+'<select name="src">'+opt(KB_SRCS,d.src,s=>T[ui].S[s])+'</select></label></div>'+
+    LANGS.map(l=>'<fieldset class="kbl" data-l="'+l+'"><legend>'+l.toUpperCase()+' · '+LANG_NAME[l]+' <span class="chip warn miss">'+tr('kb.miss')+'</span></legend>'+
+      '<label class="fld">'+tr('kb.qv')+'<textarea name="q-'+l+'" rows="2">'+esc(d.q[l].join('\n'))+'</textarea></label>'+
+      '<label class="fld">'+tr('kb.ans')+'<textarea name="a-'+l+'" rows="3">'+esc(d.a[l])+'</textarea></label></fieldset>').join('')+
+    '<p class="kberr" role="alert" hidden></p>'+
+    '<div class="btns"><button type="submit" class="primary">'+tr('kb.publish')+'</button><button type="button" class="ghost2" data-kbx>'+tr('kb.cancel')+'</button></div></form></div>';
+  kbShow();
+}
+function kbForm(f){const d={kind:f.kind.value,cat:f.cat.value,src:f.src.value,q:{},a:{}};
+  LANGS.forEach(l=>{d.q[l]=f['q-'+l].value.split('\n').map(s=>s.trim()).filter(Boolean);d.a[l]=f['a-'+l].value.trim()});return d}
+function kbPublish(f){
+  const d=kbForm(f),miss=kbMissing(d),e=kbDr.id&&st.kb.find(x=>x.id===kbDr.id),by=U.full,at=Date.now();
+  f.querySelectorAll('.kbl').forEach(x=>x.classList.toggle('bad',miss.includes(x.dataset.l)));
+  if(miss.length){const er=f.querySelector('.kberr');   /* blocked: nothing is saved, the published version stays active */
+    er.textContent=tr('kb.err',{l:miss.map(x=>x.toUpperCase()).join(', ')})+(e?' '+tr('kb.keep'):'');er.hidden=false;return}
+  const {kind,...data}=d;
+  if(!e)st.kb.push({id:'kb'+at,kind,intent:null,status:'published',vn:1,vers:[{n:1,act:'create',by,at,...data}],log:[]});
+  else{const cur=kbData(e),same=JSON.stringify([cur.cat,cur.src,cur.q,cur.a])===JSON.stringify([data.cat,data.src,data.q,data.a]);
+    if(!same||kind!==e.kind){const n=Math.max(...e.vers.map(v=>v.n))+1;e.vers.push({n,act:'edit',by,at,...data});e.vn=n;e.kind=kind}}
+  save();kbClose();sync()}
+function kbHistory(id){
+  const e=st.kb.find(x=>x.id===id);if(!e)return;kbDr={mode:'hist',id};
+  const d=kbData(e),prev=e.vers.filter(v=>v.n<e.vn).sort((a,b)=>b.n-a.n)[0];
+  const items=e.vers.map(v=>({at:v.at,v})).concat(e.log.map(x=>({at:x.at,x}))).sort((a,b)=>b.at-a.at);
+  const body=v=>LANGS.map(l=>'<div class="kbvl"><b>'+l.toUpperCase()+'</b> '+esc(v.q[l].join(' / '))+'<p>'+esc(v.a[l])+'</p></div>').join('');
+  $('kb-detail').innerHTML='<div class="panel"><div class="ph"><h3>'+tr('kb.histT')+'</h3><button type="button" class="ghost x" data-kbx aria-label="'+tr('d.close')+'">×</button></div>'+
+    '<p class="meta"><b>'+esc(d.q[ui][0]||d.q.en[0])+'</b></p>'+
+    (prev?'<div class="btns"><button type="button" class="primary" data-kbr="'+e.id+'">'+tr('kb.rb',{n:prev.n})+'</button></div>':'<p class="hint">'+tr('kb.rbnone')+'</p>')+
+    '<ol class="kbvers">'+items.map(({v,x})=>v?
+      '<li class="'+(v.n===e.vn?'act':'')+'"><div><b>v'+v.n+'</b> '+tr('kb.a.'+v.act)+' · '+esc(v.by)+' · '+dt(v.at)+(v.n===e.vn?' <span class="chip done">'+tr('kb.active')+'</span>':'')+'</div>'+
+        '<details><summary>'+tr('kb.show')+'</summary><span class="tag">'+tr('cat.'+v.cat)+' · '+esc(T[ui].S[v.src]||'')+'</span>'+body(v)+'</details></li>'
+      :'<li class="log"><div>'+tr('kb.a.'+x.act,{f:x.from,t:x.to})+' · '+esc(x.by)+' · '+dt(x.at)+'</div></li>').join('')+'</ol></div>';
+  kbShow();
+}
+function kbShow(){$('kb-detail').hidden=$('kb-scrim').hidden=false;$('kb-detail').scrollTop=0;const f=$('kb-detail').querySelector('textarea,button.primary');if(f)f.focus()}
+function kbClose(){kbDr=null;$('kb-detail').hidden=$('kb-scrim').hidden=true;$('kb-detail').innerHTML=''}
+function kbLog(e,act,o){e.log.push(Object.assign({act,by:U.full,at:Date.now()},o))}
+$('kb-q').oninput=e=>{kbQ=e.target.value;renderKb()};
+$('kb-add').onclick=()=>kbOpen(null);
+$('kb-scrim').onclick=kbClose;
+$('kb-list').onclick=ev=>{const b=ev.target.closest('[data-kbe],[data-kbh],[data-kba]');if(!b)return;
+  if(b.dataset.kbe)return kbOpen(b.dataset.kbe);
+  if(b.dataset.kbh)return kbHistory(b.dataset.kbh);
+  const e=st.kb.find(x=>x.id===b.dataset.kba);if(!e)return;
+  e.status=e.status==='archived'?'published':'archived';kbLog(e,e.status==='archived'?'archive':'restore');save();sync()};
+$('kb-detail').onclick=ev=>{if(ev.target.closest('[data-kbx]'))return kbClose();
+  const r=ev.target.closest('[data-kbr]');if(!r)return;
+  const e=st.kb.find(x=>x.id===r.dataset.kbr),prev=e&&e.vers.filter(v=>v.n<e.vn).sort((a,b)=>b.n-a.n)[0];if(!prev)return;
+  kbLog(e,'rollback',{from:e.vn,to:prev.n});e.vn=prev.n;save();sync();kbHistory(e.id)};
+$('kb-detail').onsubmit=ev=>{ev.preventDefault();kbPublish(ev.target)};
+$('kb-detail').oninput=ev=>{const fs=ev.target.closest('.kbl');if(fs&&fs.classList.contains('bad')){const d=kbForm($('kb-form'));fs.classList.toggle('bad',kbMissing(d).includes(fs.dataset.l))}};
 
 /* ---------- staff: announcements; students see active ones as a banner above Home and Chat ---------- */
 function renderAnn(){
+  if(!isStaff()){$('ann-list').innerHTML='';return}
   const list=st.ann.slice().sort((a,b)=>b.at-a.at);
   $('ann-list').innerHTML=list.length?list.map(a=>'<div class="annrow '+a.level+'"><div><span class="chip'+(a.level==='warning'?' warn':'')+'">'+tr('ann.'+a.level)+'</span> '+
     '<span class="chip'+(a.active?' done':'')+'">'+tr(a.active?'ann.active':'ann.off')+'</span><p>'+esc(a.text)+'</p><small>'+dt(a.at)+'</small></div>'+
@@ -290,12 +397,12 @@ window.addEventListener('resize',tourShow);
 /* ---------- FAQ page ---------- */
 function renderFaq(){
   const q=($('faq-q').value||'').trim().toLowerCase();
-  const txt=a=>Array.isArray(a)?a.join(' '):a;
-  const list=FAQ.filter(f=>!q||(f.q(ui)+' '+txt(f.a(ui))).toLowerCase().includes(q));
-  $('faq-list').innerHTML=list.length?list.map(f=>{const a=f.a(ui);
-    return '<article class="faq"><span class="tag">'+tr('cat.'+f.cat)+'</span><h3>'+esc(f.q(ui))+'</h3>'+
-      (Array.isArray(a)?'<ol>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'<p>'+esc(a)+'</p>')+
-      '<span class="src" data-l="'+tr('faq.src')+'">'+esc(T[ui].S[f.src])+'</span></article>'}).join('')
+  /* published knowledge base entries only (archived ones are hidden) */
+  const list=kbLive().map(kbData).filter(d=>!q||(d.q[ui].join(' ')+' '+d.a[ui]).toLowerCase().includes(q));
+  $('faq-list').innerHTML=list.length?list.map(d=>{const a=d.a[ui].split('\n').filter(s=>s.trim());
+    return '<article class="faq"><span class="tag">'+tr('cat.'+d.cat)+'</span><h3>'+esc(d.q[ui][0])+'</h3>'+
+      (a.length>1?'<ol>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'<p>'+esc(a[0]||'')+'</p>')+
+      '<span class="src" data-l="'+tr('faq.src')+'">'+esc(T[ui].S[d.src]||'')+'</span></article>'}).join('')
     :'<div class="empty">'+tr('faq.none')+'</div>';
 }
 $('faq-q').oninput=renderFaq;
@@ -327,7 +434,9 @@ document.addEventListener('click',e=>{
   const d=e.target.closest('[data-dis]');if(d&&U){(st.dismiss[U.login]=st.dismiss[U.login]||[]).push(+d.dataset.dis);save();renderBanners()}
   if(!e.target.closest('.usermenu'))closeUserMenu();
   if(!e.target.closest('.bellwrap'))closeBell()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(tourI>=0)return tourEnd();closeUserMenu();closeBell();if(sel!==null)closeTicket()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(tourI>=0)return tourEnd();closeUserMenu();closeBell();if(sel!==null)closeTicket();if(kbDr)kbClose()});
+window.addEventListener('hashchange',()=>{if(U)show(location.hash.slice(1))});
+$('den-back').onclick=()=>show(homeView());
 
 /* ---------- About: overview + sprint board ---------- */
 /* Edit these arrays to match the real backlog. day = working day of Sprint 2 when the story was finished (for the burndown). */
@@ -409,7 +518,8 @@ function applyAuth(){
   $('who-av').textContent=U.ini;$('who-av').style.background=U.color;$('who-name').textContent=U.name;
   $('mn-name').textContent=U.full;$('logout').textContent=tr('menu.logout');fillMenu();
   chatEpoch++;mode=null;loadChat();
-  sync();show(homeView());
+  const h=location.hash.slice(1);    /* opening a #view link: staff-only views show "Access denied" to students and visitors */
+  sync();show(VIEWS.includes(h)&&h!=='denied'?h:homeView());
   if(U.role==='student'&&!tourDone().includes(U.login))setTimeout(()=>{if(U&&$('tour').hidden)tourStart()},500);
 }
 const loginErr=m=>{$('login-err').textContent=m;$('login-err').hidden=!m};
@@ -424,7 +534,8 @@ $('accounts').innerHTML=Object.values(ACCOUNTS).map(a=>'<button type="button" cl
 $('accounts').onclick=e=>{const b=e.target.closest('[data-login]');if(!b)return;
   $('l-name').value=b.dataset.login;loginErr('');$('l-pass').focus()};
 /* log out; for a visitor this is "Sign in" and returns to the login screen */
-function toLogin(){closeUserMenu();closeBell();if(tourI>=0)tourEnd();chatEpoch++;sess=null;try{sessionStorage.removeItem('hd-session')}catch(_){}applyAuth()}
+function toLogin(){closeUserMenu();closeBell();if(tourI>=0)tourEnd();chatEpoch++;sess=null;
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}try{sessionStorage.removeItem('hd-session')}catch(_){}applyAuth()}
 $('logout').onclick=toLogin;
 $('guest-btn').onclick=()=>{loginErr('');sess={login:'guest'};try{sessionStorage.setItem('hd-session',JSON.stringify(sess))}catch(_){}applyAuth()};
 
@@ -437,16 +548,15 @@ function renderSugg(){
   if(v.length<3){box.innerHTML='';box.hidden=true;return}
   const L=detect(v),low=v.toLowerCase();
   const toks=(low.match(/\p{L}+/gu)||[]).filter(w=>w.length>=3&&!STOP.includes(w));
-  const txt=a=>(Array.isArray(a)?a.join(' '):a).toLowerCase();
-  const hit=FAQ.map(f=>{const corp=LANGS.map(l=>f.q(l)).join(' ').toLowerCase(),ans=txt(f.a(L));let s=0;
+  const hit=kbLive().map(e=>{const d=kbData(e),corp=LANGS.map(l=>d.q[l].join(' ')).join(' ').toLowerCase(),ans=d.a[L].toLowerCase();let s=0;
     (toks.length?toks:[low]).forEach(w=>{const stem=w.length>=6?w.slice(0,5):w;if(corp.includes(w)||corp.includes(stem))s+=1;else if(ans.includes(w))s+=.3});
-    return [f,s]}).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    return [e,s]}).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
   box.hidden=!hit.length;
-  box.innerHTML=hit.length?'<span class="sl">'+tr('sugg.title')+'</span>'+hit.map(([f])=>'<button type="button" data-sq="'+f.id+'" data-l="'+L+'">'+esc(f.q(L))+'</button>').join(''):'';
+  box.innerHTML=hit.length?'<span class="sl">'+tr('sugg.title')+'</span>'+hit.map(([e])=>'<button type="button" data-sq="'+e.id+'" data-l="'+L+'">'+esc(kbData(e).q[L][0])+'</button>').join(''):'';
 }
 $('q').oninput=renderSugg;
 $('sugg').onclick=e=>{const b=e.target.closest('[data-sq]');if(!b)return;
-  const q=FAQ.find(x=>x.id===b.dataset.sq).q(b.dataset.l);$('q').value='';renderSugg();userMsg(q);answer(q);$('q').focus()};
+  const k=st.kb.find(x=>x.id===b.dataset.sq);if(!k)return;const q=kbData(k).q[b.dataset.l][0];$('q').value='';renderSugg();userMsg(q);answer(q);$('q').focus()};
 setInterval(()=>{if(U&&U.role==='staff')sync()},60000);   /* keeps SLA countdowns fresh */
 document.querySelectorAll('nav.tabs [data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));
 document.querySelectorAll('[data-qk]').forEach(b=>b.onclick=()=>ask(tr(b.dataset.qk)));

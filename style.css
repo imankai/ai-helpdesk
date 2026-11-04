@@ -508,3 +508,51 @@ body.role-staff .no-staff,body.role-guest .only-student,body.role-guest .only-st
 .rvi dd{margin:0;overflow-wrap:anywhere}
 .rvi dd em{color:var(--muted)}
 @media (max-width:560px){.rvi dl{grid-template-columns:1fr}.rvi dd{margin-bottom:6px}.rvh small{margin-left:0}}
+/* ---------- v8: analytics period and unanswered list, knowledge base, access denied (US15, US16) ---------- */
+.anper{margin-top:0;margin-bottom:18px;flex-wrap:wrap}
+.anper button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.unq{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-bottom:8px}
+.unq b{display:block;overflow-wrap:anywhere}
+.unq .chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px}
+.unq small{color:var(--muted)}
+.unq .ghost2{flex:none}
+.kbbar{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.kbbar .faqsearch{flex:1;margin:0;min-width:0}
+.kbbar .primary{flex:none;padding:10px 16px}
+.kbi{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:6px;padding:12px 16px;margin-bottom:10px}
+.kbi.arch{border-left-color:var(--line);opacity:.7}
+.kbh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.kbh small{color:var(--muted);margin-left:auto}
+.kbh .tag,.kbvers .tag{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--warn-ink)}
+.kbi h3{font-size:17px;margin:8px 0 4px}
+.kbi p{margin:0 0 10px;color:var(--muted);overflow-wrap:anywhere}
+.kbi .btns{display:flex;flex-wrap:wrap;gap:8px}
+.kbi .ghost2{padding:5px 12px;font-size:14px}
+.kbl{border:1px solid var(--line);border-radius:6px;padding:10px 12px 12px;margin:0;display:flex;flex-direction:column;gap:8px}
+.kbl legend{font-weight:700;padding:0 6px;color:var(--ink)}
+.kbl .miss{display:none;margin-left:6px}
+.kbl.bad{border-color:var(--alert)}
+.kbl.bad .miss{display:inline-block}
+.kbl textarea{min-height:0}
+.kberr{margin:0;color:var(--alert);font-weight:600}
+.kbvers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.kbvers li{border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:14.5px}
+.kbvers li.act{border-color:var(--ok)}
+.kbvers li.log{background:var(--surface2);color:var(--muted)}
+.kbvers details{margin-top:6px}
+.kbvers summary{cursor:pointer;color:var(--link)}
+.kbvl{margin-top:6px;overflow-wrap:anywhere}
+.kbvl p{margin:2px 0 0;white-space:pre-line;color:var(--muted)}
+.denied{text-align:center;padding-top:40px}
+.denied p{color:var(--muted);margin:10px auto 18px;max-width:46ch}
+@media (max-width:560px){.unq{flex-direction:column;align-items:stretch}.kbbar{flex-direction:column;align-items:stretch}.kbh small{margin-left:0}}
+/* the staff menu has 8 sections: compact tabs on medium screens, the hamburger menu below 1100px */
+@media (max-width:1400px){body.role-staff .tabs button{padding:0 10px}body.role-staff .uname{display:none}}
+@media (max-width:1100px){
+  body.role-staff .bar{gap:10px 12px}
+  body.role-staff .brand{order:1}body.role-staff .tools{order:2;margin-left:auto}body.role-staff .menu{order:3;display:grid;margin-left:0}
+  body.role-staff .tabs{order:4;display:none;flex:none;width:100%;flex-direction:column;align-self:auto;padding-bottom:8px}
+  body.role-staff .bar.open .tabs{display:flex}
+  body.role-staff .tabs button{padding:12px 4px;border-bottom:0;border-left:3px solid transparent;margin:0}
+  body.role-staff .tabs button[aria-current="page"]{border-left-color:var(--accent)}
+}
