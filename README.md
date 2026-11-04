@@ -12,6 +12,7 @@ Developed by a student team as part of INF451.
 
 **Student side**
 - Chat assistant that answers in the language of the question (English, Kazakh, Russian), with a source for every answer
+- Question understanding in plain JavaScript: text normalisation (including Kazakh letters), a synonym, slang and transliteration dictionary per topic ("эдд дроп", "вайфай не ловит", "мен грантпын ба"), typo tolerance (Levenshtein distance) and similarity scoring against every question variant in the knowledge base; confident matches are answered, close ones get "Did you mean…?" buttons, the rest are logged as unanswered
 - Helpful / Not helpful rating under every answer with an optional short comment; each rating is saved with the question, the answer and the time
 - Visitor mode ("Continue as visitor"): general questions, FAQ and the campus map without an account; visitor ratings are stored anonymously, personal features ask the visitor to sign in
 - Personal answers from the signed-in student's data: course registration check (holds and prerequisites), tuition balance and state grant status, advisor appointments
@@ -85,15 +86,21 @@ Notes:
 - Because storage is per browser, tickets are not shared between different computers. To see "student writes, staff replies", use two tabs in the same browser.
 - Fonts are loaded from Google Fonts; without internet the page falls back to system fonts.
 
+## Tests
+
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 60 questions in English, Russian and Kazakh (slang, transliteration, typos) and on every built-in question, and shows a table: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+
 ## Project structure
 
 ```
 index.html   Page structure: login, header, all views, tour overlay
 style.css    Styles, light and dark theme tokens, responsive layout
 i18n.js      Interface strings (EN / KK / RU), bot replies and the initial FAQ content
-app.js       Demo accounts and data, state, chat engine and intent matching
+nlu.js       Question understanding: normalisation, topic synonyms, typo tolerance, knowledge base scoring
+app.js       Demo accounts and data, state, chat engine and answer routing
 ui.js        Views, dashboard, staff board, analytics, notifications, tour, login, theme
 docs/SPRINTS.md   Sprint backlog: all user stories with QA scenarios
+tests/nlu-test.html   Test set for question understanding
 ```
 
 ## Tech

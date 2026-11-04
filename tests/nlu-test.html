@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help Desk · Question understanding tests</title>
+<style>
+  body{font:15px/1.45 "Segoe UI",Arial,sans-serif;margin:24px;color:#14213a;background:#f3f5f9}
+  h1{font-size:22px;margin:0 0 4px}h2{font-size:18px;margin:28px 0 8px}
+  p{margin:4px 0 12px;color:#566279}
+  .sum{font-size:17px;font-weight:700}
+  table{border-collapse:collapse;width:100%;background:#fff}
+  th,td{border:1px solid #d5dce8;padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#e4ebf5}
+  td.ok{color:#1a6b3a;font-weight:700}td.bad{color:#b3341f;font-weight:700}
+  tr.fail{background:#fdeceb}
+  code{font-size:13px}
+  #log,#q{display:none}
+</style>
+</head>
+<body>
+<h1>Question understanding tests</h1>
+<p>Runs the real chat engine (i18n.js, nlu.js, app.js) on fixed questions, signed in as demo student 249900002 unless the row says “visitor”. Nothing is saved to the demo data.</p>
+<div id="out">Running…</div>
+<div id="log"></div><input id="q">
+
+<script>
+onerror=(m,s,l)=>{document.getElementById('out').textContent='Error: '+m+' ('+(s||'').split('/').pop()+':'+l+')'};
+/* keep the demo data untouched: the engine starts from fresh data and its saves are ignored */
+(function(){const g=Storage.prototype.getItem,s=Storage.prototype.setItem;
+  Storage.prototype.getItem=function(k){return k==='hd-state'?null:g.call(this,k)};
+  Storage.prototype.setItem=function(k,v){if(k!=='hd-state')s.call(this,k,v)}})();
+</script>
+<script src="../i18n.js"></script>
+<script src="../nlu.js"></script>
+<script src="../app.js"></script>
+<script>
+/* question, expected topic, optional "visitor".
+   Topics: an entry or handler as the bot routes it (pay and grant entries answer with the personal billing card → bill) */
+const CASES=[
+ ['когда эдд дроп','adddrop'],
+ ['до какого числа можно поменять предмет','adddrop'],
+ ['адд дроп до какого','adddrop'],
+ ['when is adddrop','adddrop'],
+ ['can I drop a course?','adddrop'],
+ ['пәнді алып тастау мерзімі қашан','adddrop'],
+ ['хочу убрать предмет','adddrop'],
+ ['забыл пароль от портала','pw'],
+ ['парол не помню','pw'],
+ ['how to reset my pasword','pw'],
+ ['құпиясөзімді ұмыттым','pw'],
+ ['вайфай не ловит','wifi'],
+ ['wifi doesnt work in the dorm','wifi'],
+ ['интернет жоқ','wifi'],
+ ['вай фай не работает в общаге','wifi'],
+ ['не могу зайти в портал','portal'],
+ ['cant login to student portal','portal'],
+ ['порталға кіре алмаймын','portal'],
+ ['сколько мне платить','bill'],
+ ['how much do I owe?','bill'],
+ ['қанша төлеуім керек','bill'],
+ ['мен грантпын ба','bill'],
+ ['я на гранте?','bill'],
+ ['стипендя когда','bill'],
+ ['рагистрация на курсы','reg'],
+ ['как записаться на курсы','reg'],
+ ['рега когда открывается','reg'],
+ ['can i register for classes','reg'],
+ ['курсқа қалай тіркелемін','reg'],
+ ['хочу к эдвайзеру','adv'],
+ ['book a meeting with my advisor','adv'],
+ ['кеңесшіге жазылғым келеді','adv'],
+ ['нужна справка с места учебы','registrar'],
+ ['how do I get a transcript','registrar'],
+ ['анықтама керек','registrar'],
+ ['где F305','campus'],
+ ['H203 қайда','campus'],
+ ['где кабинеты','rooms'],
+ ['расписание пар','sched'],
+ ['сабақ кестесі қайда','sched'],
+ ['where is my timetable','sched'],
+ ['создать тикет','ticket'],
+ ['хочу подать заявку','ticket'],
+ ['өтінім ашу','ticket'],
+ ['позовите оператора','human'],
+ ['talk to a real person','human'],
+ ['во сколько открывается ЦОС','hours'],
+ ['в какой отдел обращаться','offices'],
+ ['кімге хабарласу керек','offices'],
+ ['привет','greet'],
+ ['what does the registrar do','registrar'],
+ ['обучение','dym: bill'],                 /* medium confidence → "Did you mean…?" */
+ ['пароль и вайфай','dym: pw, wifi'],      /* two topics → both offered */
+ ['студенческий билет','fb'],              /* not in the knowledge base → "not sure" + Unanswered */
+ ['asdfgh qwerty','fb'],
+ ['какая погода завтра','fb'],
+ ['сколько платить','bill','visitor'],
+ ['мен грантпын ба','bill','visitor'],
+ ['хочу к эдвайзеру','guest','visitor'],
+ ['летняя школа будет?','summer']          /* entry added below, as staff would add it in Knowledge base */
+];
+const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
+/* interface functions from ui.js that replies may reference */
+window.toLogin=window.show=window.openMap=window.sync=()=>{};
+let said=[];
+window.bot=o=>said.push(plainAnswer(o)||'');           /* capture replies instead of animating them */
+window.botNow=window.bot;
+function run(t,who){said=[];mode=null;U=who==='visitor'?GUEST:ACCOUNTS['249900002'];curQ=t;
+  const r=route(t);respond(r,detect(t),t);return{r,said:said.join(' | ')}}
+/* a new entry, published the way the Knowledge base editor does it */
+st.kb.push({id:'summer',kind:'faq',intent:null,status:'published',vn:1,log:[],vers:[{n:1,act:'create',by:'Test',at:Date.now(),cat:'reg',src:'cal',
+  q:{en:['Is there a summer school this year?'],kk:['Биыл жазғы мектеп бар ма?'],ru:['Будет ли летняя школа в этом году?']},
+  a:{en:'Yes, in July.',kk:'Иә, шілдеде.',ru:'Да, в июле.'}}]});
+
+function table(rows){return '<table><thead><tr><th>#</th><th>Question</th><th>Expected</th><th>Bot routed to</th><th>Bot answered</th><th>Result</th></tr></thead><tbody>'+
+  rows.map((x,i)=>'<tr class="'+(x.ok?'':'fail')+'"><td>'+(i+1)+'</td><td>'+esc(x.q)+(x.who?' <small>('+x.who+')</small>':'')+'</td><td><code>'+esc(x.exp)+'</code></td><td><code>'+esc(x.got)+'</code></td><td>'+esc(x.said.slice(0,110))+'</td><td class="'+(x.ok?'ok':'bad')+'">'+(x.ok?'✓':'✗')+'</td></tr>').join('')+'</tbody></table>'}
+const res=CASES.map(([q,exp,who])=>{const {r,said}=run(q,who),got=label(r);return{q,exp,who,got,said,ok:got===exp}});
+
+/* regression: every question variant of the built-in knowledge base and the old quick questions must still reach their answer */
+const reg=[];
+kbLive().filter(e=>e.id!=='summer').forEach(e=>{const d=kbData(e);LANGS.forEach(l=>d.q[l].forEach(q=>reg.push([q,e.intent||e.id])))});
+[['Can I register for my courses?','reg'],['What is my tuition balance?','bill'],['Book an advisor meeting','adv'],['I forgot my password','pw'],
+ ['When is the add/drop deadline?','adddrop'],['Talk to a person','human'],['Where is room F305?','campus'],['Где кабинет D104?','campus'],
+ ['Where is the library?','campus'],['Create a ticket','ticket'],['Где моё расписание?','sched'],['Wi-Fi не подключается','wifi']].forEach(x=>reg.push(x));
+const rres=reg.map(([q,exp])=>{const {r,said}=run(q),got=label(r);return{q,exp,got,said,ok:got===exp}});
+
+const pct=a=>Math.round(100*a.filter(x=>x.ok).length/a.length);
+document.getElementById('out').innerHTML=
+  '<p class="sum" id="sum">Test set: '+res.filter(x=>x.ok).length+' / '+res.length+' ('+pct(res)+'%) · Regression: '+rrex(rres)+'</p>'+
+  '<h2>Test set: slang, transliteration, typos (EN / RU / KK)</h2>'+table(res)+
+  '<h2>Regression: built-in questions and quick questions</h2>'+table(rres);
+function rrex(a){return a.filter(x=>x.ok).length+' / '+a.length+' ('+pct(a)+'%)'}
+</script>
+</body>
+</html>

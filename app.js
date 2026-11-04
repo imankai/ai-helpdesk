@@ -260,57 +260,50 @@ function campusIntent(t){
   const n=bareNum(t);if(n)return{k:'bare',n};
   const ty=TYPEQ.find(([,re])=>re.test(t));
   if(ty)return{k:'type',type:ty[0]};
-  return SVC.test(t)?{k:'svc'}:null}
+  return SVC.test(t)&&WHERE.test(t)?{k:'svc'}:null}
+/* "not on the map" is the answer only to where-questions; "Registrar office" alone goes to the knowledge base */
+const WHERE=/where|find|locat|how (do i )?(get|reach)|где|найти|как (пройти|добраться)|қайда|қалай бар/i;
 
-/* ---------- intents ---------- */
-/* Keyword patterns per intent in English, Kazakh and Russian. They only classify the question; displayed text lives in i18n.js. */
-const I=[
- ['human',/\b(human|staff|person|operator|agent|live)\b|оператор|человек|сотрудник|қызметкер|адаммен|адам/i],
- ['ticket',/ticket|заявк|өтінім/i],
- ['pw',/password|пароль|құпиясөз|құпия сөз/i],
- ['wifi',/wi-?fi|wireless|вай-?фай|интернет|ғаламтор/i],
- ['portal',/portal|log ?in|can'?t log|портал|войти|не могу зайти|кіре алмай/i],
- ['bill',/grant|грант|balance|tuition|pay|fee|bill|owe|financial|aid|scholarship|баланс|оплат|долг|стипенд|плат|деньг|төлем|ақы|қарыз|шәкіртақы/i],
- ['adv',/advis|appointment|meeting|эдвайзер|советник|консульт|встреч|кеңесші|кездесу/i],
- ['reg',/regist|enrol|prereq|курс|тіркел|регистр|пререквиз|пән/i],
- ['adddrop',/add.?drop|drop a course|add a course|deadline|дедлайн|соңғы мерзім/i],
- ['sched',/schedule|timetable|расписан|кесте/i],
- ['offices',/which office|who (can|should)|contact|в какой отдел|к кому|қай бөлім|кімге хабарлас/i],
- ['hours',/hours|open|office|часы|работает|офис|жұмыс уақыты|кеңсе/i],
- ['greet',/^(hi|hello|hey|привет|здравств|сәлем|салем)/i]
-];
+/* ---------- understanding the question (nlu.js) ---------- */
+/* route(t) decides how to answer; answer(t) shows it. Kept apart so the test page can check routing directly.
+   -> {k:'campus',c} | {k:'kb',e} | {k:'h',i} | {k:'guest',i} | {k:'dym',list} | {k:'fb'} */
+function route(t){
+  const c=campusIntent(t);if(c)return{k:'campus',c};
+  const q=nluAnalyze(t),rank=kbRank(q,kbLive()),best=rank[0],T=nluTopic(q),stu=U.role==='student';
+  /* two equally strong topics with their own entries ("password and wifi"): ask instead of guessing */
+  const top=[...q.tags].filter(([,w])=>w===q.tags.get(T)).map(([k])=>TOPICS[k]);
+  const amb=top.length>1&&top.every(tp=>!tp.intent)?top.map(tp=>kbLive().find(x=>x.id===tp.kb)).filter(Boolean):[];
+  if(amb.length>1&&!(best&&best.s>=.9))return{k:'dym',list:amb.slice(0,3)};    /* a near-exact question variant still wins */
+  /* high confidence in a knowledge base entry: answer it (a student still gets the personal answer for registration or billing) */
+  if(best&&best.s>=NLU_HIGH)return forEntry(best.e);
+  if(T){const tp=TOPICS[T],e=tp.kb&&kbLive().find(x=>x.id===tp.kb);
+    if(tp.intent&&PERSONAL.includes(tp.intent))return stu?{k:'h',i:tp.intent}:e?{k:'kb',e}:{k:'guest',i:tp.intent};
+    if(tp.intent)return{k:'h',i:tp.intent};
+    if(e)return{k:'kb',e}}             /* archived entries are not live, so their topic is not answered */
+  /* medium confidence: offer the closest questions */
+  if(best&&best.s>=NLU_MED)return{k:'dym',list:rank.filter(x=>x.s>=NLU_MED*.8).slice(0,3).map(x=>x.e)};
+  return{k:'fb'}}
+const forEntry=e=>e.intent&&PERSONAL.includes(e.intent)&&U.role==='student'?{k:'h',i:e.intent}:{k:'kb',e};
 function answer(t){
   const L=detect(t); lastLang=L; curQ=t;
   if(mode==='desc'){pendingDesc=t;mode=null;return later(()=>askOffice(L))}
-  const c=campusIntent(t);
-  if(c){logQ('campus');return later(()=>H.campus(L,c))}
-  const hit=(I.find(([,re])=>re.test(t))||['fb'])[0];
-  /* knowledge base: a close match on question variants first, then the entry linked to the detected intent */
-  const e=kbMatch(t)||kbByIntent(hit);
-  if(e&&!(e.intent&&PERSONAL.includes(e.intent)&&U.role==='student')){logQ(e.intent||'kb:'+e.id);return later(()=>kbAnswer(e,L))}
-  let k=e?e.intent:hit;
-  if(!H[k]||k==='campus')k='fb';      /* general intents answer only from published entries; archived = not answered */
-  logQ(k,k==='fb'?t:'');
-  if(U.role==='guest'&&PERSONAL.includes(k))return later(()=>guestOnly(L));
-  later(()=>H[k](L));
+  later(()=>respond(route(t),L,t));
 }
+/* low confidence is logged with the question text for the "Unanswered" list in Analytics */
+function respond(r,L,t){
+  if(r.k==='campus'){logQ('campus');return H.campus(L,r.c)}
+  if(r.k==='kb'){logQ(r.e.intent||'kb:'+r.e.id);return kbAnswer(r.e,L)}
+  if(r.k==='h'){logQ(r.i);return U.role==='guest'&&PERSONAL.includes(r.i)?guestOnly(L):H[r.i](L)}
+  if(r.k==='guest'){logQ(r.i);return guestOnly(L)}
+  if(r.k==='dym'){logQ('dym');
+    return bot({text:trL('nlu.dym',L),acts:r.list.map(e=>[kbData(e).q[L][0],()=>respond(forEntry(e),L,t)])},L)}
+  logQ('fb',t);H.fb(L)}
 /* intents that use a student's own data; a visitor is asked to sign in instead */
 const PERSONAL=['reg','bill','adv','ticket','human'];
 const kbData=e=>e.vers.find(v=>v.n===e.vn);
 const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published');
-const kbByIntent=i=>kbLive().find(e=>e.intent===i)||null;
 /* languages that still lack a question variant or an answer; publishing is blocked while any is missing */
 const kbMissing=d=>LANGS.filter(l=>!(d.q[l]||[]).some(s=>s.trim())||!(d.a[l]||'').trim());
-const kbToks=s=>(s.toLowerCase().match(/\p{L}+/gu)||[]).filter(w=>w.length>=3&&!STOP.includes(w));
-/* same word or the same word with a one-letter ending (пароль / пароля), but not register / registrar */
-const tokEq=(a,b)=>{if(a===b)return true;const m=Math.max(a.length,b.length);if(Math.min(a.length,b.length)<5)return false;
-  let i=0;while(i<m&&a[i]===b[i])i++;return i>=m-1};
-function kbMatch(t){const u=kbToks(t);if(!u.length)return null;let best=null,bs=0;
-  for(const e of kbLive()){const d=kbData(e);
-    for(const l of LANGS)for(const v of d.q[l]){const vt=kbToks(v);if(!vt.length||(vt.length===1&&u.length>2))continue;
-      const n=vt.filter(w=>u.some(x=>tokEq(w,x))).length,s=n/vt.length;
-      if(s>=0.75&&s>bs){bs=s;best=e}}}
-  return best}
 const IT_K=['pw','wifi','portal'];
 function kbAnswer(e,L){const d=kbData(e),S=T[L],lines=d.a[L].split('\n').map(s=>s.trim()).filter(Boolean),it=IT_K.includes(e.intent);
   const o={src:S.S[d.src]||'',fb:!it};if(lines.length>1)o.ol=lines;else o.text=lines[0];
@@ -331,6 +324,7 @@ const H={
    bot({text:fill(S.adv,{a:U.advisor}),src:S.S.adv,acts:slots(L).map(d=>[fmt(d,L),()=>book(d,L)])},L)},
  ticket:L=>startTicket(L),
  human:L=>human(L),
+ rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
  campus:(L,c)=>{
    const src=trL('cm.src',L),cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
    if(c.k==='svc')return bot({text:trL('cm.svc',L),src,fb:true},L);
