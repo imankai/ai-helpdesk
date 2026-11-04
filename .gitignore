@@ -1,0 +1,22 @@
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Archives and backups
+*.zip
+*.rar
+*.7z
+*.bak
+*.orig
+*.tmp
+*~
+
+# Logs
+*.log

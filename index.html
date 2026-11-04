@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDU · Help Desk (demo)</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M8 4h24a5 5 0 0 1 5 5v16a5 5 0 0 1-5 5H20l-8 7v-7H8a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z' fill='%23f26b21'/%3E%3Cpath d='M15 14.5a5 5 0 1 1 7 4.6c-1.4.8-2 1.6-2 3.2' fill='none' stroke='%230b1b33' stroke-width='2.8' stroke-linecap='round'/%3E%3Ccircle cx='20' cy='27' r='1.8' fill='%230b1b33'/%3E%3C/svg%3E">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('hd-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-out">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="mark" viewBox="0 0 40 40">
+    <path d="M8 4h24a5 5 0 0 1 5 5v16a5 5 0 0 1-5 5H20l-8 7v-7H8a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z" fill="#f26b21"/>
+    <path d="M15 14.5a5 5 0 1 1 7 4.6c-1.4.8-2 1.6-2 3.2" fill="none" stroke="#0b1b33" stroke-width="2.8" stroke-linecap="round"/>
+    <circle cx="20" cy="27" r="1.8" fill="#0b1b33"/>
+  </symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+</svg>
+
+<div class="login" id="login">
+  <div class="login-art">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><use href="#mark"/></svg>
+      <span class="wm"><b>Help Desk</b><small>for SDU students</small></span>
+    </div>
+    <div class="art-body">
+      <h1 data-i18n="login.h1">Answers from the university, in your language.</h1>
+      <ul class="facts">
+        <li><b data-i18n="login.f1">3 languages</b><span data-i18n="login.f1s">English, Қазақша and Русский</span></li>
+        <li><b data-i18n="login.f2">4 offices</b><span data-i18n="login.f2s">Registrar, IT, Finance, Student Affairs</span></li>
+        <li><b data-i18n="login.f3">1 place</b><span data-i18n="login.f3s">for tickets, advisor meetings and staff replies</span></li>
+      </ul>
+    </div>
+    <p class="art-note" data-i18n="login.artnote">Student project prototype. Not an official SDU service.</p>
+  </div>
+  <div class="login-side">
+    <div class="langsw" role="group" aria-label="Language">
+      <button type="button" data-lang="en">EN</button><button type="button" data-lang="kk">ҚАЗ</button><button type="button" data-lang="ru">РУС</button>
+    </div>
+    <button type="button" class="icon-btn theme-btn" data-i18n-aria="theme" aria-label="Switch theme">
+      <svg class="i i-sun" viewBox="0 0 24 24"><use href="#i-sun"/></svg><svg class="i i-moon" viewBox="0 0 24 24"><use href="#i-moon"/></svg>
+    </button>
+    <form class="login-card" id="login-form">
+      <h2 data-i18n="login.title">Sign in</h2>
+      <label class="fld"><span data-i18n="login.id">Student ID</span><input id="l-name" name="login" autocomplete="username" required data-i18n-ph="login.idph" placeholder="e.g. 249900002"></label>
+      <label class="fld"><span data-i18n="login.pass">Password</span><input id="l-pass" name="password" type="password" autocomplete="current-password" required placeholder="demo123"></label>
+      <p class="err" id="login-err" role="alert" hidden></p>
+      <button type="submit" class="primary" data-i18n="login.submit">Sign in</button>
+      <div class="demoacc">
+        <h3 data-i18n="login.demo">Demo accounts</h3>
+        <div class="accs" id="accounts"></div>
+        <p class="demo-note" data-i18n="login.note">Password for all: demo123. Click an ID to fill it in. Staff login: staff. All data is fictional.</p>
+      </div>
+    </form>
+    <footer class="foot" data-i18n="foot">Help Desk — student project for INF451 · Team: Zhanibek, Kamshat, Imangali, Kenan</footer>
+  </div>
+</div>
+
+<div class="app">
+  <header class="bar">
+    <button type="button" class="brand" id="brand" data-i18n-aria="brand" aria-label="Help Desk — Home">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><use href="#mark"/></svg>
+      <span class="wm"><b>Help Desk</b><small>for SDU students</small></span>
+    </button>
+    <button type="button" class="icon-btn menu" id="menu-btn" data-i18n-aria="menu" aria-label="Menu" aria-expanded="false" aria-controls="tabs">
+      <svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <nav class="tabs" id="tabs" aria-label="Sections">
+      <button id="nav-chat" class="only-student" data-view="chat" data-i18n="nav.chat">Chat</button>
+      <button id="nav-tickets" class="only-student" data-view="tickets"><span data-i18n="nav.tickets">My tickets</span> <span class="count" id="c-t">0</span></button>
+      <button id="nav-appts" class="only-student" data-view="appts"><span data-i18n="nav.appts">Appointments</span> <span class="count" id="c-a">0</span></button>
+      <button id="nav-staff" class="only-staff" data-view="staff"><span data-i18n="nav.board">Ticket board</span> <span class="count" id="c-s">0</span></button>
+      <button id="nav-analytics" class="only-staff" data-view="analytics" data-i18n="nav.analytics">Analytics</button>
+      <button id="nav-ann" class="only-staff" data-view="ann" data-i18n="nav.ann">Announcements</button>
+      <button id="nav-faq" data-view="faq" data-i18n="nav.faq">FAQ</button>
+      <button id="nav-about" data-view="about" data-i18n="nav.about">About</button>
+    </nav>
+    <div class="tools">
+      <div class="bellwrap only-student">
+        <button type="button" class="icon-btn" id="bell" data-i18n-aria="bell" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" aria-controls="bell-pop">
+          <svg class="i" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>
+          <span class="badge" id="bell-n" hidden>0</span>
+        </button>
+        <div class="pop bellpop" id="bell-pop" hidden><div id="bell-list"></div></div>
+      </div>
+      <button type="button" class="icon-btn theme-btn" data-i18n-aria="theme" aria-label="Switch theme">
+        <svg class="i i-sun" viewBox="0 0 24 24"><use href="#i-sun"/></svg><svg class="i i-moon" viewBox="0 0 24 24"><use href="#i-moon"/></svg>
+      </button>
+      <div class="usermenu">
+        <button type="button" class="userbtn" id="user-btn" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu">
+          <span class="av" id="who-av"></span><span class="uname" id="who-name"></span>
+          <svg class="i caret" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="pop" id="user-menu" hidden>
+          <div class="pwho"><b id="mn-name"></b><span id="mn-sub"></span></div>
+          <div class="fld langfld"><span data-i18n="menu.lang">Interface language</span>
+            <div class="langsw" role="group" aria-label="Language">
+              <button type="button" data-lang="en">EN</button><button type="button" data-lang="kk">ҚАЗ</button><button type="button" data-lang="ru">РУС</button>
+            </div>
+          </div>
+          <button type="button" class="mi only-student" id="tour-again" data-i18n="tour.again">Show tour again</button>
+          <button type="button" class="mi" id="nav-reset" data-i18n="menu.reset">Reset demo</button>
+          <button type="button" class="mi" id="logout" data-i18n="menu.logout">Log out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="view page home" id="v-home">
+      <div class="wrap">
+        <div class="banners" id="ban-home"></div>
+        <p class="eyebrow" data-i18n="home.eyebrow">Student dashboard</p>
+        <h2 class="hello" id="hello"></h2>
+        <p class="hint" id="home-sub"></p>
+
+        <div class="stats" id="stats"></div>
+
+        <h3 class="sect" data-i18n="qa.title">Quick actions</h3>
+        <div class="tiles">
+          <button type="button" class="tile" data-qk="q.reg">
+            <svg class="i" viewBox="0 0 24 24"><path d="M9 4h6v3H9z"/><path d="M7 5.5H5.5v15h13v-15H17"/><path d="m9 13.5 2 2 4-4.5"/></svg>
+            <b data-i18n="t.reg">Registration</b><span data-i18n="t.reg.s">Check holds and prerequisites</span>
+          </button>
+          <button type="button" class="tile" id="tile-pay" data-qk="q.pay">
+            <svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1.5"/><path d="M3 10h18M6.5 15h3"/></svg>
+            <b id="tile-pay-t">Pay tuition</b><span id="tile-pay-s">Balance and deadline</span>
+          </button>
+          <button type="button" class="tile" data-qk="q.adv">
+            <svg class="i" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="1.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>
+            <b data-i18n="t.adv">Book advisor</b><span data-i18n="t.adv.s">Pick a free slot</span>
+          </button>
+          <button type="button" class="tile" data-qk="q.it">
+            <svg class="i" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16.5V20"/></svg>
+            <b data-i18n="t.it">IT help</b><span data-i18n="t.it.s">Password, Wi-Fi, portal</span>
+          </button>
+          <button type="button" class="tile" data-qk="q.staff">
+            <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-4 3.5-6 7-6s6.2 2 7 6"/></svg>
+            <b data-i18n="t.staff">Talk to staff</b><span data-i18n="t.staff.s">Join the queue</span>
+          </button>
+        </div>
+
+        <form class="askbox" id="ask-form">
+          <label for="ask-q" class="sect" data-i18n="ask.title">Ask Help Desk</label>
+          <div class="askrow">
+            <input id="ask-q" autocomplete="off" data-i18n-ph="ask.ph" placeholder="Ask Help Desk anything…">
+            <button type="submit" class="primary" data-i18n="ask.send">Send</button>
+          </div>
+        </form>
+
+        <div class="duo">
+          <section class="blk"><h3 class="sect" data-i18n="dl.title">Upcoming deadlines</h3><ol class="dlist" id="deadlines"></ol></section>
+          <section class="blk"><h3 class="sect" data-i18n="rec.title">Recent tickets</h3><div id="recent"></div></section>
+        </div>
+      </div>
+    </section>
+
+    <section class="view chatview" id="v-chat" hidden>
+      <div class="chatwrap">
+        <div class="banners" id="ban-chat"></div>
+        <div class="log" id="log" aria-live="polite"></div>
+        <div class="compose">
+          <div class="quick" id="quick"></div>
+          <form class="in" id="form">
+            <input id="q" autocomplete="off" data-i18n-ph="chat.ph" placeholder="Type your question…" aria-label="Your question">
+            <button type="submit" data-i18n="chat.send">Send</button>
+          </form>
+          <div class="sugg" id="sugg" hidden aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view page" id="v-tickets" hidden>
+      <div class="wrap">
+        <h2 data-i18n="tk.title">My tickets</h2>
+        <p class="hint" data-i18n="tk.hint">Requests the assistant sent to university offices. Staff replies appear here.</p>
+        <div id="tickets"></div>
+      </div>
+    </section>
+
+    <section class="view page" id="v-appts" hidden>
+      <div class="wrap">
+        <h2 data-i18n="ap.title">Appointments</h2>
+        <p class="hint" data-i18n="ap.hint">Advisor meetings booked from the chat. You get a reminder one hour before.</p>
+        <div id="appts"></div>
+      </div>
+    </section>
+
+    <section class="view page" id="v-faq" hidden>
+      <div class="wrap">
+        <h2 data-i18n="faq.title">FAQ</h2>
+        <p class="hint" data-i18n="faq.hint">Search the answers the assistant uses in the chat.</p>
+        <input id="faq-q" class="faqsearch" type="search" autocomplete="off" data-i18n-ph="faq.ph" placeholder="Search questions…" aria-label="Search">
+        <div id="faq-list"></div>
+      </div>
+    </section>
+
+    <section class="view page" id="v-staff" hidden>
+      <h2 data-i18n="bd.title">Ticket board</h2>
+      <p class="hint" data-i18n="bd.hint">Student requests from all offices. Open a card to read the conversation, reply or change the status.</p>
+      <div class="board" id="s-board"></div>
+      <div class="scrim" id="s-scrim" hidden></div>
+      <div class="drawer" id="s-detail" role="dialog" aria-label="Ticket" hidden></div>
+    </section>
+
+    <section class="view page" id="v-analytics" hidden>
+      <div class="wrap">
+        <h2 data-i18n="an.title">Analytics</h2>
+        <p class="hint" data-i18n="an.hint">Calculated live from tickets and chat activity stored in this browser.</p>
+        <div id="an"></div>
+      </div>
+    </section>
+
+    <section class="view page" id="v-ann" hidden>
+      <div class="wrap">
+        <h2 data-i18n="ann.title">Announcements</h2>
+        <p class="hint" data-i18n="ann.hint">Publish a notice that students see above Home and Chat.</p>
+        <form class="annform" id="ann-form">
+          <label class="fld"><span data-i18n="ann.text">Announcement text</span><textarea id="ann-text" rows="3" required data-i18n-ph="ann.ph" placeholder="e.g. Registration opens on 16.11.2026"></textarea></label>
+          <div class="annbar">
+            <label class="fld inline"><span data-i18n="ann.level">Importance</span>
+              <select id="ann-level"><option value="info" data-i18n="ann.info">Info</option><option value="warning" data-i18n="ann.warning">Warning</option></select>
+            </label>
+            <button type="submit" class="primary" data-i18n="ann.publish">Publish</button>
+          </div>
+        </form>
+        <h3 class="sect" data-i18n="ann.list">All announcements</h3>
+        <div id="ann-list"></div>
+      </div>
+    </section>
+
+    <section class="view page about" id="v-about" hidden>
+      <div id="about"></div>
+    </section>
+  </main>
+</div>
+
+<div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tour-t">
+  <div class="tour-hl" id="tour-hl"></div>
+  <div class="tour-card" id="tour-card">
+    <small id="tour-n"></small>
+    <h3 id="tour-t"></h3>
+    <p id="tour-p"></p>
+    <div class="tour-btns">
+      <button type="button" class="ghost2" id="tour-skip" data-i18n="tour.skip">Skip</button>
+      <button type="button" class="primary" id="tour-next">Next</button>
+    </div>
+  </div>
+</div>
+
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
