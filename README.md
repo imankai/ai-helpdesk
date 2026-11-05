@@ -17,16 +17,19 @@ Developed by a student team as part of INF451.
 - Visitor mode ("Continue as visitor"): general questions, FAQ and the campus map without an account; visitor ratings are stored anonymously, personal features ask the visitor to sign in
 - Personal answers from the signed-in student's data: course registration check (holds and prerequisites), tuition balance and state grant status, advisor appointments
 - FAQ page with search; the chat bot uses the same answers
-- Campus map and room finder: ask "Where is room F305?" (also in Kazakh and Russian) and get building, floor, room type and a hint; for a number without a building ("room 305") the bot asks which building, and for a near miss ("H1") it suggests the existing room; a Campus map page shows the buildings D–I and barrels A1–C2 and highlights the chosen place
+- Campus map and room finder: ask "Where is room F305?" (also in Kazakh and Russian) and get building, floor, room type, nearest entrance and a hint; for a number without a building ("room 305") the bot asks which building, and for a near miss ("H1") it suggests the existing room; a Campus map page shows the buildings D–I and barrels A1–C2 and highlights the chosen place
 - Similar-question suggestions while typing in the chat, and a "Help Desk is typing…" indicator
 - Help tickets with status tracking, staff replies and a 1–5 star rating of resolved tickets
 - Advisor appointment booking with reminders
-- Notification bell (staff reply, status change, appointment reminder)
+- Notification bell (staff reply, status change, appointment reminder, tuition reminder 7 days before the deadline); reminders can be turned off in the user menu or by asking in the chat
+- Ticket status in the chat ("where is my ticket"): number, office and status of the student's own latest tickets
+- Office directory: room on the campus map, hours, phone and email for every office, with "Closed now, opens at…" outside working hours
 - Dashboard with deadlines, recent tickets and quick actions; announcement banners
 - First-login guided tour (can be replayed from the user menu)
 
 **Staff side**
 - Kanban ticket board (Open / In progress / Resolved) with priority (Low / Medium / High) and a 24-hour reply SLA with an "Overdue" marker
+- Test assistant: a chat with the bot for checking answers; ratings go to the Review queue marked Staff, questions are not counted in Analytics
 - Ticket drawer with the conversation, status and priority controls, and reply field
 - Review queue: answers rated "Not helpful" with the question, answer, comment and time, and a "Mark reviewed" button
 - Analytics with a period filter (Today / Last 7 days / Last 30 days / All time): questions asked, share of unanswered questions, tickets, escalations to staff, average rating, top 5 questions and an "Unanswered & not helpful" list with a "Create FAQ entry" button; only aggregated data, no student names or IDs
@@ -47,17 +50,17 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 |---|---|---|---|
 | 1 – General help | US1 FAQ Instant Answers | Done | |
 | 1 – General help | US2 IT Issue Self-Help | Partial | No real password-reset link; a ticket does not list the steps already tried |
-| 1 – General help | US3 Help Ticket Creation | Partial | The chat cannot report a ticket's status; it is shown only in My tickets |
+| 1 – General help | US3 Help Ticket Creation | Done | |
 | 1 – General help | US4 Escalation to Human Staff | Partial | The live chat is simulated: staff do not receive the conversation, and working hours are not checked |
 | 2 – Personal answers | US5 Course Registration Guidance | Partial | No seat availability; a named course (e.g. CS201) is not checked separately |
-| 2 – Personal answers | US6 Financial Aid & Billing Q&A | Partial | "Financial aid" questions are not recognised; no award amount, disbursement date or payment methods |
+| 2 – Personal answers | US6 Financial Aid & Billing Q&A | Partial | Shows the scholarship status, but no award amount, disbursement date or payment methods |
 | 2 – Personal answers | US7 Advisor Appointment Scheduling | Partial | A slot taken by another student is not detected; there is no advisor calendar |
 | 2 – Personal answers | US8 Multi-Language Support | Done | |
 | 3 – Schedules, contacts and documents | US9 Class & Exam Schedule Lookup | Partial | The bot only points to the Student Portal: no class list with time, room and teacher, and no exam schedule |
-| 3 – Schedules, contacts and documents | US10 Office & Contact Directory | Partial | Offices are described, but only the Student Service Center has hours and contacts; no room per office and no "closed now" warning |
-| 3 – Schedules, contacts and documents | US11 Deadline & Event Reminders | Partial | Deadlines are listed on Home and appointments trigger reminders, but there are no payment reminders 7 days ahead and reminders cannot be turned off |
+| 3 – Schedules, contacts and documents | US10 Office & Contact Directory | Done | |
+| 3 – Schedules, contacts and documents | US11 Deadline & Event Reminders | Done | |
 | 3 – Schedules, contacts and documents | US12 Certificate & Document Requests | Partial | The bot explains that the Registrar handles documents and a general ticket can be sent; no document request, ready date or "ready" status |
-| 4 – Campus, feedback and knowledge base | US13 Campus Navigation & Room Finder | Partial | The map has no nearest entrance and no services such as the library or canteen |
+| 4 – Campus, feedback and knowledge base | US13 Campus Navigation & Room Finder | Done | |
 | 4 – Campus, feedback and knowledge base | US14 Answer Feedback & Rating | Done | |
 | 4 – Campus, feedback and knowledge base | US15 Help Desk Analytics Dashboard | Done | |
 | 4 – Campus, feedback and knowledge base | US16 Knowledge Base Content Management | Done | |
@@ -94,7 +97,7 @@ Notes:
 
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 60 questions in English, Russian and Kazakh (slang, transliteration, typos) and on every built-in question, and shows a table: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 61 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
 
 ## Project structure
 

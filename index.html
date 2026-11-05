@@ -75,7 +75,7 @@
       <svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
     <nav class="tabs" id="tabs" aria-label="Sections">
-      <button id="nav-chat" class="no-staff" data-view="chat" data-i18n="nav.chat">Chat</button>
+      <button id="nav-chat" data-view="chat" data-i18n="nav.chat">Chat</button>
       <button id="nav-tickets" class="only-student" data-view="tickets"><span data-i18n="nav.tickets">My tickets</span> <span class="count" id="c-t">0</span></button>
       <button id="nav-appts" class="only-student" data-view="appts"><span data-i18n="nav.appts">Appointments</span> <span class="count" id="c-a">0</span></button>
       <button id="nav-staff" class="only-staff" data-view="staff"><span data-i18n="nav.board">Ticket board</span> <span class="count" id="c-s">0</span></button>
@@ -111,6 +111,7 @@
             </div>
           </div>
           <button type="button" class="mi only-student" id="tour-again" data-i18n="tour.again">Show tour again</button>
+          <button type="button" class="mi only-student" id="rem-toggle"></button>
           <button type="button" class="mi no-guest" id="nav-reset" data-i18n="menu.reset">Reset demo</button>
           <button type="button" class="mi" id="logout" data-i18n="menu.logout">Log out</button>
         </div>

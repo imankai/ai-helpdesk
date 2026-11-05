@@ -3,13 +3,13 @@ const yearLbl=n=>tr('year',{n:ui==='en'?n+['th','st','nd','rd'][n<4?n:0]:n});
 const chip=s=>'<span class="chip'+({Open:' warn','In progress':' prog',Resolved:' done'}[s]||'')+'">'+esc(tr('st.'+s))+'</span>';
 const dt=ts=>new Date(ts).toLocaleString(T[ui].loc,{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 const noteText=n=>n.type==='reply'?tr('n.reply',{n:n.n}):n.type==='status'?tr('n.status',{n:n.n,s:tr('st.'+n.s)}):
-  n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
+  n.type==='pay'?tr('n.pay',{m:money(n.amt),d:dmy(n.due)}):n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
 
 /* ---------- views ---------- */
 const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','kb','ann','about','denied'];
 /* each view is linked to #name in the address; staff-only views show "Access denied" to anyone else and render no data for them */
 const STAFF_VIEWS=['staff','review','analytics','kb','ann'];
-const ROLE_VIEWS={student:['home','chat','tickets','appts','campus','faq','about'],guest:['chat','campus','faq','about'],staff:STAFF_VIEWS.concat('campus','faq','about')};
+const ROLE_VIEWS={student:['home','chat','tickets','appts','campus','faq','about'],guest:['chat','campus','faq','about'],staff:STAFF_VIEWS.concat('chat','campus','faq','about')};
 const isStaff=()=>U&&U.role==='staff';
 const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
 /* priority and SLA: first reply is due 24 h after creation; tickets that are resolved or already answered have no SLA */
@@ -36,7 +36,8 @@ function ask(t){show('chat');userMsg(t);answer(t)}
 /* ---------- sync: re-render everything that depends on data or language ---------- */
 function sync(){
   const stu=U&&U.role==='student',mine=stu?st.tickets.filter(isMine):[],ap=stu?myAppts():[];
-  if(stu)ap.forEach(a=>{const d=a.at-Date.now();if(d>0&&d<864e5&&!a.rem){a.rem=1;note(U.login,'appt2',{at:a.at});save()}});
+  payReminder();
+  if(stu&&remOn())ap.forEach(a=>{const d=a.at-Date.now();if(d>0&&d<864e5&&!a.rem){a.rem=1;note(U.login,'appt2',{at:a.at});save()}});
   $('c-t').textContent=mine.length;$('c-a').textContent=ap.length;
   renderHome(mine,ap);
   $('tickets').innerHTML=mine.length?'<div class="tw"><table><thead><tr><th>'+tr('th.ticket')+'</th><th>'+tr('th.office')+'</th><th>'+tr('th.problem')+'</th><th>'+tr('th.created')+'</th><th>'+tr('th.status')+'</th></tr></thead><tbody>'+
@@ -44,7 +45,7 @@ function sync(){
       return '<tr id="tk-'+t.n+'"><td class="mono">#'+t.n+'</td><td>'+esc(t.office)+'</td><td>'+esc(t.desc)+(r?'<div class="reply-note"><b>'+tr('tk.reply')+'</b> '+esc(r.text)+'</div>':'')+rateBlock(t)+'</td><td>'+new Date(t.at).toLocaleDateString(T[ui].loc)+'</td><td>'+chip(t.status)+'</td></tr>'}).join('')+'</tbody></table></div>'
     :'<div class="empty">'+tr('tk.none')+'</div>';
   $('appts').innerHTML=ap.length?'<div class="tw"><table><thead><tr><th>'+tr('th.when')+'</th><th>'+tr('th.with')+'</th><th>'+tr('th.rem')+'</th><th></th></tr></thead><tbody>'+
-    ap.map(a=>'<tr id="ap-'+a.at+'"><td>'+fmt(a.at,ui)+'</td><td>'+esc(a.with)+'</td><td>'+tr('ap.before')+'</td><td><button class="link" data-cancel="'+st.appts.indexOf(a)+'">'+tr('ap.cancel')+'</button></td></tr>').join('')+'</tbody></table></div>'
+    ap.map(a=>'<tr id="ap-'+a.at+'"><td>'+fmt(a.at,ui)+'</td><td>'+esc(a.with)+'</td><td>'+tr(remOn()?'ap.before':'rem.offs')+'</td><td><button class="link" data-cancel="'+st.appts.indexOf(a)+'">'+tr('ap.cancel')+'</button></td></tr>').join('')+'</tbody></table></div>'
     :'<div class="empty">'+tr('ap.none')+'</div>';
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{st.appts.splice(+b.dataset.cancel,1);save();sync()});
   renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderBanners();renderCampus();
@@ -92,11 +93,11 @@ function renderCampus(){
   if(campus.room){const r=CAMPUS.get(campus.room);
     const hint=r.barrel?tr('cm.hint.barrel',{id:r.id}):r.f?tr('cm.hint.floor',{b:r.b,f:r.f,r:floorSummary(r.b,r.f,ui)}):tr('cm.hint.nofloor',{id:r.id,b:r.b});
     p.innerHTML='<div class="cmcard"><h3>'+esc(r.id)+'</h3><dl>'+
-      (r.b?'<dt>'+tr('cm.building')+'</dt><dd>'+r.b+'</dd>':'')+(r.f?'<dt>'+tr('cm.floor')+'</dt><dd>'+r.f+'</dd>':'')+
+      (r.b?'<dt>'+tr('cm.building')+'</dt><dd>'+r.b+'</dd>':'')+(r.f?'<dt>'+tr('cm.floor')+'</dt><dd>'+r.f+'</dd>':'')+(r.b?'<dt>'+tr('cm.ent')+'</dt><dd>'+tr('cm.ent.'+r.b)+'</dd>':'')+
       '<dt>'+tr('cm.type')+'</dt><dd><i class="sw '+r.t+'"></i> '+esc(typeName(r))+'</dd></dl><p>'+esc(hint)+'</p></div>';return}
   if(campus.b){const rooms=[...CAMPUS.values()].filter(r=>r.b===campus.b);
     const nofl=rooms.filter(r=>!r.f);
-    p.innerHTML='<div class="cmcard"><h3>'+tr('cm.building')+' '+campus.b+'</h3>'+
+    p.innerHTML='<div class="cmcard"><h3>'+tr('cm.building')+' '+campus.b+'</h3><p>'+tr('cm.ent')+': '+tr('cm.ent.'+campus.b)+'</p>'+
       [3,2,1].map(f=>{const rs=rooms.filter(r=>r.f===f);return rs.length?'<div class="cmfl"><b>'+tr('cm.fl',{n:f})+'</b><div class="chips">'+rs.map(chip).join('')+'</div></div>':''}).join('')+
       (nofl.length?'<div class="cmfl"><b>'+tr('cm.p.lecture').replace(/^./,c=>c.toUpperCase())+'</b><div class="chips">'+nofl.map(chip).join('')+'</div></div>':'')+'</div>';return}
   p.innerHTML='<div class="cmcard"><p>'+esc(tr('cm.pick'))+'</p></div>';
@@ -226,7 +227,7 @@ function qLabel(i){if(!i.startsWith('kb:'))return tr('i.'+i);
 function renderAnalytics(){
   if(!isStaff()){$('an').innerHTML='';return}
   const t0=anSince(),inP=at=>at>=t0,ev=(st.events||[]).filter(e=>inP(e.at)),tk=st.tickets.filter(t=>inP(t.at));
-  const fbs=ev.filter(e=>e.k==='fb'),up=fbs.filter(e=>e.v).length,dn=fbs.length-up;
+  const fbs=ev.filter(e=>e.k==='fb'&&e.role!=='staff'),up=fbs.filter(e=>e.v).length,dn=fbs.length-up;
   const rated=st.tickets.filter(t=>t.rating&&inP(t.rating.at)),avg=rated.length?(rated.reduce((a,t)=>a+t.rating.stars,0)/rated.length).toFixed(1):'—';
   const qs=ev.filter(e=>e.k==='q'&&e.i!=='greet'),un=qs.filter(e=>e.i==='fb'),escN=ev.filter(e=>e.k==='esc').length,cnt={};
   qs.forEach(e=>{cnt[e.i]=(cnt[e.i]||0)+1});
@@ -398,10 +399,10 @@ window.addEventListener('resize',tourShow);
 function renderFaq(){
   const q=($('faq-q').value||'').trim().toLowerCase();
   /* published knowledge base entries only (archived ones are hidden) */
-  const list=kbLive().map(kbData).filter(d=>!q||(d.q[ui].join(' ')+' '+d.a[ui]).toLowerCase().includes(q));
-  $('faq-list').innerHTML=list.length?list.map(d=>{const a=d.a[ui].split('\n').filter(s=>s.trim());
+  const list=kbLive().filter(e=>{const d=kbData(e);return !q||(d.q[ui].join(' ')+' '+d.a[ui]).toLowerCase().includes(q)});
+  $('faq-list').innerHTML=list.length?list.map(e=>{const d=kbData(e),a=d.a[ui].split('\n').filter(s=>s.trim()),of=OFFICE_INFO[e.id];
     return '<article class="faq"><span class="tag">'+tr('cat.'+d.cat)+'</span><h3>'+esc(d.q[ui][0])+'</h3>'+
-      (a.length>1?'<ol>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'<p>'+esc(a[0]||'')+'</p>')+
+      (a.length>1?'<ol>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'<p>'+esc(a[0]||'')+'</p>')+(of?'<ul>'+officeRows(of,ui).concat(officeState(of,ui).text).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
       '<span class="src" data-l="'+tr('faq.src')+'">'+esc(T[ui].S[d.src]||'')+'</span></article>'}).join('')
     :'<div class="empty">'+tr('faq.none')+'</div>';
 }
@@ -425,6 +426,7 @@ function closeUserMenu(){$('user-menu').hidden=true;$('user-btn').setAttribute('
 $('bell').onclick=()=>{if($('bell-pop').hidden){closeUserMenu();$('bell-pop').hidden=false;$('bell').setAttribute('aria-expanded','true')}else closeBell()};
 $('bell-list').onclick=e=>{const b=e.target.closest('.note');if(!b)return;
   const type=b.dataset.nt,ref=b.dataset.ref;closeBell();
+  if(type==='pay')return ask(tr('q.pay'));
   const target=type==='reply'||type==='status'?(show('tickets'),$('tk-'+ref)):(show('appts'),$('ap-'+ref));
   if(target){target.scrollIntoView({block:'center'});target.classList.remove('flash');void target.offsetWidth;target.classList.add('flash')}};
 $('user-btn').onclick=()=>{closeBell();const o=$('user-menu').hidden;$('user-menu').hidden=!o;$('user-btn').setAttribute('aria-expanded',String(o))};
@@ -445,17 +447,17 @@ const SPRINTS=[{n:1,d:'25.09.2026'},{n:2,d:'09.10.2026',days:10},{n:3,d:'23.10.2
 const STORIES=[
   {id:'US1',t:'FAQ Instant Answers',s:1,p:3,st:'Done'},
   {id:'US2',t:'IT Issue Self-Help',s:1,p:4,st:'Partial'},
-  {id:'US3',t:'Help Ticket Creation',s:1,p:3,st:'Partial'},
+  {id:'US3',t:'Help Ticket Creation',s:1,p:3,st:'Done'},
   {id:'US4',t:'Escalation to Human Staff',s:1,p:4,st:'Partial'},
   {id:'US5',t:'Course Registration Guidance',s:2,o:'Kamshat',p:7,st:'Partial',day:7},
   {id:'US6',t:'Financial Aid & Billing Q&A',s:2,o:'Imangali',p:6,st:'Partial',day:5},
   {id:'US7',t:'Advisor Appointment Scheduling',s:2,o:'Kenan',p:5,st:'Partial',day:3},
   {id:'US8',t:'Multi-Language Support',s:2,o:'Zhanibek',p:5,st:'Done',day:10},
   {id:'US9',t:'Class & Exam Schedule Lookup',s:3,p:4,st:'Partial'},
-  {id:'US10',t:'Office & Contact Directory',s:3,p:3,st:'Partial'},
-  {id:'US11',t:'Deadline & Event Reminders',s:3,p:5,st:'Partial'},
+  {id:'US10',t:'Office & Contact Directory',s:3,p:3,st:'Done'},
+  {id:'US11',t:'Deadline & Event Reminders',s:3,p:5,st:'Done'},
   {id:'US12',t:'Certificate & Document Requests',s:3,p:6,st:'Partial'},
-  {id:'US13',t:'Campus Navigation & Room Finder',s:4,p:4,st:'Partial'},
+  {id:'US13',t:'Campus Navigation & Room Finder',s:4,p:4,st:'Done'},
   {id:'US14',t:'Answer Feedback & Rating',s:4,p:3,st:'Done'},
   {id:'US15',t:'Help Desk Analytics Dashboard',s:4,o:'Kenan',p:7,st:'Done'},
   {id:'US16',t:'Knowledge Base Content Management',s:4,o:'Zhanibek',p:6,st:'Done'}];
@@ -508,6 +510,8 @@ $('about').onclick=e=>{const b=e.target.closest('[data-tab]');if(b){aboutTab=b.d
 function buildQuick(){$('quick').innerHTML='';
   tr('quick').forEach(q=>{const b=document.createElement('button');b.type='button';b.textContent=q;b.onclick=()=>ask(q);$('quick').appendChild(b)})}
 function fillMenu(){if(!U)return;
+  $('nav-chat').textContent=tr(U.role==='staff'?'nav.test':'nav.chat');
+  $('rem-toggle').textContent=tr(remOn()?'rem.on':'rem.off');$('rem-toggle').setAttribute('aria-pressed',String(remOn()));
   if(U.role==='guest'){$('who-name').textContent=$('mn-name').textContent=tr('guest.name');$('mn-sub').textContent=tr('guest.sub');$('logout').textContent=tr('guest.exit');return}
   $('mn-sub').textContent=U.role==='staff'?tr('menu.staff'):U.major+', '+yearLbl(U.year)+' · ID '+U.id}
 const homeView=()=>U.role==='staff'?'staff':U.role==='guest'?'chat':'home';
@@ -517,8 +521,13 @@ function applyUI(){
   document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.placeholder=tr(e.dataset.i18nPh));
   document.querySelectorAll('[data-i18n-aria]').forEach(e=>{const s=tr(e.dataset.i18nAria);e.setAttribute('aria-label',s);e.title=s});
   document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===ui)));
-  buildQuick();renderAbout();fillMenu();sync();
+  buildQuick();renderAbout();fillMenu();sync();fitNav();
 }
+/* collapse the top menu into the hamburger when its items do not fit (depends on language and account) */
+function fitNav(){const b=document.body,t=$('tabs');b.classList.remove('nav-collapse');
+  if(U&&!matchMedia('(max-width:900px)').matches&&t.scrollWidth>t.clientWidth+1)b.classList.add('nav-collapse')}
+window.addEventListener('resize',fitNav);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitNav);
 function setUI(l){ui=l;try{localStorage.setItem('hd-ui',l)}catch(_){}applyUI()}
 
 /* ---------- login ---------- */
@@ -532,7 +541,7 @@ function applyAuth(){
   $('mn-name').textContent=U.full;$('logout').textContent=tr('menu.logout');fillMenu();
   chatEpoch++;mode=null;loadChat();
   const h=location.hash.slice(1);    /* opening a #view link: staff-only views show "Access denied" to students and visitors */
-  sync();show(VIEWS.includes(h)&&h!=='denied'?h:homeView());
+  sync();show(VIEWS.includes(h)&&h!=='denied'?h:homeView());fitNav();
   if(U.role==='student'&&!tourDone().includes(U.login))setTimeout(()=>{if(U&&$('tour').hidden)tourStart()},500);
 }
 const loginErr=m=>{$('login-err').textContent=m;$('login-err').hidden=!m};
@@ -550,6 +559,7 @@ $('accounts').onclick=e=>{const b=e.target.closest('[data-login]');if(!b)return;
 function toLogin(){closeUserMenu();closeBell();if(tourI>=0)tourEnd();chatEpoch++;sess=null;
   try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}try{sessionStorage.removeItem('hd-session')}catch(_){}applyAuth()}
 $('logout').onclick=toLogin;
+$('rem-toggle').onclick=()=>{setRem(!remOn());fillMenu();sync()};
 $('guest-btn').onclick=()=>{loginErr('');sess={login:'guest'};try{sessionStorage.setItem('hd-session',JSON.stringify(sess))}catch(_){}applyAuth()};
 
 /* ---------- wiring ---------- */
@@ -577,7 +587,7 @@ $('brand').onclick=()=>{if(U)show(homeView())};
 $('ask-form').onsubmit=e=>{e.preventDefault();const t=$('ask-q').value.trim();if(!t)return;$('ask-q').value='';ask(t)};
 $('menu-btn').onclick=()=>{const o=document.querySelector('.bar').classList.toggle('open');$('menu-btn').setAttribute('aria-expanded',String(o))};
 $('nav-reset').onclick=()=>{closeUserMenu();st=fresh();sel=null;save();chatEpoch++;mode=null;$('log').innerHTML='';boot();sync()};
-function boot(){botNow({text:U&&U.role==='guest'?tr('g.greet'):T[ui].greet},ui)}
+function boot(){botNow({text:U&&U.role==='guest'?tr('g.greet'):U&&U.role==='staff'?tr('test.greet'):T[ui].greet},ui)}
 /* another browser tab changed the data */
 window.addEventListener('storage',e=>{if(e.key!=='hd-state')return;
   try{const s=JSON.parse(e.newValue);if(s&&s.tickets){st=loadSt(s);sync()}}catch(_){}});

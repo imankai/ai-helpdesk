@@ -13,17 +13,18 @@ const nluToks=t=>{const s=nluNorm(t);return s?s.split(' ').map(nluFold):[]};
 const NSTOP=new Set(('i me my mine the a an is are am was be to of in on at for from by with about do does did can could will would should shall '+
   'how what when where which who why please pls and or it its this that there here you your have has had need want get see not dont doesnt cant '+
   'я мне меня мой моя мои мое как где когда что это в во на по с со к ко о об от до за и или а но не ли же бы можно нужно надо хочу '+
-  'пожалуйста подскажите скажите какой какая какое какие какого каких сколько есть у уже ещё еще мы вы ты он она они '+
+  'пожалуйста подскажите скажите какой какая какое какие какого каких сколько есть у уже ещё еще мы вы ты он она они будет будут '+
   'мен маган менин сен сиз калай кайда кашан не ма ме ба бе па пе бар кандай керек ушин жане осы сол бул немесе туралы бойынша '+
   'кажет келеди').split(' ').map(nluFold));
 
 /* ---------- topics: synonyms, slang and transliteration in EN / RU / KK ----------
    intent: chat handler in app.js (personal answers or actions); kb: id of the knowledge base entry that answers the topic.
-   A word starting with "=" is matched exactly only (no prefix or typo matching). Short stems such as "тіркел" match word endings. */
+   A word starting with "=" is matched exactly only (no prefix or typo matching). Short stems such as "тіркел" match word endings.
+   A word starting with "~" is weak: exact only, and used only when the question has no stronger topic ("office" alone, but not "portal does not work"). */
 const TOPICS={
  adddrop:{kb:'adddrop',syn:['add drop','adddrop','add and drop','drop a course','add a course','change a course','swap a course','drop','add drop deadline',
    'эдд дроп','адд дроп','эд дроп','ад дроп','эддроп','адддроп','дроп','добавить предмет','убрать предмет','поменять предмет','сменить предмет','заменить предмет',
-   'добавить курс','убрать курс','поменять курс','дропнуть','пән қосу','пәнді алып тастау','пәнді ауыстыру','пән ауыстыру']},
+   'добавить курс','убрать курс','поменять курс','дропнуть','пән қосу','пәнді алып тастау','пәнді ауыстыру','пән ауыстыру','соңғы мерзім','~deadline','~дедлайн']},
  pw:{kb:'pw',syn:['password','forgot password','reset password','change password','pasword','passcode','parol',
    'пароль','парол','забыл пароль','забыла пароль','не помню пароль','сбросить пароль','поменять пароль','восстановить пароль','пароль от портала',
    'құпиясөз','құпия сөз','парольді ұмыттым','құпиясөзді ұмыттым']},
@@ -32,10 +33,10 @@ const TOPICS={
    'ғаламтор','интернет жоқ','вайфай жоқ']},
  portal:{kb:'portal',syn:['portal','student portal','log in','login','cant log in','cannot log in','sign in','cant sign in',
    'портал','войти','не могу войти','не могу зайти','зайти в портал','не заходит','вход','логин','личный кабинет',
-   'порталға кіру','порталға кіре алмаймын','кіре алмай','кіре алмаймын','жүйеге кіру']},
+   'порталға кіру','порталға кіре алмаймын','кіре алмай','кіре алмаймын','жүйеге кіру','cant log']},
  grant:{intent:'bill',kb:'grant',syn:['grant','state grant','keep grant','lose grant','on a grant',
    'грант','на гранте','госгрант','гос грант','грантник','грантница','потерять грант','сохранить грант','мемлекеттік грант','грантпен','грантта']},
- scholarship:{intent:'bill',syn:['scholarship','stipend','merit scholarship','stipendiya',
+ scholarship:{intent:'bill',kb:'pay',syn:['scholarship','stipend','merit scholarship','stipendiya','financial aid','=financial','=aid','финансовая помощь','қаржылық көмек',
    'стипендия','стипенд','степуха','стипуха','стипа','шәкіртақы']},
  pay:{intent:'bill',kb:'pay',syn:['pay','payment','pay tuition','tuition','tuition fee','fee','fees','balance','bill','billing','how much','owe','debt',
    'оплата','оплат','платить','заплатить','сколько платить','сколько стоит','=долг','=долги','задолженност','баланс','=счет','деньги','стоимость обучения',
@@ -45,31 +46,38 @@ const TOPICS={
  reg:{intent:'reg',kb:'reg',syn:['registration','register','registering','enroll','enrol','enrollment','course registration','sign up for courses','sign up for classes',
    'prerequisite','prereq','hold','registraciya',
    'регистрация','регистрац','зарегистр','рега','регаться','записаться на курсы','запись на курсы','записаться на предметы','выбор курсов','выбрать курсы',
-   'пререквизит','блокировк','тіркел','тіркеу','курсқа жазылу','пәнге жазылу']},
+   'пререквизит','блокировк','тіркел','тіркеу','курсқа жазылу','пәнге жазылу','=пән','пәнге','пәндер','курс']},
  adv:{intent:'adv',syn:['advisor','adviser','advising','appointment','advisor meeting','meeting with advisor','book advisor','edvaizer',
-   'эдвайзер','адвайзер','эдвизор','эдвайзор','советник','куратор','записаться к эдвайзеру','встреча с эдвайзером','консультация',
+   'meeting','эдвайзер','адвайзер','эдвизор','эдвайзор','советник','куратор','записаться к эдвайзеру','встреча с эдвайзером','консультац','встреч',
    'кеңесші','кеңесшіге жазылу','кездесу']},
  sched:{kb:'sched',syn:['schedule','timetable','class schedule','my classes','classes today','raspisanie',
    'расписание','расписан','расписание пар','пары','когда пары','занятия','кесте','сабақ кестесі','сабақ']},
  rooms:{intent:'rooms',syn:['room','classroom','lecture hall','auditorium','building',
    'кабинет','аудитори','корпус','=ауд','бөлме','дәрісхана']},
+ tkstatus:{intent:'tkstatus',syn:['status of my ticket','ticket status','where is my ticket','check my ticket','my tickets','what happened to my ticket',
+   'статус заявки','статус моей заявки','где моя заявка','мои заявки','что с заявкой','что с моей заявкой','статус тикета','где мой тикет',
+   'өтінім мәртебесі','өтінімнің мәртебесі','өтінімім қайда','менің өтінімім','менің өтінімдерім']},
+ remoff:{intent:'remoff',syn:['stop reminders','stop sending reminders','turn off reminders','disable reminders','no more reminders',
+   'отключи напоминания','отключить напоминания','выключи напоминания','не присылай напоминания','не напоминай','хватит напоминать',
+   'ескертулерді өшіру','ескертуді өшір','ескерту жібермеңіз']},
+ remon:{intent:'remon',syn:['turn on reminders','enable reminders','start reminders','включи напоминания','включить напоминания','ескертулерді қосу','ескертуді қос']},
  ticket:{intent:'ticket',syn:['ticket','create ticket','open a ticket','submit a request','request','complaint',
    'тикет','заявка','заявк','создать заявку','подать заявку','оставить заявку','жалоба','өтінім','өтініш','өтінім ашу']},
  human:{intent:'human',syn:['human','operator','staff member','real person','live agent','talk to staff','talk to a person','speak to someone',
    'оператор','человек','живой человек','сотрудник','позовите оператора','связаться с сотрудником','поговорить с человеком',
-   'адам','адаммен','қызметкер','оператормен сөйлесу']},
+   'адам','адаммен','қызметкер','оператормен сөйлесу','~staff','~person','~agent','~live']},
  hours:{kb:'hours',syn:['hours','opening hours','working hours','when open','open hours',
    'часы работы','график работы','во сколько открывается','до скольки работает','режим работы',
-   'жұмыс уақыты','қашан ашылады','жұмыс кестесі']},
+   'жұмыс уақыты','қашан ашылады','жұмыс кестесі','~open','~office','~часы','~работает','~офис','~кеңсе']},
  offices:{kb:'offices',syn:['which office','what office','who to contact','who should i contact','contact','department',
    'в какой отдел','какой отдел','к кому обратиться','куда обращаться','куда обратиться','отдел',
-   'қай бөлім','кімге хабарласу','кімге жүгіну','бөлім']},
- greet:{intent:'greet',syn:['hi','hello','hey','good morning','привет','здравствуйте','здравствуй','добрый день','салам','сәлем','салем','сәлеметсіз','қайырлы күн']}
+   'who can help','who should i ask','who can','who should','к кому','қай бөлім','кімге хабарласу','кімге хабарлас','кімге жүгіну','бөлім']},
+ greet:{intent:'greet',syn:['hi','hello','hey','good morning','привет','здравствуйте','здравствуй','здравств','добрый день','салам','сәлем','салем','сәлеметсіз','қайырлы күн']}
 };
 /* flat phrase index, built once */
 const NLU_PHRASES=[];
 Object.entries(TOPICS).forEach(([topic,o])=>o.syn.forEach(p=>{
-  const exact=p[0]==='=',words=nluToks(exact?p.slice(1):p);if(words.length)NLU_PHRASES.push({topic,words,exact})}));
+  const weak=p[0]==='~',exact=weak||p[0]==='=',words=nluToks(exact?p.slice(1):p);if(words.length)NLU_PHRASES.push({topic,words,exact,weak})}));
 
 /* ---------- typo tolerance ---------- */
 function lev(a,b,max){
@@ -91,15 +99,19 @@ function wcost(t,w,exact){
 
 /* ---------- analysis of one text ---------- */
 const nluCache=new Map();
-/* -> {toks, tags: Map topic -> weight, words: content tokens not explained by a topic} */
+/* -> {toks, tags: Map topic -> weight, weak: the same for weak words, words: content tokens not explained by a topic} */
 function nluAnalyze(text){
   if(nluCache.has(text))return nluCache.get(text);
   const toks=nluToks(text),matches=[];
-  for(const p of NLU_PHRASES){const used=[],costs=[];let ok=true;
+  const weak=new Map();
+  for(const p of NLU_PHRASES){
+    if(p.weak){if(toks.includes(p.words[0]))weak.set(p.topic,1);continue}
+    const used=[],costs=[];let ok=true;
     for(const w of p.words){let best=Infinity,bi=-1;
       toks.forEach((t,i)=>{if(used.includes(i))return;const c=wcost(t,w,p.exact);if(c<best){best=c;bi=i}});
       if(bi<0){ok=false;break}used.push(bi);costs.push(best)}
-    if(ok)matches.push({topic:p.topic,len:p.words.length,used,costs})}
+    if(ok)matches.push({topic:p.topic,len:p.words.length,used,costs,total:costs.reduce((a,c)=>a+c,0)})}
+  matches.sort((a,b)=>a.total-b.total);   /* on a tie for a token, the phrase with fewer typos keeps it */
   /* each token belongs to the topic that explains it best: lowest cost, then the longer phrase */
   const owner=toks.map(()=>null);
   matches.forEach(m=>m.used.forEach((i,k)=>{const o=owner[i],c=m.costs[k];
@@ -107,9 +119,21 @@ function nluAnalyze(text){
   const tags=new Map();
   matches.forEach(m=>{if(m.used.every(i=>owner[i].topic===m.topic))tags.set(m.topic,Math.max(tags.get(m.topic)||0,m.len))});
   const words=toks.filter((t,i)=>!owner[i]&&!NSTOP.has(t)&&t.length>=3&&!/^\d+$/.test(t));
-  const r={toks,tags,words};nluCache.set(text,r);if(nluCache.size>2000)nluCache.clear();return r}
+  const r={toks,tags,weak,words};nluCache.set(text,r);if(nluCache.size>2000)nluCache.clear();return r}
 /* strongest topic of a question; ties go to the topic listed first in TOPICS */
-function nluTopic(a){let best=null,bw=0;for(const t of Object.keys(TOPICS)){const w=a.tags.get(t)||0;if(w>bw){bw=w;best=t}}return best}
+function nluTopic(a){let best=null,bw=0;for(const t of Object.keys(TOPICS)){const w=a.tags.get(t)||0;if(w>bw){bw=w;best=t}}
+  return best||[...a.weak.keys()][0]||null}
+
+/* ---------- language of the question ---------- */
+/* Kazakh written without its special letters ("мен грантпын ба"): common words, stems and the endings -пын / -мын / -бын, weighed against common Russian words */
+const KK_WORDS=new Set('мен сен ба бе ма ме па пе керек калай кайда кашан канша жок рахмет салем сабак туралы жане кандай маган менин сиз сизге'.split(' '));
+const KK_STEMS=['тиркел','купиясоз','кенесши','отиним','кесте','анык','толем','грантпын'];
+const RU_WORDS=new Set('я мне меня как где что когда хочу это на не почему какой какая можно нужно надо у в и'.split(' '));
+function isKazakh(t){
+  if(/[әғқңөұүһі]/i.test(t))return true;
+  let kk=0,ru=0;
+  nluToks(t).forEach(w=>{if(RU_WORDS.has(w))ru++;else if(KK_WORDS.has(w)||KK_STEMS.some(x=>w.startsWith(x))||(w.length>=6&&/(пын|мын|бын)$/.test(w)))kk++});
+  return kk>ru}
 
 /* ---------- knowledge base scoring ---------- */
 /* similarity of a question to every question variant of the published entries (all languages).

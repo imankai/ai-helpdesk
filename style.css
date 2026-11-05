@@ -483,7 +483,7 @@ svg .sw{background:none}
 .rm.office{border-left-color:var(--c-office)}.rm.study{border-left-color:var(--c-study)}
 
 /* ---------- v7: answer feedback, visitor mode, review queue (US14) ---------- */
-body.role-staff .no-staff,body.role-guest .only-student,body.role-guest .only-staff,body.role-guest .no-guest{display:none !important}
+body.role-guest .only-student,body.role-guest .only-staff,body.role-guest .no-guest{display:none !important}
 .fb{flex-wrap:wrap;align-items:center}
 .fbx{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:2px}
 .fbok{font-size:13px;color:var(--ok)}
@@ -546,19 +546,20 @@ body.role-staff .no-staff,body.role-guest .only-student,body.role-guest .only-st
 .denied{text-align:center;padding-top:40px}
 .denied p{color:var(--muted);margin:10px auto 18px;max-width:46ch}
 @media (max-width:560px){.unq{flex-direction:column;align-items:stretch}.kbbar{flex-direction:column;align-items:stretch}.kbh small{margin-left:0}}
-/* the staff menu has 8 sections: compact tabs on medium screens, the hamburger menu below 1100px */
-@media (max-width:1400px){body.role-staff .tabs button{padding:0 10px}body.role-staff .uname{display:none}}
-@media (max-width:1100px){
-  body.role-staff .bar{gap:10px 12px}
-  body.role-staff .brand{order:1}body.role-staff .tools{order:2;margin-left:auto}body.role-staff .menu{order:3;display:grid;margin-left:0}
-  body.role-staff .tabs{order:4;display:none;flex:none;width:100%;flex-direction:column;align-self:auto;padding-bottom:8px}
-  body.role-staff .bar.open .tabs{display:flex}
-  body.role-staff .tabs button{padding:12px 4px;border-bottom:0;border-left:3px solid transparent;margin:0}
-  body.role-staff .tabs button[aria-current="page"]{border-left-color:var(--accent)}
-}
+/* the staff menu has 9 sections: compact tabs on medium screens; ui.js adds nav-collapse when the tabs do not fit in the current language */
+@media (max-width:1400px){body.role-staff .tabs button{padding:0 7px}body.role-staff .uname{display:none}}
+body.nav-collapse .bar{gap:10px 12px}
+body.nav-collapse .brand{order:1}body.nav-collapse .tools{order:2;margin-left:auto}body.nav-collapse .menu{order:3;display:grid;margin-left:0}
+body.nav-collapse .tabs{order:4;display:none;flex:none;width:100%;flex-direction:column;align-self:auto;padding-bottom:8px}
+body.nav-collapse .bar.open .tabs{display:flex}
+body.nav-collapse .tabs button{padding:12px 4px;border-bottom:0;border-left:3px solid transparent;margin:0}
+body.nav-collapse .tabs button[aria-current="page"]{border-left-color:var(--accent)}
 /* ---------- v9: story status on the About page ---------- */
 .col[data-s="Partial"]{border-top-color:var(--accent)}
 .col[data-s="Done"]{border-top-color:var(--ok)}
 .col[data-s="Planned"]{border-top-color:var(--line)}
 .stnote{display:block;margin-top:4px;font-size:13px;line-height:1.35;color:var(--muted)}
 .sc .av.sm{justify-content:center;color:#fff;font-size:10px}
+/* ---------- v10: Test assistant sits after the staff sections ---------- */
+body.role-staff #nav-chat{order:1}
+body.role-staff #nav-campus,body.role-staff #nav-faq,body.role-staff #nav-about{order:2}

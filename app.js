@@ -72,32 +72,51 @@ const KB_OFFICES=[
   {en:"Finance handles tuition payments, billing questions and payment deadlines. Ask the assistant for your balance or create a ticket for Finance.",
    kk:"Finance оқу ақысын төлеу, есепшот сұрақтары және төлем мерзімдерімен айналысады. Қалдықты көмекшіден сұраңыз немесе Finance-қа өтінім ашыңыз.",
    ru:"Finance занимается оплатой обучения, вопросами по счетам и сроками оплаты. Спросите у ассистента свой баланс или создайте заявку в Finance."}],
- ['affairs',{en:["What does Student Affairs do?","Student Affairs office"],kk:["Student Affairs не істейді?","Student Affairs бөлімі"],ru:["Чем занимается Student Affairs?","Отдел Student Affairs"]},
-  {en:"Student Affairs handles dormitory places and student life questions. Create a ticket for Student Affairs or contact the Student Service Center: "+SSC+".",
-   kk:"Student Affairs жатақхана орындары және студенттік өмір сұрақтарымен айналысады. Student Affairs-қа өтінім ашыңыз немесе Студенттерге қызмет көрсету орталығына хабарласыңыз: "+SSC+".",
-   ru:"Student Affairs занимается местами в общежитии и вопросами студенческой жизни. Создайте заявку в Student Affairs или обратитесь в Центр обслуживания студентов: "+SSC+"."}]];
+ ['affairs',{en:["What does Student Affairs do?","Student Affairs office","Lost student ID"],kk:["Student Affairs не істейді?","Student Affairs бөлімі","Студенттік билетімді жоғалттым"],ru:["Чем занимается Student Affairs?","Отдел Student Affairs","Потерял студенческий билет"]},
+  {en:"Student Affairs handles dormitory places, student ID cards and student life questions. Create a ticket for Student Affairs or contact the Student Service Center: "+SSC+".",
+   kk:"Student Affairs жатақхана орындары, студенттік билет және студенттік өмір сұрақтарымен айналысады. Student Affairs-қа өтінім ашыңыз немесе Студенттерге қызмет көрсету орталығына хабарласыңыз: "+SSC+".",
+   ru:"Student Affairs занимается местами в общежитии, студенческими билетами и вопросами студенческой жизни. Создайте заявку в Student Affairs или обратитесь в Центр обслуживания студентов: "+SSC+"."}]];
+/* office directory (US10): rooms are real rooms of the campus map; hours are Monday to Friday; all contacts are fictional. "hours" is the Student Service Center entry */
+const OFFICE_INFO={
+  registrar:{name:'Registrar',room:'D205',open:9,close:17,tel:'8 (727) 000-00-01',mail:'registrar@university.demo'},
+  itsupport:{name:'IT Support',room:'E205',open:9,close:18,tel:'8 (727) 000-00-02',mail:'it@university.demo'},
+  finance:{name:'Finance',room:'F205',open:9,close:16,tel:'8 (727) 000-00-03',mail:'finance@university.demo'},
+  affairs:{name:'Student Affairs',room:'G205',open:10,close:17,tel:'8 (727) 000-00-04',mail:'affairs@university.demo'},
+  hours:{name:'Student Service Center',room:'H204',open:9,close:18,tel:'8 (727) 000-00-00',mail:'ssc@university.demo'}};
 function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
   const mk=(id,kind,intent,cat,src,q,a)=>({id,kind,intent:intent||null,status:'published',vn:1,vers:[{n:1,act:'create',by,at,cat,src,q,a}],log:[]});
   const per=f=>Object.fromEntries(LANGS.map(l=>[l,f(l)])),lines=v=>Array.isArray(v)?v.join('\n'):v;
   return FAQ.map(f=>mk(f.id,'faq',KB_INTENT[f.id],f.cat,f.src,per(l=>[f.q(l)]),per(l=>lines(f.a(l)))))
     .concat(KB_OFFICES.map(([id,q,a])=>mk(id,'office',null,'off','ssc',q,a)))}
-const fresh=()=>({v:4,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb()});
-const loadSt=s=>{s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
+const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{}});
+const loadSt=s=>{s.prefs=s.prefs||{};s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
   if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
 let st=fresh();
-try{const s=JSON.parse(localStorage.getItem('hd-state')||'null');if(s&&s.v===4&&s.tickets)st=loadSt(s)}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('hd-state')||'null');if(s&&s.v===5&&s.tickets)st=loadSt(s)}catch(e){}
 function note(uid,type,o){st.notes.push(Object.assign({uid,type,at:Date.now(),read:false},o))}
+/* current time; a function so the test page can check other days and hours */
+function clock(){return new Date()}
+/* reminders can be turned off per student (user menu or chat) */
+const remOn=()=>!(U&&st.prefs[U.login]&&st.prefs[U.login].remOff);
+function setRem(on){(st.prefs[U.login]=st.prefs[U.login]||{}).remOff=!on;save()}
+/* tuition reminder from 7 days before the deadline (also when it has already passed), once per deadline */
+function payReminder(){
+  if(!U||U.role!=='student'||!remOn()||!U.due)return;
+  const b=U.tuition-U.paid,now=clock(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  if(b<=0||(new Date(U.due+'T00:00')-today)/864e5>7||st.notes.some(n=>n.uid===U.login&&n.type==='pay'&&n.due===U.due))return;
+  note(U.login,'pay',{due:U.due,amt:b,at:now.getTime()});save()}
 /* visitors are anonymous: no ID is stored with their questions or ratings */
 const uidOf=()=>U&&U.role!=='guest'?U.login:null;
-function logQ(i,t){const e={k:'q',i,at:Date.now(),uid:uidOf()};if(t)e.t=t.slice(0,200);st.events.push(e);save()}
+/* staff questions in Test assistant are not real demand, so they stay out of Analytics */
+function logQ(i,t){if(U&&U.role==='staff')return;const e={k:'q',i,at:Date.now(),uid:uidOf()};if(t)e.t=t.slice(0,200);st.events.push(e);save()}
 /* a rating keeps the question, the bot answer and the time; the comment is added later */
 /* looked up by id, because another tab may replace st in the meantime */
 const fbFind=f=>f._id&&st.events.find(e=>e.id===f._id);
 function fbEvent(f,up){const e=fbFind(f);
   if(e){e.v=up;e.at=Date.now();delete e.rev}
   else st.events.push({id:f._id=Date.now()+'-'+Math.random().toString(36).slice(2,6),k:'fb',v:up,at:Date.now(),role:U.role,uid:uidOf(),q:f._q,a:f._a,c:''});
-  save()}
-function fbComment(f,c){const e=fbFind(f);if(e){e.c=c;save()}}
+  save();if(U.role==='staff')sync()}        /* staff see their own rating in the Review queue right away */
+function fbComment(f,c){const e=fbFind(f);if(e){e.c=c;save();if(U.role==='staff')sync()}}
 const isMine=t=>t.uid===U.login;
 /* chat history is kept per student ID (rendered rows only, without buttons) */
 function rec(c,h){if(!U||U.role!=='student')return;
@@ -117,7 +136,7 @@ let mode=null, lastLang='en', pendingDesc='';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function detect(t){
-  if(/[әғқңөұүһі]/i.test(t)) return 'kk';
+  if(isKazakh(t)) return 'kk';
   if(/[а-яё]/i.test(t)) return 'ru';
   return /[a-z]/i.test(t)?'en':lastLang;
 }
@@ -274,8 +293,11 @@ function route(t){
   const top=[...q.tags].filter(([,w])=>w===q.tags.get(T)).map(([k])=>TOPICS[k]);
   const amb=top.length>1&&top.every(tp=>!tp.intent)?top.map(tp=>kbLive().find(x=>x.id===tp.kb)).filter(Boolean):[];
   if(amb.length>1&&!(best&&best.s>=.9))return{k:'dym',list:amb.slice(0,3)};    /* a near-exact question variant still wins */
-  /* high confidence in a knowledge base entry: answer it (a student still gets the personal answer for registration or billing) */
-  if(best&&best.s>=NLU_HIGH)return forEntry(best.e);
+  /* a ticket number asks about that ticket, not for a new one */
+  if(T==='ticket'&&/\b\d{4,6}\b/.test(t))return stu?{k:'h',i:'tkstatus'}:{k:'guest',i:'tkstatus'};
+  /* high confidence in a knowledge base entry: answer it (a student still gets the personal answer for registration or billing).
+     A question with only a weak word ("office") needs a near-exact variant, otherwise its topic decides */
+  if(best&&best.s>=(q.tags.size?NLU_HIGH:q.weak.size?.9:NLU_HIGH))return forEntry(best.e);
   if(T){const tp=TOPICS[T],e=tp.kb&&kbLive().find(x=>x.id===tp.kb);
     if(tp.intent&&PERSONAL.includes(tp.intent))return stu?{k:'h',i:tp.intent}:e?{k:'kb',e}:{k:'guest',i:tp.intent};
     if(tp.intent)return{k:'h',i:tp.intent};
@@ -287,7 +309,7 @@ const forEntry=e=>e.intent&&PERSONAL.includes(e.intent)&&U.role==='student'?{k:'
 function answer(t){
   const L=detect(t); lastLang=L; curQ=t;
   if(mode==='desc'){pendingDesc=t;mode=null;return later(()=>askOffice(L))}
-  later(()=>respond(route(t),L,t));
+  const ep=chatEpoch;later(()=>{if(ep===chatEpoch)respond(route(t),L,t)});     /* dropped if the user logged out in the meantime */
 }
 /* low confidence is logged with the question text for the "Unanswered" list in Analytics */
 function respond(r,L,t){
@@ -299,7 +321,7 @@ function respond(r,L,t){
     return bot({text:trL('nlu.dym',L),acts:r.list.map(e=>[kbData(e).q[L][0],()=>respond(forEntry(e),L,t)])},L)}
   logQ('fb',t);H.fb(L)}
 /* intents that use a student's own data; a visitor is asked to sign in instead */
-const PERSONAL=['reg','bill','adv','ticket','human'];
+const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon'];
 const kbData=e=>e.vers.find(v=>v.n===e.vn);
 const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published');
 /* languages that still lack a question variant or an answer; publishing is blocked while any is missing */
@@ -307,11 +329,35 @@ const kbMissing=d=>LANGS.filter(l=>!(d.q[l]||[]).some(s=>s.trim())||!(d.a[l]||''
 const IT_K=['pw','wifi','portal'];
 function kbAnswer(e,L){const d=kbData(e),S=T[L],lines=d.a[L].split('\n').map(s=>s.trim()).filter(Boolean),it=IT_K.includes(e.intent);
   const o={src:S.S[d.src]||'',fb:!it};if(lines.length>1)o.ol=lines;else o.text=lines[0];
+  /* office entries carry the directory card; a closed office offers a ticket instead */
+  const of=OFFICE_INFO[e.id];
+  if(of){const s=officeState(of,L);o.list=officeRows(of,L);o.after=s.text;
+    o.acts=[[trL('cm.map',L),()=>openMap(of.room)]].concat(!s.open&&U.role==='student'?[[S.mkT,()=>startTicket(L,OFFICES.includes(of.name)?of.name:null)]]:[])}
+  if(e.id==='offices')o.list=Object.values(OFFICE_INFO).map(x=>trL('of.line',L,{n:x.name,r:x.room,a:x.open+':00',b:x.close+':00'}));
   bot(o,L);
   /* IT self-help keeps its "Did this help?" step with a ticket for IT Support */
   if(it)later(()=>bot({text:S.helped,acts:[[S.yes,()=>bot({text:S.yesR},L)],[S.no,()=>bot({text:S.noR,acts:[[S.mkT,()=>startTicket(L,'IT Support')],[S.talk,()=>human(L)]]},L)]]},L),250)}
+function officeRows(of,L){const r=CAMPUS.get(of.room);return[
+  trL('of.room',L,{r:of.room,b:r.b,f:r.f}),trL('cm.ent',L)+': '+trL('cm.ent.'+r.b,L),
+  trL('of.hours',L,{a:of.open+':00',b:of.close+':00'}),trL('of.phone',L)+': '+of.tel,'Email: '+of.mail]}
+/* open or closed right now (Monday to Friday, local time) */
+function officeState(of,L){const now=clock(),d=now.getDay(),h=now.getHours()+now.getMinutes()/60,work=d>=1&&d<=5,t=of.open+':00';
+  if(work&&h>=of.open&&h<of.close)return{open:true,text:trL('of.open',L,{t:of.close+':00'})};
+  if(work&&h<of.open)return{open:false,text:trL('of.closed',L,{t})};
+  const n=new Date(now);do n.setDate(n.getDate()+1);while(n.getDay()%6===0);
+  return{open:false,text:trL('of.closedd',L,{d:n.toLocaleDateString(T[L].loc,{weekday:'long'}),t})}}
 const H={
  greet:L=>bot({text:T[L].greet},L),
+ /* the student's own latest tickets only; a number from another student gets the same "not found" as a wrong number */
+ tkstatus:L=>{const mine=st.tickets.filter(isMine).sort((a,b)=>b.at-a.at),m=/\b\d{4,6}\b/.exec(curQ),acts=[[trL('nav.tickets',L),()=>show('tickets')]],src=trL('nav.tickets',L);
+   const upd=t=>{const r=(t.replies||[]).slice(-1)[0];return new Date(r?r.at:t.at).toLocaleDateString(T[L].loc)};
+   const line=t=>trL('tks.line',L,{n:t.n,o:t.office,s:trL('st.'+t.status,L),d:upd(t)});
+   if(m){const t=mine.find(x=>x.n===+m[0]);if(!t)return bot({text:trL('tks.nf',L,{n:m[0]}),acts,src,fb:true},L);
+     const r=(t.replies||[]).slice(-1)[0];return bot({text:line(t),after:r?trL('tks.reply',L,{r:r.text}):'',acts,src,fb:true},L)}
+   if(!mine.length)return bot({text:trL('tks.none',L),acts:[[T[L].mkT,()=>startTicket(L)]],src,fb:true},L);
+   bot({title:trL('tks.latest',L),list:mine.slice(0,3).map(line),acts,src,fb:true},L)},
+ remoff:L=>{setRem(false);fillMenu();sync();bot({text:trL('rem.offc',L)},L)},
+ remon:L=>{setRem(true);fillMenu();sync();bot({text:trL('rem.onc',L)},L)},
  reg:L=>{const S=T[L],h=U.hold&&S.holds[U.hold];bot({title:S.regT,text:h?h[0]:S.noHold,
    list:U.courses.map(x=>({t:fill(x.ok?S.cOk:S.cNo,{c:x.c,p:x.p}),cls:x.ok?'yes':'no'})),
    after:S.win+(h?' '+h[1]:''),src:S.S.reg,fb:true},L)},
@@ -340,18 +386,20 @@ const H={
      const sim=similarRooms(id);
      bot({text:trL('cm.nf',L,{r:id}),after:sim.length?trL('cm.dym',L,{r:sim.join(' / ')}):'',src,
        acts:sim.length?sim.map(k=>[k,()=>roomCard(k,L)]):null,fb:true},L)})},
- fb:L=>U.role==='guest'?bot({text:trL('g.nf',L,{c:SSC}),acts:[[trL('g.faq',L),()=>show('faq')],[trL('cm.title',L),()=>openMap()]],fb:true},L):
+ fb:L=>U.role!=='student'?bot({text:trL('g.nf',L,{c:SSC}),acts:[[trL('g.faq',L),()=>show('faq')],[trL('cm.title',L),()=>openMap()]],fb:true},L):
    bot({text:fill(T[L].fb,{c:SSC}),fb:true,acts:[[T[L].mkT,()=>startTicket(L)],[T[L].talk,()=>human(L)]]},L)
 };
 function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
   if(r.b)rows.push(trL('cm.building',L)+': '+r.b);
   if(r.f)rows.push(trL('cm.floor',L)+': '+r.f);
   rows.push(trL('cm.type',L)+': '+trL('cm.t.'+r.t,L)+(r.barrel?' ('+trL('cm.t.barrel',L)+')':''));
+  if(r.b)rows.push(trL('cm.ent',L)+': '+trL('cm.ent.'+r.b,L));
   const hint=r.barrel?trL('cm.hint.barrel',L,{id}):r.f?trL('cm.hint.floor',L,{b:r.b,f:r.f,r:floorSummary(r.b,r.f,L)}):trL('cm.hint.nofloor',L,{id,b:r.b});
   bot({title:id,list:rows,after:hint,src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap(id)]],fb:true},L)}
 let presetOffice=null;
-const guestOnly=L=>bot({text:trL('g.only',L),acts:[[trL('guest.exit',L),toLogin]]},L);
-function startTicket(L,office){if(U.role==='guest')return guestOnly(L);presetOffice=office||null;mode='desc';bot({text:T[L].tAsk},L);$('q').focus()}
+/* personal features: a visitor is asked to sign in; staff in Test assistant are told it needs a student account */
+const guestOnly=L=>U.role==='staff'?bot({text:trL('test.only',L)},L):bot({text:trL('g.only',L),acts:[[trL('guest.exit',L),toLogin]]},L);
+function startTicket(L,office){if(U.role!=='student')return guestOnly(L);presetOffice=office||null;mode='desc';bot({text:T[L].tAsk},L);$('q').focus()}
 function askOffice(L){
   if(presetOffice) return makeTicket(presetOffice,L);
   bot({text:T[L].tOff,acts:OFFICES.map(o=>[o,()=>makeTicket(o,L)])},L);
@@ -363,9 +411,9 @@ function makeTicket(o,L){
 }
 function book(d,L){
   st.appts=st.appts.filter(a=>a.who!==U.login).concat({who:U.login,at:d.getTime(),with:U.advisor});note(U.login,'appt',{at:d.getTime()});save();sync();
-  bot({text:fill(T[L].booked,{s:fmt(d,L),a:U.advisor}),src:T[L].S.adv},L);
+  bot({text:fill(T[L].booked,{s:fmt(d,L),a:U.advisor}),after:remOn()?'':trL('rem.offnote',L),src:T[L].S.adv},L);
 }
-function human(L){if(U.role==='guest')return guestOnly(L);
+function human(L){if(U.role!=='student')return guestOnly(L);
   st.events.push({k:'esc',at:Date.now()});save();      /* counted as an escalation in Analytics */
   bot({text:T[L].queue},L);
   setTimeout(()=>{sys(T[L].joined);bot({text:T[L].staff,staff:true},L)},2200);

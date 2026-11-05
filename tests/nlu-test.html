@@ -91,7 +91,8 @@ const CASES=[
  ['what does the registrar do','registrar'],
  ['обучение','dym: bill'],                 /* medium confidence → "Did you mean…?" */
  ['пароль и вайфай','dym: pw, wifi'],      /* two topics → both offered */
- ['студенческий билет','fb'],              /* not in the knowledge base → "not sure" + Unanswered */
+ ['студенческий билет','affairs'],
+ ['когда будет выпускной бал','fb'],       /* not in the knowledge base → "not sure" + Unanswered */
  ['asdfgh qwerty','fb'],
  ['какая погода завтра','fb'],
  ['сколько платить','bill','visitor'],
@@ -101,9 +102,9 @@ const CASES=[
 ];
 const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
 /* interface functions from ui.js that replies may reference */
-window.toLogin=window.show=window.openMap=window.sync=()=>{};
-let said=[];
-window.bot=o=>said.push(plainAnswer(o)||'');           /* capture replies instead of animating them */
+window.toLogin=window.show=window.openMap=window.sync=window.fillMenu=()=>{};
+let said=[],lastO=null;
+window.bot=o=>{lastO=o;said.push(plainAnswer(o)||'')};  /* capture replies instead of animating them */
 window.botNow=window.bot;
 function run(t,who){said=[];mode=null;U=who==='visitor'?GUEST:ACCOUNTS['249900002'];curQ=t;
   const r=route(t);respond(r,detect(t),t);return{r,said:said.join(' | ')}}
@@ -112,6 +113,53 @@ st.kb.push({id:'summer',kind:'faq',intent:null,status:'published',vn:1,log:[],ve
   q:{en:['Is there a summer school this year?'],kk:['Биыл жазғы мектеп бар ма?'],ru:['Будет ли летняя школа в этом году?']},
   a:{en:'Yes, in July.',kk:'Иә, шілдеде.',ru:'Да, в июле.'}}]});
 
+/* every word of the old keyword rules must still reach its topic */
+const OLD={human:['human','staff','person','operator','agent','live','оператор','человек','сотрудник','қызметкер','адаммен','адам'],
+ ticket:['ticket','заявка','заявку','өтінім'],pw:['password','пароль','құпиясөз','құпия сөз'],wifi:['wifi','wi-fi','wireless','вайфай','вай-фай','интернет','ғаламтор'],
+ portal:['portal','login','log in',"can't log",'портал','войти','не могу зайти','кіре алмай'],
+ bill:['grant','грант','balance','tuition','pay','fee','bill','owe','financial','aid','financial aid','What is my financial aid status?','scholarship','баланс','оплата','долг','стипендия','плата','платить','деньги','төлем','ақы','қарыз','шәкіртақы'],
+ adv:['advisor','advising','appointment','meeting','эдвайзер','советник','консультация','встреча','кеңесші','кездесу'],
+ reg:['register','registration','enroll','prereq','курс','курсы','тіркелу','регистрация','пререквизит','пән','пәнге'],
+ adddrop:['add drop','add/drop','drop a course','add a course','deadline','дедлайн','соңғы мерзім'],
+ sched:['schedule','timetable','расписание','кесте'],
+ offices:['which office','who can help','who should I ask','contact','в какой отдел','к кому','қай бөлім','кімге хабарласамын'],
+ hours:['hours','open','office','часы','работает','офис','жұмыс уақыты','кеңсе'],
+ greet:['hi','hello','hey','привет','здравствуйте','сәлем','салем']};
+/* a strong topic must beat a weak word */
+const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
+const LANGT=[['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
+/* checks of the QA scenarios in docs/SPRINTS.md */
+const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
+const has=(s,x)=>s.includes(x);
+function check(name,fn){let got;try{got=fn()}catch(e){got='ERROR '+e.message}return{q:name,exp:'true',got:String(got===true||got),said:'',ok:got===true}}
+const QA=[
+ check('US3 "статус моей заявки" lists number, office, status',()=>{const a=run('статус моей заявки').said;return has(a,'10229')&&has(a,'Student Affairs')&&has(a,'Решена')||a}),
+ check('US3 "where is my ticket" lists tickets',()=>{const a=run('where is my ticket').said;return has(a,'10229')||a}),
+ check('US3 status question with a number shows the last update',()=>{const a=run("What's the status of my ticket 10229?").said;return has(a,'Resolved')&&has(a,'Applications open')||a}),
+ check('US3 a ticket of another student (10228) is not shown',()=>{const a=run('status of my ticket 10228').said;return has(a,'not among')&&!has(a,'200 000')||a}),
+ check('US3 a ticket number does not start a new ticket',()=>{run('ticket 10229');return mode!=='desc'||'mode='+mode}),
+ check('US10 every office room is an office on the campus map',()=>Object.values(OFFICE_INFO).every(o=>{const r=CAMPUS.get(o.room);return r&&r.t==='office'&&'DEFGHI'.includes(r.b)})),
+ check('US10 "Who can help with a lost student ID?" names the office with room, hours, phone, email',()=>{at(2026,11,4,12);const a=run('Who can help with a lost student ID?').said;return has(a,'Student Affairs')&&has(a,'G205')&&has(a,'10:00')&&has(a,'000-00-04')&&has(a,'affairs@')||a}),
+ check('US10 open office says Open now',()=>{at(2026,11,4,12);const a=run('What does the Registrar do?').said;return has(a,'Open now, until 17:00')||a}),
+ check('US10 before opening: Closed now, opens at',()=>{at(2026,11,4,7);const a=run('What does the Registrar do?').said;return has(a,'Closed now, opens at 9:00')||a}),
+ check('US10 evening: opens next working day',()=>{at(2026,11,4,20);const a=run('What does the Registrar do?').said;return has(a,'Closed now, opens on Thursday at 9:00')||a}),
+ check('US10 Saturday: opens on Monday',()=>{at(2026,11,7,12);const a=run('What does the Registrar do?').said;return has(a,'Closed now, opens on Monday at 9:00')||a}),
+ check('US10 closed office offers a ticket',()=>{at(2026,11,7,12);run('What does the Registrar do?');return lastO.acts.some(x=>x[0]===T.en.mkT)}),
+ check('US10 open office does not offer a ticket',()=>{at(2026,11,4,12);run('What does the Registrar do?');return !lastO.acts.some(x=>x[0]===T.en.mkT)}),
+ check('US11 payment reminder 7 days before, with date and amount',()=>{st.notes=[];U=ACCOUNTS['249900004'];at(2026,11,5,9);payReminder();const n=st.notes.find(x=>x.type==='pay');return n&&n.due==='2026-11-12'&&n.amt===350000||JSON.stringify(st.notes)}),
+ check('US11 no reminder 8 days before',()=>{st.notes=[];U=ACCOUNTS['249900004'];at(2026,11,4,9);payReminder();return st.notes.length===0}),
+ check('US11 only one reminder per deadline',()=>{st.notes=[];U=ACCOUNTS['249900004'];at(2026,11,6,9);payReminder();payReminder();return st.notes.length===1}),
+ check('US11 no reminder for a grant student',()=>{st.notes=[];U=ACCOUNTS['249900002'];at(2026,11,6,9);payReminder();return st.notes.length===0}),
+ check('US11 "Stop sending me reminders" turns them off and none arrive',()=>{st.notes=[];const a=run('Stop sending me reminders');U=ACCOUNTS['249900002'];const off=!remOn();U=ACCOUNTS['249900004'];setRem(false);at(2026,11,6,9);payReminder();const none=st.notes.length===0;setRem(true);U=ACCOUNTS['249900002'];setRem(true);return off&&none&&has(a.said,'turned off')||a.said}),
+ check('US11 "включи напоминания" turns them on',()=>{U=ACCOUNTS['249900002'];setRem(false);run('включи напоминания');U=ACCOUNTS['249900002'];return remOn()}),
+ check('US13 room card shows the nearest entrance and a map button',()=>{const a=run('Where is room F305?').said;return has(a,'Nearest entrance: south entrance')&&lastO.acts.length===1||a}),
+ check('US13 every building has an entrance in three languages',()=>CAMPUS_BLDS.every(b=>LANGS.every(l=>!trL('cm.ent.'+b,l).startsWith('cm.')))),
+ check('Language "мен грантпын ба" gets a Kazakh answer',()=>{const a=run('мен грантпын ба').said;return has(a,'Оқуыңыз')||a}),
+ check('Test assistant: staff questions stay out of Analytics',()=>{const n=st.events.length;U=ACCOUNTS.staff;respond(route('I forgot my password'),'en','I forgot my password');return st.events.length===n}),
+ check('Test assistant: personal answers explain the student account',()=>{U=ACCOUNTS.staff;said=[];const r=route('хочу к эдвайзеру');respond(r,'ru','');return has(said.join(),'аккаунта сотрудника')||said.join()}),
+ check('Test assistant: a rating is stored with role staff',()=>{U=ACCOUNTS.staff;const f={_q:'q',_a:'a'};fbEvent(f,false);const e=st.events[st.events.length-1];return e.role==='staff'&&e.k==='fb'&&e.v===false}),
+];
+window.clock=()=>new Date();
 function table(rows){return '<table><thead><tr><th>#</th><th>Question</th><th>Expected</th><th>Bot routed to</th><th>Bot answered</th><th>Result</th></tr></thead><tbody>'+
   rows.map((x,i)=>'<tr class="'+(x.ok?'':'fail')+'"><td>'+(i+1)+'</td><td>'+esc(x.q)+(x.who?' <small>('+x.who+')</small>':'')+'</td><td><code>'+esc(x.exp)+'</code></td><td><code>'+esc(x.got)+'</code></td><td>'+esc(x.said.slice(0,110))+'</td><td class="'+(x.ok?'ok':'bad')+'">'+(x.ok?'✓':'✗')+'</td></tr>').join('')+'</tbody></table>'}
 const res=CASES.map(([q,exp,who])=>{const {r,said}=run(q,who),got=label(r);return{q,exp,who,got,said,ok:got===exp}});
@@ -124,11 +172,17 @@ kbLive().filter(e=>e.id!=='summer').forEach(e=>{const d=kbData(e);LANGS.forEach(
  ['Where is the library?','campus'],['Create a ticket','ticket'],['Где моё расписание?','sched'],['Wi-Fi не подключается','wifi']].forEach(x=>reg.push(x));
 const rres=reg.map(([q,exp])=>{const {r,said}=run(q),got=label(r);return{q,exp,got,said,ok:got===exp}});
 
+const oldres=[];Object.entries(OLD).forEach(([exp,ws])=>ws.forEach(q=>{const {r,said}=run(q),got=label(r);oldres.push({q,exp,got,said,ok:got===exp})}));
+WEAK.forEach(([q,exp])=>{const {r,said}=run(q),got=label(r);oldres.push({q,exp,got,said,ok:got===exp})});
+const langres=LANGT.map(([q,exp])=>{const got=detect(q);return{q,exp,got,said:'',ok:got===exp}});
 const pct=a=>Math.round(100*a.filter(x=>x.ok).length/a.length);
 document.getElementById('out').innerHTML=
-  '<p class="sum" id="sum">Test set: '+res.filter(x=>x.ok).length+' / '+res.length+' ('+pct(res)+'%) · Regression: '+rrex(rres)+'</p>'+
+  '<p class="sum" id="sum">Test set: '+res.filter(x=>x.ok).length+' / '+res.length+' ('+pct(res)+'%) · Regression: '+rrex(rres)+' · Old rule words: '+rrex(oldres)+' · Language: '+rrex(langres)+' · QA checks: '+rrex(QA)+'</p>'+
   '<h2>Test set: slang, transliteration, typos (EN / RU / KK)</h2>'+table(res)+
-  '<h2>Regression: built-in questions and quick questions</h2>'+table(rres);
+  '<h2>Regression: built-in questions and quick questions</h2>'+table(rres)+
+  '<h2>Every word of the old keyword rules</h2>'+table(oldres)+
+  '<h2>Language of the question</h2>'+table(langres)+
+  '<h2>QA scenarios from docs/SPRINTS.md</h2>'+table(QA);
 function rrex(a){return a.filter(x=>x.ok).length+' / '+a.length+' ('+pct(a)+'%)'}
 </script>
 </body>
