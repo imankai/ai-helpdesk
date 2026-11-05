@@ -41,24 +41,30 @@ Developed by a student team as part of INF451.
 
 ## User stories
 
-| Sprint | Story |
-|---|---|
-| 1 – General help | US1 FAQ Instant Answers |
-| 1 – General help | US2 IT Issue Self-Help |
-| 1 – General help | US3 Help Ticket Creation |
-| 1 – General help | US4 Escalation to Human Staff |
-| 2 – Personal answers | US5 Course Registration Guidance |
-| 2 – Personal answers | US6 Financial Aid & Billing Q&A |
-| 2 – Personal answers | US7 Advisor Appointment Scheduling |
-| 2 – Personal answers | US8 Multi-Language Support |
-| 4 – Campus, feedback and knowledge base | US13 Campus Navigation & Room Finder |
-| 4 – Campus, feedback and knowledge base | US14 Answer Feedback & Rating |
-| 4 – Campus, feedback and knowledge base | US15 Help Desk Analytics Dashboard |
-| 4 – Campus, feedback and knowledge base | US16 Knowledge Base Content Management |
+Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md), on demo data. **Done:** the scenarios work. **Partial:** some of them work. **Planned:** not started.
+
+| Sprint | Story | Status | What is missing |
+|---|---|---|---|
+| 1 – General help | US1 FAQ Instant Answers | Done | |
+| 1 – General help | US2 IT Issue Self-Help | Partial | No real password-reset link; a ticket does not list the steps already tried |
+| 1 – General help | US3 Help Ticket Creation | Partial | The chat cannot report a ticket's status; it is shown only in My tickets |
+| 1 – General help | US4 Escalation to Human Staff | Partial | The live chat is simulated: staff do not receive the conversation, and working hours are not checked |
+| 2 – Personal answers | US5 Course Registration Guidance | Partial | No seat availability; a named course (e.g. CS201) is not checked separately |
+| 2 – Personal answers | US6 Financial Aid & Billing Q&A | Partial | "Financial aid" questions are not recognised; no award amount, disbursement date or payment methods |
+| 2 – Personal answers | US7 Advisor Appointment Scheduling | Partial | A slot taken by another student is not detected; there is no advisor calendar |
+| 2 – Personal answers | US8 Multi-Language Support | Done | |
+| 3 – Schedules, contacts and documents | US9 Class & Exam Schedule Lookup | Partial | The bot only points to the Student Portal: no class list with time, room and teacher, and no exam schedule |
+| 3 – Schedules, contacts and documents | US10 Office & Contact Directory | Partial | Offices are described, but only the Student Service Center has hours and contacts; no room per office and no "closed now" warning |
+| 3 – Schedules, contacts and documents | US11 Deadline & Event Reminders | Partial | Deadlines are listed on Home and appointments trigger reminders, but there are no payment reminders 7 days ahead and reminders cannot be turned off |
+| 3 – Schedules, contacts and documents | US12 Certificate & Document Requests | Partial | The bot explains that the Registrar handles documents and a general ticket can be sent; no document request, ready date or "ready" status |
+| 4 – Campus, feedback and knowledge base | US13 Campus Navigation & Room Finder | Partial | The map has no nearest entrance and no services such as the library or canteen |
+| 4 – Campus, feedback and knowledge base | US14 Answer Feedback & Rating | Done | |
+| 4 – Campus, feedback and knowledge base | US15 Help Desk Analytics Dashboard | Done | |
+| 4 – Campus, feedback and knowledge base | US16 Knowledge Base Content Management | Done | |
 
 ## Sprint backlog
 
-The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The prototype implements the stories of sprints 1 and 2 (US1–US8) and the stories of sprint 4 (US13–US16).
+The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The table above covers sprints 1–4 (US1–US16); the prototype does not include sprints 5–7.
 
 ## Demo accounts
 

@@ -439,32 +439,48 @@ window.addEventListener('hashchange',()=>{if(U)show(location.hash.slice(1))});
 $('den-back').onclick=()=>show(homeView());
 
 /* ---------- About: overview + sprint board ---------- */
-/* Edit these arrays to match the real backlog. day = working day of Sprint 2 when the story was finished (for the burndown). */
-const SPRINT1=[['US1','FAQ Instant Answers'],['US2','IT Issue Self-Help'],['US3','Help Ticket Creation'],['US4','Escalation to Human Staff']];
-const SPRINT2={deadline:'09.10.2026',days:10,stories:[
-  {id:'US5',t:'Course Registration Guidance',o:'Kamshat',p:7,st:'Done',day:7},
-  {id:'US6',t:'Financial Aid & Billing Q&A',o:'Imangali',p:6,st:'Done',day:5},
-  {id:'US7',t:'Advisor Appointment Scheduling',o:'Kenan',p:5,st:'Done',day:3},
-  {id:'US8',t:'Multi-Language Support',o:'Zhanibek',p:5,st:'Done',day:10}]};
+/* Edit these arrays to match the real backlog (docs/SPRINTS.md). st: Done = its QA scenarios work on the demo data, Partial = some do (what is missing: sn.<id> in i18n.js), Planned = not started.
+   day = working day of Sprint 2 when the story was finished (for the burndown). */
+const SPRINTS=[{n:1,d:'25.09.2026'},{n:2,d:'09.10.2026',days:10},{n:3,d:'23.10.2026'},{n:4,d:'06.11.2026'}];
+const STORIES=[
+  {id:'US1',t:'FAQ Instant Answers',s:1,p:3,st:'Done'},
+  {id:'US2',t:'IT Issue Self-Help',s:1,p:4,st:'Partial'},
+  {id:'US3',t:'Help Ticket Creation',s:1,p:3,st:'Partial'},
+  {id:'US4',t:'Escalation to Human Staff',s:1,p:4,st:'Partial'},
+  {id:'US5',t:'Course Registration Guidance',s:2,o:'Kamshat',p:7,st:'Partial',day:7},
+  {id:'US6',t:'Financial Aid & Billing Q&A',s:2,o:'Imangali',p:6,st:'Partial',day:5},
+  {id:'US7',t:'Advisor Appointment Scheduling',s:2,o:'Kenan',p:5,st:'Partial',day:3},
+  {id:'US8',t:'Multi-Language Support',s:2,o:'Zhanibek',p:5,st:'Done',day:10},
+  {id:'US9',t:'Class & Exam Schedule Lookup',s:3,p:4,st:'Partial'},
+  {id:'US10',t:'Office & Contact Directory',s:3,p:3,st:'Partial'},
+  {id:'US11',t:'Deadline & Event Reminders',s:3,p:5,st:'Partial'},
+  {id:'US12',t:'Certificate & Document Requests',s:3,p:6,st:'Partial'},
+  {id:'US13',t:'Campus Navigation & Room Finder',s:4,p:4,st:'Partial'},
+  {id:'US14',t:'Answer Feedback & Rating',s:4,p:3,st:'Done'},
+  {id:'US15',t:'Help Desk Analytics Dashboard',s:4,o:'Kenan',p:7,st:'Done'},
+  {id:'US16',t:'Knowledge Base Content Management',s:4,o:'Zhanibek',p:6,st:'Done'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];
 let aboutTab='overview';
-const pts=()=>SPRINT2.stories.reduce((a,s)=>a+s.p,0);
+const inSprint=n=>STORIES.filter(s=>s.s===n);
+const pts=n=>inSprint(n).reduce((a,s)=>a+s.p,0);
+const stChip=s=>'<span class="chip'+({Done:' done',Partial:' warn'}[s]||'')+'">'+tr('stt.'+s)+'</span>';
+const stNote=s=>s.st==='Partial'?'<span class="stnote">'+esc(tr('sn.'+s.id))+'</span>':'';
+const owner=s=>s.o?avatar(s.o)+' '+esc(s.o):'';
 
 function overview(){
   return '<p class="lead">'+tr('ab.lead')+'</p><p>'+tr('ab.p2')+'</p>'+
     '<h3>'+tr('ab.team')+'</h3><div class="tw"><table><tbody>'+TEAM.map(([id,r])=>{const a=ACCOUNTS[id];
       return '<tr><td>'+avatar(a.name)+' <b>'+esc(a.name)+'</b></td><td>'+tr(r)+'</td></tr>'}).join('')+'</tbody></table></div>'+
-    '<h3>'+tr('ab.stories')+'</h3><div class="tw"><table><thead><tr><th>ID</th><th>'+tr('th.story')+'</th><th>'+tr('th.sprint')+'</th><th>'+tr('th.owner')+'</th><th>'+tr('th.pts')+'</th></tr></thead><tbody>'+
-    SPRINT1.map(([id,t])=>'<tr><td class="mono">'+id+'</td><td>'+esc(t)+'</td><td>1</td><td>—</td><td>—</td></tr>').join('')+
-    SPRINT2.stories.map(s=>'<tr><td class="mono">'+s.id+'</td><td>'+esc(s.t)+'</td><td>2</td><td>'+avatar(s.o)+' '+esc(s.o)+'</td><td>'+s.p+'</td></tr>').join('')+'</tbody></table></div>';
+    '<h3>'+tr('ab.stories')+'</h3><div class="tw"><table><thead><tr><th>ID</th><th>'+tr('th.story')+'</th><th>'+tr('th.sprint')+'</th><th>'+tr('th.owner')+'</th><th>'+tr('th.pts')+'</th><th>'+tr('th.status')+'</th></tr></thead><tbody>'+
+    STORIES.map(s=>'<tr><td class="mono">'+s.id+'</td><td>'+esc(s.t)+'</td><td>'+s.s+'</td><td>'+(owner(s)||'—')+'</td><td>'+s.p+'</td><td>'+stChip(s.st)+stNote(s)+'</td></tr>').join('')+'</tbody></table></div>';
 }
 function bdLabel(i){const d=new Date(2026,8,28);let k=i-1;while(k>0){d.setDate(d.getDate()+1);if(d.getDay()%6)k--}
   return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')}
 function burndown(){
-  const W=640,H=300,l=46,r=16,t=16,b=46,n=SPRINT2.days,tot=pts();
+  const W=640,H=300,l=46,r=16,t=16,b=46,n=SPRINTS[1].days,tot=pts(2);
   const X=i=>l+(W-l-r)*i/n,Y=v=>t+(H-t-b)*(1-v/tot);
   const idx=[...Array(n+1).keys()];
-  const act=idx.map(i=>tot-SPRINT2.stories.filter(s=>s.st==='Done'&&s.day<=i).reduce((a,s)=>a+s.p,0));
+  const act=idx.map(i=>tot-inSprint(2).filter(s=>s.st==='Done'&&s.day<=i).reduce((a,s)=>a+s.p,0));   /* only Done stories burn points */
   const line=f=>idx.map(i=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(f(i)).toFixed(1)).join('');
   return '<svg class="burn" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(tr('burn.title'))+'">'+
     [0,5,10,15,20].map(v=>'<line class="grid" x1="'+l+'" x2="'+(W-r)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text class="ax" x="'+(l-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+v+'</text>').join('')+
@@ -474,13 +490,10 @@ function burndown(){
     idx.map(i=>'<circle class="dot" cx="'+X(i).toFixed(1)+'" cy="'+Y(act[i]).toFixed(1)+'" r="3.5"/>').join('')+'</svg>';
 }
 function sprintBoard(){
-  const cols=[['To do','col.todo'],['In progress','col.prog'],['Done','col.done']];
-  return '<section class="blk"><h3>'+tr('sb.s1')+' <span class="chip done">'+tr('col.done')+'</span></h3><ul class="s1">'+
-      SPRINT1.map(([id,t])=>'<li><span class="mono">'+id+'</span> '+esc(t)+'</li>').join('')+'</ul></section>'+
-    '<section class="blk"><h3>'+tr('sb.s2')+'</h3><p class="meta2">'+tr('sb.meta2',{p:pts(),d:SPRINT2.deadline})+'</p>'+
-      '<div class="board sboard">'+cols.map(([k,lab])=>{const list=SPRINT2.stories.filter(s=>s.st===k);
-        return '<section class="col" data-s="'+k.replace(' ','-')+'"><h3>'+tr(lab)+' <span class="count">'+list.length+'</span></h3>'+
-          (list.length?list.map(s=>'<div class="sc"><span class="mono">'+s.id+'</span><b>'+esc(s.t)+'</b><span class="sm">'+avatar(s.o)+' '+esc(s.o)+' · '+s.p+' '+tr('th.pts').toLowerCase()+'</span></div>').join(''):'<div class="none">'+tr('sb.empty')+'</div>')+'</section>'}).join('')+'</div></section>'+
+  return '<p class="hint">'+tr('sb.rule')+'</p>'+SPRINTS.map(sp=>'<section class="blk"><h3>'+tr('sb.s'+sp.n)+'</h3><p class="meta2">'+tr('sb.meta2',{p:pts(sp.n),d:sp.d})+'</p>'+
+      '<div class="board sboard">'+['Planned','Partial','Done'].map(k=>{const list=inSprint(sp.n).filter(s=>s.st===k);
+        return '<section class="col" data-s="'+k+'"><h3>'+tr('stt.'+k)+' <span class="count">'+list.length+'</span></h3>'+
+          (list.length?list.map(s=>'<div class="sc"><span class="mono">'+s.id+'</span><b>'+esc(s.t)+'</b><span class="sm">'+(s.o?owner(s)+' · ':'')+s.p+' '+tr('th.pts').toLowerCase()+'</span>'+stNote(s)+'</div>').join(''):'<div class="none">'+tr('sb.empty')+'</div>')+'</section>'}).join('')+'</div></section>').join('')+
     '<section class="blk"><h3>'+tr('burn.title')+' <span class="chip">'+tr('burn.note')+'</span></h3>'+burndown()+
       '<p class="legend"><i class="l-ideal"></i> '+tr('burn.ideal')+' <i class="l-act"></i> '+tr('burn.actual')+'</p></section>';
 }

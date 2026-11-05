@@ -556,3 +556,9 @@ body.role-staff .no-staff,body.role-guest .only-student,body.role-guest .only-st
   body.role-staff .tabs button{padding:12px 4px;border-bottom:0;border-left:3px solid transparent;margin:0}
   body.role-staff .tabs button[aria-current="page"]{border-left-color:var(--accent)}
 }
+/* ---------- v9: story status on the About page ---------- */
+.col[data-s="Partial"]{border-top-color:var(--accent)}
+.col[data-s="Done"]{border-top-color:var(--ok)}
+.col[data-s="Planned"]{border-top-color:var(--line)}
+.stnote{display:block;margin-top:4px;font-size:13px;line-height:1.35;color:var(--muted)}
+.sc .av.sm{justify-content:center;color:#fff;font-size:10px}
