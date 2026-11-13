@@ -486,7 +486,8 @@ const STORIES=[
   {id:'US15',t:'Help Desk Analytics Dashboard',s:4,o:'Kenan',p:7,st:'Done'},
   {id:'US16',t:'Knowledge Base Content Management',s:4,o:'Zhanibek',p:6,st:'Done'},
   {id:'US17',t:'Grades & Transcript Lookup',s:5,p:5,st:'Done'},
-  {id:'US18',t:'Attendance Tracking & Absence Warnings',s:5,p:4,st:'Done'}];
+  {id:'US18',t:'Attendance Tracking & Absence Warnings',s:5,p:4,st:'Done'},
+  {id:'US19',t:'Library Services',s:5,p:5,st:'Done'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];
 let aboutTab='overview';
 const inSprint=n=>STORIES.filter(s=>s.s===n);

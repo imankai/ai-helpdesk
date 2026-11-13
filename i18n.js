@@ -472,7 +472,25 @@ const D={
  'att.all':["All students","Барлық студенттер","Все студенты"],
  'att.st.ok':["OK","Қалыпты","В норме"],
  'att.st.warn':["Close to the limit","Шекке жақын","Близко к лимиту"],
- 'att.st.over':["Limit exceeded","Шек асып кетті","Лимит превышен"]
+ 'att.st.over':["Limit exceeded","Шек асып кетті","Лимит превышен"],
+
+ 'i.lib':["Library catalog","Кітапхана каталогы","Каталог библиотеки"],
+ 'i.loans':["My library books","Кітапханадан алған кітаптарым","Мои книги из библиотеки"],
+ 'lib.title':["Library catalog: books found","Кітапхана каталогы: табылған кітаптар","Каталог библиотеки: найденные книги"],
+ 'lib.author':["Author","Авторы","Автор"],
+ 'lib.av':["{n} of {m} copies available","{m} данадан {n} дана қолжетімді","Доступно {n} из {m} экз."],
+ 'lib.nav':["Not available: all {m} copies are on loan, nearest return {d}","Қолжетімсіз: барлық {m} дана берілген, ең жақын қайтару күні {d}","Нет в наличии: все {m} экз. выданы, ближайший возврат {d}"],
+ 'lib.shelf':["Shelf {s}","Сөре {s}","Полка {s}"],
+ 'lib.nf':["I couldn't find “{q}” in the library catalog. Search by title, author or course code, for example “Clean Code”, “Sommerville” or “INF451”.","Кітапхана каталогынан «{q}» табылмады. Атауы, авторы немесе курс коды бойынша іздеңіз, мысалы «Clean Code», «Sommerville» немесе «INF451».","В каталоге библиотеки не нашлось «{q}». Ищите по названию, автору или коду курса, например «Clean Code», «Sommerville» или «INF451»."],
+ 'lib.ask':["Which book are you looking for? Write the title, the author or a course code, for example “Is Clean Code available?” or “books for INF451”.","Қандай кітап іздеп жүрсіз? Атауын, авторын немесе курс кодын жазыңыз, мысалы «Clean Code бар ма?» немесе «INF451 кітаптары».","Какую книгу вы ищете? Напишите название, автора или код курса, например «Есть ли Clean Code?» или «книги по INF451»."],
+ 'lib.src':["Library catalog","Кітапхана каталогы","Каталог библиотеки"],
+ 'ln.title':["Your library books","Кітапханадан алған кітаптарыңыз","Ваши книги из библиотеки"],
+ 'ln.line':["{t} — return by {d}","{t} — {d} дейін қайтару","{t} — вернуть до {d}"],
+ 'ln.over':["{t} — was due {d} · Overdue by {n} days","{t} — мерзімі {d} болған · Мерзімі {n} күнге өтіп кетті","{t} — срок был {d} · Просрочена на {n} дн."],
+ 'ln.none':["You have no library books on loan.","Кітапханадан алған кітабыңыз жоқ.","У вас нет книг из библиотеки."],
+ 'ln.hold':["The overdue book blocks your course registration (library hold). Return it to the library to clear the hold.","Мерзімі өткен кітап курстарға тіркелуді бұғаттайды (кітапхана шектеуі). Шектеуді алу үшін кітапты кітапханаға қайтарыңыз.","Просроченная книга блокирует регистрацию на курсы (блокировка библиотеки). Верните её в библиотеку, чтобы снять блокировку."],
+ 'ln.ret':["Please return the overdue book to the library as soon as possible.","Мерзімі өткен кітапты кітапханаға тезірек қайтарыңыз.","Пожалуйста, верните просроченную книгу в библиотеку как можно скорее."],
+ 'ln.src':["Library system · Your loans","Кітапхана жүйесі · Сіздің кітаптарыңыз","Библиотечная система · Ваши книги"]
 };
 let ui='en';
 try{const s=localStorage.getItem('hd-ui');if(LANGS.includes(s))ui=s}catch(e){}

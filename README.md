@@ -26,13 +26,14 @@ Developed by a student team as part of INF451.
 - Grades and transcript in the chat ("What is my GPA?", "мои оценки", "менің бағаларым", "оценка по INF451"): a card with course, grade and credits, the GPA and the total credits earned, for all courses or for one; a final grade that is not posted yet comes with the official posting deadline (28.12.2026)
 - Attendance in the chat ("How many classes have I missed?", "пропуски", "сабақ босаттым", "сколько я пропустил по INF451"): absences, limit and absences left for every current course or for one
 - Absence warnings in the notification bell: when 2 or fewer absences are left before the limit (with the course and the limit), and a separate warning when the limit is exceeded
+- Library: search the catalog by title, author or course ("Is 'Clean Code' available?", "книги по INF451", "kitap bar ma") for available copies and the shelf, or "not available" with the nearest return date; "My books" lists the user's loans with due dates and marks overdue ones, and explains that an overdue book blocks registration (library hold); visitors can search the catalog, "My books" needs a sign-in
 - Office directory: room on the campus map, hours, phone and email for every office, with "Closed now, opens at…" outside working hours
 - Dashboard with deadlines, recent tickets and quick actions; announcement banners
 - First-login guided tour (can be replayed from the user menu)
 
 **Staff side**
 - Kanban ticket board (Open / In progress / Resolved) with priority (Low / Medium / High) and a 24-hour reply SLA with an "Overdue" marker
-- Test assistant: a chat with the bot for checking answers; ratings go to the Review queue marked Staff, questions are not counted in Analytics
+- Test assistant: a chat with the bot for checking answers (including the library catalog and the staff member's own library books); ratings go to the Review queue marked Staff, questions are not counted in Analytics
 - Ticket drawer with the conversation, status and priority controls, and reply field
 - Review queue: answers rated "Not helpful" with the question, answer, comment and time, and a "Mark reviewed" button
 - Analytics with a period filter (Today / Last 7 days / Last 30 days / All time): questions asked, share of unanswered questions, tickets, escalations to staff, average rating, top 5 questions and an "Unanswered & not helpful" list with a "Create FAQ entry" button; only aggregated data, no student names or IDs
@@ -70,6 +71,7 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 | 4 – Campus, feedback and knowledge base | US16 Knowledge Base Content Management | Done | |
 | 5 – More student self-service | US17 Grades & Transcript Lookup | Done | |
 | 5 – More student self-service | US18 Attendance Tracking & Absence Warnings | Done | |
+| 5 – More student self-service | US19 Library Services | Done | |
 
 ## Sprint backlog
 
@@ -81,7 +83,7 @@ Password for every account: `demo123`
 
 | Login | Role | Notes |
 |---|---|---|
-| `249900001` | Student | Tuition with an unpaid balance, library hold on registration; GPA 3.12, 128 credits |
+| `249900001` | Student | Tuition with an unpaid balance, library hold on registration (2 library books, one overdue); GPA 3.12, 128 credits |
 | `249900002` | Student | Studies on a state grant, no balance, no holds; GPA 3.67, 134 credits; 4 of 6 absences in INF451 (absence warning) |
 | `249900003` | Student | Tuition paid in full, no holds; GPA 2.85, 121 credits |
 | `249900004` | Student | Tuition with an unpaid balance, no holds; GPA 3.40, 126 credits |
@@ -103,7 +105,7 @@ Notes:
 
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 100 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 126 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
 
 ## Project structure
 

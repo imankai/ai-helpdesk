@@ -61,6 +61,13 @@ const TOPICS={
  adv:{intent:'adv',syn:['advisor','adviser','advising','appointment','advisor meeting','meeting with advisor','book advisor','edvaizer',
    'meeting','эдвайзер','адвайзер','эдвизор','эдвайзор','советник','куратор','записаться к эдвайзеру','встреча с эдвайзером','консультац','встреч',
    'кеңесші','кеңесшіге жазылу','кездесу']},
+ /* US19 library: listed after adv, so "book a meeting" stays with the advisor; "book" is exact only ("look" is not a typo of it); "my books" / "return books" (longer phrases) go to loans */
+ loans:{intent:'loans',syn:['my books','my loans','my library books','return books','return my books','books due','when return books','renew a book','borrowed books','books i borrowed',
+   'kitaptarym','moi knigi',
+   'мои книги','мои займы','сдавать книги','сдать книги','вернуть книги','вернуть книгу','когда сдавать','срок сдачи книг','взятые книги','продлить книгу',
+   'менің кітаптарым','кітаптарым','кітапты қайтару','кітаптарды қайтару','кітап қайтару','қашан қайтару','алған кітаптарым']},
+ lib:{intent:'lib',syn:['library','=book','=books','available','availability','borrow','=author','=authors','textbook','catalog','kitap','kniga','knigi','biblioteka',
+   'библиотек','книг','учебник','=автор','=автора','каталог','доступн','в наличии','кітап','кітапхана','оқулық','авторы']},
  sched:{kb:'sched',syn:['schedule','timetable','class schedule','my classes','classes today','raspisanie',
    'расписание','расписан','расписание пар','пары','когда пары','занятия','кесте','сабақ кестесі','сабақ']},
  rooms:{intent:'rooms',syn:['room','classroom','lecture hall','auditorium','building',
@@ -140,8 +147,12 @@ function nluTopic(a){let best=null,bw=0;for(const t of Object.keys(TOPICS)){cons
 const KK_WORDS=new Set('мен сен ба бе ма ме па пе керек калай кайда кашан канша жок рахмет салем сабак туралы жане кандай маган менин сиз сизге'.split(' '));
 const KK_STEMS=['тиркел','купиясоз','кенесши','отиним','кесте','анык','толем','грантпын','багалар','босат','калдыр'];
 const RU_WORDS=new Set('я мне меня как где что когда хочу это на не почему какой какая можно нужно надо у в и'.split(' '));
+/* Kazakh typed in Latin letters ("kitap bar ma"): at least one clearly Kazakh word and two Kazakh words in all; "bar", "ma", "me" alone are English too */
+const KK_LAT=new Set('kitap kitaptarym kitapty kitaptar kerek kaida qaida kashan qashan kansha qansha menin sabak bagalarym bagalar kandai qandai zhatakhana zhataqhana bolme rakhmet salem bar ma me ba be'.split(' '));
+const KK_LAT_WEAK=new Set(['bar','ma','me','ba','be']);
 function isKazakh(t){
   if(/[әғқңөұүһі]/i.test(t))return true;
+  if(!/[а-яё]/i.test(t)){const w=nluToks(t).filter(x=>KK_LAT.has(x));return w.length>=2&&w.some(x=>!KK_LAT_WEAK.has(x))}
   let kk=0,ru=0;
   nluToks(t).forEach(w=>{if(RU_WORDS.has(w))ru++;else if(KK_WORDS.has(w)||KK_STEMS.some(x=>w.startsWith(x))||(w.length>=6&&/(пын|мын|бын)$/.test(w)))kk++});
   return kk>ru}

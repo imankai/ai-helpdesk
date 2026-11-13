@@ -34,6 +34,26 @@ const ATT_LIM={INF451:6,INF320:6,MAT301:5,INF330:6};
 const ATT_SEED={'249900001':{INF451:2,INF320:1},'249900002':{INF451:4,MAT301:1},'249900003':{INF451:1,INF330:3},'249900004':{INF451:0,MAT301:2}};
 const seedAtt=()=>JSON.parse(JSON.stringify(ATT_SEED));
 const ATT_WARN=2;             /* warn when this many absences or fewer are left before the limit */
+/* library (US19): demo catalog with fictional copy counts and shelves; "next" is the nearest return date when no copy is available.
+   The library's own location is not on the campus map, so the bot names shelves only. */
+const CATALOG=[
+  {id:'cc',t:'Clean Code',a:'Robert C. Martin',c:'INF451',n:4,av:2,sh:'B-12'},
+  {id:'pp',t:'The Pragmatic Programmer',a:'Andrew Hunt, David Thomas',c:'INF451',n:3,av:0,sh:'B-12',next:'2026-11-18'},
+  {id:'rf',t:'Refactoring',a:'Martin Fowler',c:'INF451',n:2,av:1,sh:'B-12'},
+  {id:'se',t:'Software Engineering',a:'Ian Sommerville',c:'INF401',n:5,av:3,sh:'B-10'},
+  {id:'dp',t:'Design Patterns',a:'Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides',c:'INF401',n:2,av:1,sh:'B-11'},
+  {id:'cn',t:'Computer Networking: A Top-Down Approach',a:'James Kurose, Keith Ross',c:'INF320',n:6,av:4,sh:'C-03'},
+  {id:'db',t:'Database System Concepts',a:'Abraham Silberschatz, Henry Korth, S. Sudarshan',c:'INF310',n:5,av:2,sh:'C-07'},
+  {id:'os',t:'Operating System Concepts',a:'Abraham Silberschatz, Peter Galvin, Greg Gagne',c:'INF305',n:4,av:0,sh:'C-08',next:'2026-11-19'},
+  {id:'sa',t:'Systems Analysis and Design',a:'Kenneth Kendall, Julie Kendall',c:'INF330',n:3,av:1,sh:'D-01'},
+  {id:'ml',t:'Machine Learning',a:'Tom Mitchell',c:'INF380',n:2,av:2,sh:'D-02'},
+  {id:'wd',t:'Learning Web Design',a:'Jennifer Robbins',c:'INF350',n:3,av:2,sh:'D-05'},
+  {id:'sec',t:'Security Engineering',a:'Ross Anderson',c:'INF415',n:2,av:0,sh:'C-11',next:'2026-11-24'},
+  {id:'st',t:'Statistics',a:'David Freedman, Robert Pisani, Roger Purves',c:'MAT301',n:4,av:3,sh:'A-09'},
+  {id:'al',t:'Introduction to Algorithms',a:'Thomas Cormen, Charles Leiserson, Ronald Rivest, Clifford Stein',c:'INF210',n:3,av:1,sh:'A-04'}];
+/* books on loan; 249900001 has two, one overdue (this is her library hold on registration). Staff can check their own loans too. */
+const LOANS=[{uid:'249900001',b:'cc',due:'2026-11-25'},{uid:'249900001',b:'os',due:'2026-10-30'},
+  {uid:'249900002',b:'cn',due:'2026-11-20'},{uid:'249900004',b:'st',due:'2026-12-01'},{uid:'staff',b:'se',due:'2026-11-27'}];
 /* visitor without an account: general questions only, nothing personal is stored (US14) */
 const GUEST={role:'guest',login:'guest',id:null,ini:'?',color:'#5a6a80'};
 const HOLD_INFO={library:['Library','Overdue book blocks registration'],finance:['Finance','Unpaid tuition blocks registration']};
@@ -317,8 +337,9 @@ const WHERE=/where|find|locat|how (do i )?(get|reach)|где|найти|как (
 /* route(t) decides how to answer; answer(t) shows it. Kept apart so the test page can check routing directly.
    -> {k:'campus',c} | {k:'kb',e} | {k:'h',i} | {k:'guest',i} | {k:'dym',list} | {k:'fb'} */
 function route(t){
-  const c=campusIntent(t);if(c)return{k:'campus',c};
-  const q=nluAnalyze(t),rank=kbRank(q,kbLive()),best=rank[0],T=nluTopic(q),stu=U.role==='student';
+  /* "Where can I find Clean Code?" is a catalog question, not "the library is not on the map" */
+  const c=campusIntent(t);if(c&&!(c.k==='svc'&&bookSearch(t).length))return{k:'campus',c};
+  const q=nluAnalyze(t),rank=kbRank(q,kbLive()),best=rank[0],T=nluTopic(q),stu=U.role==='student'||(U.role==='staff'&&STAFF_SELF.includes(T&&TOPICS[T].intent));
   /* two equally strong topics with their own entries ("password and wifi"): ask instead of guessing */
   const top=[...q.tags].filter(([,w])=>w===q.tags.get(T)).map(([k])=>TOPICS[k]);
   const amb=top.length>1&&top.every(tp=>!tp.intent)?top.map(tp=>kbLive().find(x=>x.id===tp.kb)).filter(Boolean):[];
@@ -328,6 +349,8 @@ function route(t){
   /* high confidence in a knowledge base entry: answer it (a student still gets the personal answer for registration or billing).
      A question with only a weak word ("office") needs a near-exact variant, otherwise its topic decides */
   if(best&&best.s>=(q.tags.size?NLU_HIGH:q.weak.size?.9:NLU_HIGH))return forEntry(best.e);
+  /* "Do you have Clean Code?": a full catalog title (two words or more) is a library question even without a library word */
+  if(!T&&bookTitleIn(t))return{k:'h',i:'lib'};
   if(T){const tp=TOPICS[T],e=tp.kb&&kbLive().find(x=>x.id===tp.kb);
     if(tp.intent&&PERSONAL.includes(tp.intent))return stu?{k:'h',i:tp.intent}:e?{k:'kb',e}:{k:'guest',i:tp.intent};
     if(tp.intent)return{k:'h',i:tp.intent};
@@ -352,7 +375,9 @@ function respond(r,L,t){
     return bot({text:trL('nlu.dym',L),acts:r.list.map(e=>[kbData(e).q[L][0],()=>respond(forEntry(e),L,t)])},L)}
   logQ('fb',t);H.fb(L)}
 /* intents that use a student's own data; a visitor is asked to sign in instead */
-const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon','grades','attend'];
+const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon','grades','attend','loans'];
+/* personal intents that also work for a staff account with the staff member's own data (library loans) */
+const STAFF_SELF=['loans'];
 const kbData=e=>e.vers.find(v=>v.n===e.vn);
 const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published');
 /* languages that still lack a question variant or an answer; publishing is blocked while any is missing */
@@ -410,6 +435,18 @@ const H={
    if(code&&!one)return bot({text:trL('att.nf',L,{c:code,l:list.map(x=>x.c).join(', ')}),html:attCard(list,L),src,fb:true},L);
    if(one)return bot({text:trL('att.one',L,{c:one.c+' '+one.t,a:one.abs,l:one.lim,n:Math.max(one.left,0)}),html:attCard([one],L),after:attWarnText(one,L),src,fb:true},L);
    bot({title:trL('att.title',L),html:attCard(list,L),after:list.map(x=>attWarnText(x,L)).filter(Boolean).join(' '),src,fb:true},L)},
+ /* US19: catalog search by title, author or course code; open to visitors */
+ lib:L=>{const src=trL('lib.src',L),found=bookSearch(curQ);
+   if(!found.length){const q=libQuery(curQ);return bot({text:q?trL('lib.nf',L,{q}):trL('lib.ask',L),src,fb:true},L)}
+   if(found.length===1){const b=found[0];return bot({title:b.t,list:bookRows(b,L),src,fb:true},L)}
+   bot({title:trL('lib.title',L),list:found.map(b=>({t:bookLine(b,L),cls:b.av?'yes':'no'})),src,fb:true},L)},
+ /* US19: the user's own loans with due dates; overdue ones are marked and linked to the library hold */
+ loans:L=>{const src=trL('ln.src',L),now=clock(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+   const mine=LOANS.filter(x=>x.uid===U.login).map(x=>Object.assign({bk:CATALOG.find(b=>b.id===x.b),late:Math.round((today-new Date(x.due+'T00:00'))/864e5)},x)).sort((a,b)=>a.due<b.due?-1:1);
+   if(!mine.length)return bot({text:trL('ln.none',L),src,fb:true},L);
+   const over=mine.filter(x=>x.late>0);
+   bot({title:trL('ln.title',L),list:mine.map(x=>x.late>0?{t:trL('ln.over',L,{t:x.bk.t,d:dmy(x.due),n:x.late}),cls:'no'}:trL('ln.line',L,{t:x.bk.t,d:dmy(x.due)})),
+     after:over.length?trL(U.hold==='library'?'ln.hold':'ln.ret',L):'',src,fb:true},L)},
  ticket:L=>startTicket(L),
  human:L=>human(L),
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
@@ -445,6 +482,21 @@ function attCard(list,L){
     '</tbody></table></div>'}
 function attWarnText(x,L){const c=x.c+' '+x.t;
   return x.left<0?trL('att.w.over',L,{c,a:x.abs,l:x.lim}):x.left===0?trL('att.w.0',L,{c,l:x.lim}):x.left<=ATT_WARN?trL('att.w',L,{c,n:x.left,l:x.lim}):''}
+/* catalog search: a course code lists that course's books; otherwise books whose title words (or an author's name) appear in the question, best match first */
+const libWords=t=>nluToks(t).filter(w=>w.length>=3&&!NSTOP.has(w));
+function bookSearch(t){
+  const code=courseCode(t);if(code){const l=CATALOG.filter(b=>b.c===code);if(l.length)return l}
+  const qw=libWords(t);if(!qw.length)return[];
+  const hit=w=>qw.some(x=>x===w||(w.length>=5&&x.length>=5&&lev(x,w,1)<=1));
+  const sc=CATALOG.map(b=>{const tw=libWords(b.t),th=tw.filter(hit).length,ah=nluToks(b.a).some(w=>w.length>=4&&hit(w));
+    return[b,th===tw.length?10+th:th?th:ah?1:0]}).filter(x=>x[1]>0);
+  const max=Math.max(0,...sc.map(x=>x[1]));return sc.filter(x=>x[1]===max).map(x=>x[0])}
+const bookTitleIn=t=>{const qw=libWords(t);return CATALOG.some(b=>{const tw=libWords(b.t);return tw.length>=2&&tw.every(w=>qw.includes(w))})};
+/* what the user searched for, for "not found": content words that are not library words */
+const libQuery=t=>nluAnalyze(t).words.filter(w=>!KK_LAT.has(w)).join(' ');
+function bookRows(b,L){return[trL('lib.author',L)+': '+b.a,trL('gr.course',L)+': '+b.c,
+  b.av?{t:trL('lib.av',L,{n:b.av,m:b.n}),cls:'yes'}:{t:trL('lib.nav',L,{m:b.n,d:dmy(b.next)}),cls:'no'},trL('lib.shelf',L,{s:b.sh})]}
+const bookLine=(b,L)=>b.t+' — '+b.a+' ('+b.c+'): '+(b.av?trL('lib.av',L,{n:b.av,m:b.n}):trL('lib.nav',L,{m:b.n,d:dmy(b.next)}))+' · '+trL('lib.shelf',L,{s:b.sh});
 function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
   if(r.b)rows.push(trL('cm.building',L)+': '+r.b);
   if(r.f)rows.push(trL('cm.floor',L)+': '+r.f);

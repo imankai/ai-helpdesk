@@ -20,7 +20,7 @@
 </head>
 <body>
 <h1>Question understanding tests</h1>
-<p>Runs the real chat engine (i18n.js, nlu.js, app.js) on fixed questions, signed in as demo student 249900002 unless the row says “visitor”. Nothing is saved to the demo data.</p>
+<p>Runs the real chat engine (i18n.js, nlu.js, app.js) on fixed questions, signed in as demo student 249900002 unless the row names another account or “visitor”. Nothing is saved to the demo data.</p>
 <div id="out">Running…</div>
 <div id="log"></div><input id="q">
 
@@ -139,7 +139,34 @@ const CASES=[
  ['канша сабак калдырдым','attend'],
  ['я пропустил срок оплаты','bill'],
  ['how many classes have I missed','guest','visitor'],
- ['пропуски','guest','visitor']
+ ['пропуски','guest','visitor'],
+ /* US19 library: catalog (anyone) and my books (student, staff) */
+ ["Is 'Clean Code' available in the library?",'lib'],
+ ["Is 'Clean Code' available?",'lib'],
+ ['books for INF451','lib'],
+ ['do you have The Pragmatic Programmer','lib'],
+ ['Where can I find Clean Code?','lib'],
+ ['books by Sommerville','lib'],
+ ['есть ли книга Clean Code','lib'],
+ ['книги по INF451','lib'],
+ ['есть в библиотеке Operating System Concepts?','lib'],
+ ['kniga clean code est?','lib'],
+ ['кітап бар ма','lib'],
+ ['Clean Code кітабы бар ма','lib'],
+ ['kitap bar ma','lib'],
+ ['When do I need to return my books?','loans'],
+ ['my books','loans'],
+ ['мои книги','loans'],
+ ['когда сдавать книги','loans'],
+ ['кітапты қашан қайтару керек','loans'],
+ ['менің кітаптарым','loans'],
+ ['kitaptarym','loans'],
+ ['moi knigi','loans'],
+ ['payment due date','bill'],
+ ['how do I look up my grades','grades'],
+ ["Is 'Clean Code' available?",'lib','visitor'],
+ ['мои книги','guest','visitor'],
+ ['my books','loans','staff']
 ];
 const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
 /* interface functions from ui.js that replies may reference */
@@ -147,7 +174,7 @@ window.toLogin=window.show=window.openMap=window.sync=window.fillMenu=()=>{};
 let said=[],lastO=null;
 window.bot=o=>{lastO=o;said.push(plainAnswer(o)||'')};  /* capture replies instead of animating them */
 window.botNow=window.bot;
-function run(t,who){said=[];mode=null;U=who==='visitor'?GUEST:ACCOUNTS['249900002'];curQ=t;
+function run(t,who){said=[];mode=null;U=who==='visitor'?GUEST:ACCOUNTS[who||'249900002'];curQ=t;
   const r=route(t);respond(r,detect(t),t);return{r,said:said.join(' | ')}}
 /* a new entry, published the way the Knowledge base editor does it */
 st.kb.push({id:'summer',kind:'faq',intent:null,status:'published',vn:1,log:[],vers:[{n:1,act:'create',by:'Test',at:Date.now(),cat:'reg',src:'cal',
@@ -168,7 +195,7 @@ const OLD={human:['human','staff','person','operator','agent','live','опера
  greet:['hi','hello','hey','привет','здравствуйте','сәлем','салем']};
 /* a strong topic must beat a weak word */
 const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
-const LANGT=[['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
+const LANGT=[['kitap bar ma','kk'],['кітап бар ма','kk'],['есть ли книга Clean Code','ru'],['my books','en'],['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
 /* checks of the QA scenarios in docs/SPRINTS.md */
 const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
 const has=(s,x)=>s.includes(x);
@@ -223,6 +250,21 @@ const QA=[
  check('US18 a student sees only own absences (249900001: INF451 2 of 6)',()=>{st.att=seedAtt();U=ACCOUNTS['249900001'];said=[];curQ='How many classes have I missed in INF451?';respond(route(curQ),'en',curQ);const a=said.join();return has(a,'2 of 6')&&!has(a,'4 of 6')||a}),
  check('US18 visitor is asked to sign in, no absences shown',()=>{const a=run('How many classes have I missed in INF451?','visitor').said;return has(a,'sign in')&&!has(a,'of 6')||a}),
  check('US18 every student has INF451 with limit 6; one has 4 absences',()=>Object.keys(ATT_SEED).every(k=>attList(k).some(x=>x.c==='INF451'&&x.lim===6))&&Object.values(ATT_SEED).filter(m=>m.INF451===4).length===1),
+ check('US19 S1 "Is ‘Clean Code’ available in the library?" → copies available and shelf, as in the catalog',()=>{const b=CATALOG.find(x=>x.t==='Clean Code'),a=run("Is 'Clean Code' available in the library?").said;return has(a,b.av+' of '+b.n+' copies available')&&has(a,'Shelf '+b.sh)&&has(a,'Robert C. Martin')||a}),
+ check('US19 S1 Russian: "есть ли книга Clean Code" → Доступно 2 из 4, Полка B-12',()=>{const a=run('есть ли книга Clean Code').said;return has(a,'Доступно 2 из 4')&&has(a,'Полка B-12')||a}),
+ check('US19 all copies on loan → "Not available" and the nearest return date',()=>{const a=run('Is The Pragmatic Programmer available?').said;return has(a,'Not available')&&has(a,'18.11.2026')&&!has(a,'copies available')||a}),
+ check('US19 search by course: INF451 → its three books',()=>{const a=run('books for INF451').said;return has(a,'Clean Code')&&has(a,'The Pragmatic Programmer')&&has(a,'Refactoring')&&!has(a,'Statistics')||a}),
+ check('US19 search by author and with a typo',()=>{const a=run('books by Sommerville').said,b=run('is clen code available').said;return has(a,'Software Engineering')&&has(b,'Clean Code')||a+' / '+b}),
+ check('US19 a book not in the catalog',()=>{const a=run('is Harry Potter available in the library').said;return has(a,'couldn’t find “harry potter”')||has(a,"couldn't find “harry potter”")||a}),
+ check('US19 "Where is the library?" still says it is not on the map (no invented location)',()=>{const r=run('Where is the library?').r;return r.k==='campus'&&r.c.k==='svc'}),
+ check('US19 S2 "When do I need to return my books?" (249900001) → both books with due dates, overdue marked, hold explained',()=>{at(2026,11,13,10);const a=run('When do I need to return my books?','249900001').said;
+   return has(a,'Clean Code — return by 25.11.2026')&&has(a,'Operating System Concepts — was due 30.10.2026 · Overdue by 14 days')&&has(a,'blocks your course registration')||a}),
+ check('US19 S2 Kazakh: overdue marked "мерзімі өтіп кетті"',()=>{at(2026,11,13,10);const a=run('кітапты қашан қайтару керек','249900001').said;return has(a,'өтіп кетті')&&has(a,'25.11.2026')||a}),
+ check('US19 each student sees only own books (249900002 → Computer Networking only)',()=>{at(2026,11,13,10);const a=run('my books').said;return has(a,'Computer Networking')&&!has(a,'Clean Code')&&!has(a,'Overdue')||a}),
+ check('US19 a student with no loans',()=>{const a=run('my books','249900003').said;return has(a,'no library books')||a}),
+ check('US19 visitor can search the catalog but "my books" asks to sign in',()=>{const a=run('Is Clean Code available?','visitor').said,b=run('my books','visitor').said;return has(a,'2 of 4')&&has(b,'sign in')&&!has(b,'return by')||a+' / '+b}),
+ check('US19 staff in Test assistant: catalog and own loans',()=>{at(2026,11,13,10);const a=run('my books','staff').said,b=run('Is Clean Code available?','staff').said;return has(a,'Software Engineering — return by 27.11.2026')&&!has(a,'Clean Code')&&has(b,'2 of 4')||a+' / '+b}),
+ check('US19 catalog has 12–15 books incl. Clean Code; available never above total',()=>CATALOG.length>=12&&CATALOG.length<=15&&CATALOG.some(b=>b.t==='Clean Code')&&CATALOG.every(b=>b.av<=b.n&&(b.av||b.next))),
  check('US17 every student has different GPA and credits; INF451 not posted for all',()=>{const v=Object.values(ACAD);return new Set(v.map(a=>a.gpa)).size===v.length&&new Set(v.map(a=>a.cr)).size===v.length&&v.every(a=>a.courses.some(c=>c.c==='INF451'&&c.g===null))}),
 ];
 window.clock=()=>new Date();
