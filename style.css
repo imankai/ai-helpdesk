@@ -556,8 +556,8 @@ body.role-guest .only-student,body.role-guest .only-staff,body.role-guest .no-gu
 .denied{text-align:center;padding-top:40px}
 .denied p{color:var(--muted);margin:10px auto 18px;max-width:46ch}
 @media (max-width:560px){.unq{flex-direction:column;align-items:stretch}.kbbar{flex-direction:column;align-items:stretch}.kbh small{margin-left:0}}
-/* the staff menu has 9 sections: compact tabs on medium screens; ui.js adds nav-collapse when the tabs do not fit in the current language */
-@media (max-width:1400px){body.role-staff .tabs button{padding:0 7px}body.role-staff .uname{display:none}}
+/* ui.js adds nav-collapse when the tabs do not fit in the current language (staff sections beyond the main four are in "More ▾") */
+@media (max-width:1400px){body.role-staff .uname{display:none}}   /* the staff avatar stays; the name would push the menu into the hamburger in Kazakh */
 body.nav-collapse .bar{gap:10px 12px}
 body.nav-collapse .brand{order:1}body.nav-collapse .tools{order:2;margin-left:auto}body.nav-collapse .menu{order:3;display:grid;margin-left:0}
 body.nav-collapse .tabs{order:4;display:none;flex:none;width:100%;flex-direction:column;align-self:auto;padding-bottom:8px}
@@ -584,3 +584,22 @@ body.role-staff #nav-campus,body.role-staff #nav-faq,body.role-staff #nav-about{
 /* ---------- staff: Housing requests (US20) ---------- */
 .hri .rvh .who{display:flex;align-items:center;gap:6px}
 .hri .fld.inline select{padding:6px 8px}
+
+/* ---------- staff menu: "More ▾" dropdown ----------
+   Phones and a collapsed menu: the button is hidden and the list is shown inline in the hamburger menu (display:contents).
+   Wide screens: a dropdown under the button. */
+.more{display:contents}
+#more-btn{display:none}
+.morepop{display:contents}
+@media (min-width:901px){
+  body:not(.nav-collapse) .more{display:flex;position:relative;align-self:stretch}
+  body:not(.nav-collapse) #more-btn{display:flex}
+  #more-btn .caret{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;transition:transform .15s}
+  .more.open #more-btn .caret{transform:rotate(180deg)}
+  #more-btn.cur{color:#fff;font-weight:700;border-bottom-color:var(--accent);background:rgba(255,255,255,.1)}
+  body:not(.nav-collapse) .morepop{display:none;position:absolute;left:0;top:calc(100% + 3px);z-index:40;min-width:230px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);padding:6px;flex-direction:column;animation:pop .15s ease-out}
+  body:not(.nav-collapse) .more.open .morepop{display:flex}
+  body:not(.nav-collapse) .morepop button{width:100%;padding:10px 12px;margin:0;color:var(--ink);border-bottom:0;border-left:3px solid transparent;border-radius:3px;white-space:nowrap;order:0}
+  body:not(.nav-collapse) .morepop button:hover{background:var(--surface2);color:var(--ink)}
+  body:not(.nav-collapse) .morepop button[aria-current="page"]{color:var(--ink);background:var(--surface2);border-left-color:var(--accent)}
+}

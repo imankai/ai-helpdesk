@@ -10,6 +10,7 @@ const D={
  'nav.board':["Ticket board","Өтінімдер тақтасы","Доска заявок"],
  'nav.analytics':["Analytics","Аналитика","Аналитика"],
  'nav.about':["About","Жоба туралы","О проекте"],
+ 'nav.more':["More","Тағы","Ещё"],
  'menu.lang':["Interface language","Интерфейс тілі","Язык интерфейса"],
  'menu.reset':["Reset demo","Демоны қалпына келтіру","Сбросить демо"],
  'menu.logout':["Log out","Шығу","Выйти"],

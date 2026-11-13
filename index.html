@@ -88,6 +88,11 @@
       <button id="nav-campus" data-view="campus" data-i18n="nav.campus">Campus map</button>
       <button id="nav-faq" data-view="faq" data-i18n="nav.faq">FAQ</button>
       <button id="nav-about" data-view="about" data-i18n="nav.about">About</button>
+      <!-- staff only: secondary sections are moved here by ui.js (placeNav); on phones the list is shown inline in the hamburger menu -->
+      <div class="more only-staff" id="more">
+        <button type="button" id="more-btn" aria-haspopup="true" aria-expanded="false" aria-controls="more-pop"><span data-i18n="nav.more">More</span> <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="morepop" id="more-pop"></div>
+      </div>
     </nav>
     <div class="tools">
       <div class="bellwrap only-student">

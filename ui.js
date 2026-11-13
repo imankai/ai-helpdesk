@@ -30,6 +30,7 @@ function show(v){
   if(U&&v!=='denied')try{if(location.hash!=='#'+v)history.replaceState(null,'','#'+v)}catch(_){}
   VIEWS.forEach(x=>{$('v-'+x).hidden=x!==v;const b=$('nav-'+x);if(b)x===v?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
   document.querySelector('.bar').classList.remove('open');$('menu-btn').setAttribute('aria-expanded','false');
+  closeMore();$('more-btn').classList.toggle('cur',!!$('more-pop').querySelector('[aria-current]'));   /* "More" is highlighted when one of its sections is open */
   if(v==='chat')$('q').focus();
 }
 function ask(t){show('chat');userMsg(t);answer(t)}
@@ -567,6 +568,16 @@ function applyUI(){
   document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===ui)));
   buildQuick();renderAbout();fillMenu();sync();fitNav();
 }
+/* staff menu: the main sections stay in the bar, the rest goes into "More ▾"; students and visitors keep their own order */
+const MORE_IDS=['nav-kb','nav-ann','nav-att','nav-chat','nav-campus','nav-faq','nav-about'];
+const NAV_ORDER=[...$('tabs').children].map(e=>e.id);
+function placeNav(){const t=$('tabs'),pop=$('more-pop');
+  if(U&&U.role==='staff')MORE_IDS.forEach(id=>pop.appendChild($(id)));
+  else NAV_ORDER.forEach(id=>t.insertBefore($(id),$('more')))}
+function closeMore(){$('more').classList.remove('open');$('more-btn').setAttribute('aria-expanded','false')}
+$('more-btn').onclick=()=>{const o=$('more').classList.toggle('open');$('more-btn').setAttribute('aria-expanded',String(o))};
+document.addEventListener('click',e=>{if(!e.target.closest('#more'))closeMore()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMore()});
 /* collapse the top menu into the hamburger when its items do not fit (depends on language and account) */
 function fitNav(){const b=document.body,t=$('tabs');b.classList.remove('nav-collapse');
   if(U&&!matchMedia('(max-width:900px)').matches&&t.scrollWidth>t.clientWidth+1)b.classList.add('nav-collapse')}
@@ -582,7 +593,7 @@ function applyAuth(){
   if(!U){sess=null;document.body.className='auth-out';sync();return}
   document.body.className='auth-in role-'+U.role;
   $('who-av').textContent=U.ini;$('who-av').style.background=U.color;$('who-name').textContent=U.name;
-  $('mn-name').textContent=U.full;$('logout').textContent=tr('menu.logout');fillMenu();
+  $('mn-name').textContent=U.full;$('logout').textContent=tr('menu.logout');fillMenu();placeNav();
   chatEpoch++;mode=null;loadChat();
   const h=location.hash.slice(1);    /* opening a #view link: staff-only views show "Access denied" to students and visitors */
   sync();show(VIEWS.includes(h)&&h!=='denied'?h:homeView());fitNav();
