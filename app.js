@@ -15,7 +15,19 @@ const ACCOUNTS={
     courses:[{c:"INF 380 Machine Learning",p:"MAT 301 Statistics",ok:false},{c:"INF 390 Mobile Development",p:null,ok:true},{c:"MGT 301 Project Management",p:null,ok:true}]},
   staff:{role:'staff',full:'Help Desk Staff',name:'Help Desk Staff',ini:'HS',color:'#3b4a5f'}
 };
-Object.entries(ACCOUNTS).forEach(([k,a])=>{a.login=k;a.id=k;a.first=a.name.split('.')[0]});
+/* Student Portal record (US17): cumulative GPA and credits earned, and the courses of the current and the last term.
+   g: final letter grade, null = not posted yet. Fall 2026 is in progress, so its final grades are not posted. All values are fictional. */
+const GRADE_DL='2026-12-28';      /* official posting deadline for Fall 2026 final grades (academic calendar) */
+const ACAD={
+  '249900001':{gpa:3.12,cr:128,courses:[{c:'INF451',t:'Team Software Project',cr:6,g:null,term:'f26'},{c:'INF320',t:'Computer Networks',cr:5,g:null,term:'f26'},
+    {c:'INF310',t:'Database Systems',cr:5,g:'B+',term:'s26'},{c:'INF305',t:'Operating Systems',cr:5,g:'B',term:'s26'},{c:'MGT210',t:'Business Communication',cr:3,g:'A-',term:'s26'}]},
+  '249900002':{gpa:3.67,cr:134,courses:[{c:'INF451',t:'Team Software Project',cr:6,g:null,term:'f26'},{c:'MAT301',t:'Statistics',cr:5,g:null,term:'f26'},
+    {c:'INF320',t:'Computer Networks',cr:5,g:'A',term:'s26'},{c:'INF310',t:'Database Systems',cr:5,g:'A-',term:'s26'},{c:'ENG210',t:'Academic English',cr:3,g:'A',term:'s26'}]},
+  '249900003':{gpa:2.85,cr:121,courses:[{c:'INF451',t:'Team Software Project',cr:6,g:null,term:'f26'},{c:'INF330',t:'Information Systems Analysis',cr:5,g:null,term:'f26'},
+    {c:'INF320',t:'Computer Networks',cr:5,g:'B-',term:'s26'},{c:'INF310',t:'Database Systems',cr:5,g:'C+',term:'s26'},{c:'MGT210',t:'Business Communication',cr:3,g:'B',term:'s26'}]},
+  '249900004':{gpa:3.40,cr:126,courses:[{c:'INF451',t:'Team Software Project',cr:6,g:null,term:'f26'},{c:'MAT301',t:'Statistics',cr:5,g:null,term:'f26'},
+    {c:'INF310',t:'Database Systems',cr:5,g:'B+',term:'s26'},{c:'INF305',t:'Operating Systems',cr:5,g:'A-',term:'s26'},{c:'HIS101',t:'History of Kazakhstan',cr:3,g:'A',term:'s26'}]}};
+Object.entries(ACCOUNTS).forEach(([k,a])=>{a.login=k;a.id=k;a.first=a.name.split('.')[0];if(ACAD[k])a.acad=ACAD[k]});
 /* visitor without an account: general questions only, nothing personal is stored (US14) */
 const GUEST={role:'guest',login:'guest',id:null,ini:'?',color:'#5a6a80'};
 const HOLD_INFO={library:['Library','Overdue book blocks registration'],finance:['Finance','Unpaid tuition blocks registration']};
@@ -321,7 +333,7 @@ function respond(r,L,t){
     return bot({text:trL('nlu.dym',L),acts:r.list.map(e=>[kbData(e).q[L][0],()=>respond(forEntry(e),L,t)])},L)}
   logQ('fb',t);H.fb(L)}
 /* intents that use a student's own data; a visitor is asked to sign in instead */
-const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon'];
+const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon','grades'];
 const kbData=e=>e.vers.find(v=>v.n===e.vn);
 const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published');
 /* languages that still lack a question variant or an answer; publishing is blocked while any is missing */
@@ -368,6 +380,12 @@ const H={
  adv:L=>{const S=T[L],ap=myAppts();
    if(ap.length){return bot({text:fill(S.hasAppt,{s:fmt(ap[0].at,L)}),src:S.S.adv,fb:true},L)}
    bot({text:fill(S.adv,{a:U.advisor}),src:S.S.adv,acts:slots(L).map(d=>[fmt(d,L),()=>book(d,L)])},L)},
+ /* US17: grades card from the signed-in student's own record; a course code in the question ("INF451", "inf 451") shows that course only */
+ grades:L=>{const A=U.acad,code=courseCode(curQ),src=trL('gr.src',L),sum=trL('gr.sum',L,{g:A.gpa.toFixed(2),n:A.cr});
+   const dl=dmy(GRADE_DL),one=code&&A.courses.find(x=>x.c===code);
+   if(code&&!one)return bot({text:trL('gr.nf',L,{c:code,l:A.courses.map(x=>x.c).join(', ')}),html:gradeCard(A,A.courses,L),src,fb:true},L);
+   if(one)return bot({text:one.g?trL('gr.one',L,{c:one.c+' '+one.t,g:one.g,n:one.cr}):trL('gr.npc',L,{c:one.c+' '+one.t,d:dl}),html:gradeCard(A,[one],L),src,fb:true},L);
+   bot({title:trL('gr.title',L),text:sum,html:gradeCard(A,A.courses,L),after:A.courses.some(x=>!x.g)?trL('gr.dl',L,{d:dl}):'',src,fb:true},L)},
  ticket:L=>startTicket(L),
  human:L=>human(L),
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
@@ -389,6 +407,13 @@ const H={
  fb:L=>U.role!=='student'?bot({text:trL('g.nf',L,{c:SSC}),acts:[[trL('g.faq',L),()=>show('faq')],[trL('cm.title',L),()=>openMap()]],fb:true},L):
    bot({text:fill(T[L].fb,{c:SSC}),fb:true,acts:[[T[L].mkT,()=>startTicket(L)],[T[L].talk,()=>human(L)]]},L)
 };
+/* course code in a question: 2–4 Latin letters and 3 digits, "INF451", "INF 451", "inf-451" (room ids such as F305 have one letter) */
+function courseCode(t){const m=/(^|[^A-Za-z])([A-Za-z]{2,4})\s?-?(\d{3})(?!\d)/.exec(t||'');return m?(m[2]+m[3]).toUpperCase():null}
+/* table card: course, grade, credits, then GPA and credits earned */
+function gradeCard(A,list,L){
+  return '<div class="tw"><table class="bt"><thead><tr><th>'+esc(trL('gr.course',L))+'</th><th>'+esc(trL('gr.grade',L))+'</th><th>'+esc(trL('gr.cr',L))+'</th></tr></thead><tbody>'+
+    list.map(x=>'<tr><td><b>'+esc(x.c)+'</b> '+esc(x.t)+'<small>'+esc(trL('gr.t.'+x.term,L))+'</small></td><td>'+(x.g?'<b>'+esc(x.g)+'</b>':'<span class="no">'+esc(trL('gr.np',L))+'</span>')+'</td><td>'+x.cr+'</td></tr>').join('')+
+    '</tbody></table></div><div class="kv"><span>GPA <b>'+A.gpa.toFixed(2)+'</b></span><span>'+esc(trL('gr.total',L))+' <b>'+A.cr+'</b></span></div>'}
 function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
   if(r.b)rows.push(trL('cm.building',L)+': '+r.b);
   if(r.f)rows.push(trL('cm.floor',L)+': '+r.f);

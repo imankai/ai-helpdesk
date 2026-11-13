@@ -443,7 +443,7 @@ $('den-back').onclick=()=>show(homeView());
 /* ---------- About: overview + sprint board ---------- */
 /* Edit these arrays to match the real backlog (docs/SPRINTS.md). st: Done = its QA scenarios work on the demo data, Partial = some do (what is missing: sn.<id> in i18n.js), Planned = not started.
    day = working day of Sprint 2 when the story was finished (for the burndown). */
-const SPRINTS=[{n:1,d:'25.09.2026'},{n:2,d:'09.10.2026',days:10},{n:3,d:'23.10.2026'},{n:4,d:'06.11.2026'}];
+const SPRINTS=[{n:1,d:'25.09.2026'},{n:2,d:'09.10.2026',days:10},{n:3,d:'23.10.2026'},{n:4,d:'06.11.2026'},{n:5,d:'20.11.2026'}];
 const STORIES=[
   {id:'US1',t:'FAQ Instant Answers',s:1,p:3,st:'Done'},
   {id:'US2',t:'IT Issue Self-Help',s:1,p:4,st:'Partial'},
@@ -460,7 +460,8 @@ const STORIES=[
   {id:'US13',t:'Campus Navigation & Room Finder',s:4,p:4,st:'Done'},
   {id:'US14',t:'Answer Feedback & Rating',s:4,p:3,st:'Done'},
   {id:'US15',t:'Help Desk Analytics Dashboard',s:4,o:'Kenan',p:7,st:'Done'},
-  {id:'US16',t:'Knowledge Base Content Management',s:4,o:'Zhanibek',p:6,st:'Done'}];
+  {id:'US16',t:'Knowledge Base Content Management',s:4,o:'Zhanibek',p:6,st:'Done'},
+  {id:'US17',t:'Grades & Transcript Lookup',s:5,p:5,st:'Done'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];
 let aboutTab='overview';
 const inSprint=n=>STORIES.filter(s=>s.s===n);

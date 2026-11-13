@@ -41,8 +41,14 @@ const TOPICS={
  pay:{intent:'bill',kb:'pay',syn:['pay','payment','pay tuition','tuition','tuition fee','fee','fees','balance','bill','billing','how much','owe','debt',
    'оплата','оплат','платить','заплатить','сколько платить','сколько стоит','=долг','=долги','задолженност','баланс','=счет','деньги','стоимость обучения',
    'төлем','төлеу','ақы','оқу ақысы','қарыз','қанша төлеу']},
- cert:{kb:'registrar',syn:['certificate','enrollment certificate','reference letter','transcript','registrar',
-   'справка','справк','справка с места учебы','выписка','транскрипт','регистратор','анықтама','оқу орнынан анықтама']},
+ /* "transcript" alone is the grades topic (US17); getting or ordering a transcript document stays with the Registrar */
+ cert:{kb:'registrar',syn:['certificate','enrollment certificate','reference letter','registrar','get transcript','official transcript','copy of transcript','request transcript','order transcript',
+   'справка','справк','справка с места учебы','выписка','регистратор','получить транскрипт','заказать транскрипт','копия транскрипта','нужен транскрипт',
+   'анықтама','оқу орнынан анықтама','транскрипт алу','транскрипт керек']},
+ grades:{intent:'grades',syn:['grade','grades','my grades','final grade','gpa','credits','credit','credits earned','transcript','my transcript','marks','academic progress',
+   'otsenki','ocenki','bagalarym','bagalar','kredit','transkript',
+   'оценк','мои оценки','итоговая оценка','средний балл','гпа','джипиэй','кредит','сколько кредитов','транскрипт','мой транскрипт','успеваемост',
+   '=баға','=бағам','бағалар','менің бағаларым','қорытынды баға','баға қойыл','орташа балл','кредит саны']},
  reg:{intent:'reg',kb:'reg',syn:['registration','register','registering','enroll','enrol','enrollment','course registration','sign up for courses','sign up for classes',
    'prerequisite','prereq','hold','registraciya',
    'регистрация','регистрац','зарегистр','рега','регаться','записаться на курсы','запись на курсы','записаться на предметы','выбор курсов','выбрать курсы',
@@ -127,7 +133,7 @@ function nluTopic(a){let best=null,bw=0;for(const t of Object.keys(TOPICS)){cons
 /* ---------- language of the question ---------- */
 /* Kazakh written without its special letters ("мен грантпын ба"): common words, stems and the endings -пын / -мын / -бын, weighed against common Russian words */
 const KK_WORDS=new Set('мен сен ба бе ма ме па пе керек калай кайда кашан канша жок рахмет салем сабак туралы жане кандай маган менин сиз сизге'.split(' '));
-const KK_STEMS=['тиркел','купиясоз','кенесши','отиним','кесте','анык','толем','грантпын'];
+const KK_STEMS=['тиркел','купиясоз','кенесши','отиним','кесте','анык','толем','грантпын','багалар'];
 const RU_WORDS=new Set('я мне меня как где что когда хочу это на не почему какой какая можно нужно надо у в и'.split(' '));
 function isKazakh(t){
   if(/[әғқңөұүһі]/i.test(t))return true;

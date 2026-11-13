@@ -23,6 +23,7 @@ Developed by a student team as part of INF451.
 - Advisor appointment booking with reminders
 - Notification bell (staff reply, status change, appointment reminder, tuition reminder 7 days before the deadline); reminders can be turned off in the user menu or by asking in the chat
 - Ticket status in the chat ("where is my ticket"): number, office and status of the student's own latest tickets
+- Grades and transcript in the chat ("What is my GPA?", "мои оценки", "менің бағаларым", "оценка по INF451"): a card with course, grade and credits, the GPA and the total credits earned, for all courses or for one; a final grade that is not posted yet comes with the official posting deadline (28.12.2026)
 - Office directory: room on the campus map, hours, phone and email for every office, with "Closed now, opens at…" outside working hours
 - Dashboard with deadlines, recent tickets and quick actions; announcement banners
 - First-login guided tour (can be replayed from the user menu)
@@ -64,10 +65,11 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 | 4 – Campus, feedback and knowledge base | US14 Answer Feedback & Rating | Done | |
 | 4 – Campus, feedback and knowledge base | US15 Help Desk Analytics Dashboard | Done | |
 | 4 – Campus, feedback and knowledge base | US16 Knowledge Base Content Management | Done | |
+| 5 – More student self-service | US17 Grades & Transcript Lookup | Done | |
 
 ## Sprint backlog
 
-The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The table above covers sprints 1–4 (US1–US16); the prototype does not include sprints 5–7.
+The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The table above covers sprints 1–4 (US1–US16) and the Sprint 5 stories built so far; the other Sprint 5 stories and sprints 6–7 are not in the prototype.
 
 ## Demo accounts
 
@@ -75,10 +77,10 @@ Password for every account: `demo123`
 
 | Login | Role | Notes |
 |---|---|---|
-| `249900001` | Student | Tuition with an unpaid balance, library hold on registration |
-| `249900002` | Student | Studies on a state grant, no balance, no holds |
-| `249900003` | Student | Tuition paid in full, no holds |
-| `249900004` | Student | Tuition with an unpaid balance, no holds |
+| `249900001` | Student | Tuition with an unpaid balance, library hold on registration; GPA 3.12, 128 credits |
+| `249900002` | Student | Studies on a state grant, no balance, no holds; GPA 3.67, 134 credits |
+| `249900003` | Student | Tuition paid in full, no holds; GPA 2.85, 121 credits |
+| `249900004` | Student | Tuition with an unpaid balance, no holds; GPA 3.40, 126 credits |
 | `staff` | Staff | Ticket board, review queue, analytics, knowledge base, announcements |
 
 The login screen also lists these accounts; click one to fill in the login. **Continue as visitor** opens the chat without an account.
@@ -97,7 +99,7 @@ Notes:
 
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 61 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 82 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
 
 ## Project structure
 

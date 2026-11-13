@@ -170,6 +170,7 @@ const D={
  'sb.s2':["Sprint 2 — Personal answers with each student's own data","Sprint 2 — Әр студенттің өз деректері бойынша жеке жауаптар","Спринт 2 — Персональные ответы по данным каждого студента"],
  'sb.s3':["Sprint 3 — Schedules, contacts and documents","Sprint 3 — Кестелер, байланыстар және құжаттар","Спринт 3 — Расписания, контакты и документы"],
  'sb.s4':["Sprint 4 — Campus, feedback and knowledge base","Sprint 4 — Кампус, пікірлер және білім қоры","Спринт 4 — Кампус, отзывы и база знаний"],
+ 'sb.s5':["Sprint 5 — More student self-service","Sprint 5 — Студенттерге көбірек өзіне-өзі қызмет","Спринт 5 — Больше самообслуживания для студентов"],
  'sb.meta2':["{p} points · deadline {d}","{p} ұпай · мерзімі {d}","{p} баллов · дедлайн {d}"],
  'sb.rule':["Status is checked against the QA scenarios in the backlog, on demo data. Done: the scenarios work. Partial: some of them work. Planned: not started.","Мәртебе бэклогтағы QA сценарийлері бойынша демо-деректермен тексеріледі. Дайын: сценарийлер жұмыс істейді. Ішінара: олардың бір бөлігі жұмыс істейді. Жоспарда: басталмаған.","Статус проверен по QA-сценариям из бэклога на демо-данных. Готово: сценарии работают. Частично: работает их часть. В планах: не начато."],
  'stt.Planned':["Planned","Жоспарда","В планах"],
@@ -315,7 +316,7 @@ const D={
  'guest.sub':["Anonymous visitor · general questions only","Анонимді қонақ · тек жалпы сұрақтар","Анонимный гость · только общие вопросы"],
  'guest.exit':["Sign in","Кіру","Войти"],
  'g.greet':["Hello! You are using Help Desk as a visitor. Ask about the FAQ, university offices or the campus map, for example “Where is room F305?”. Tickets, balance and appointments need a student sign-in.","Сәлем! Сіз Help Desk-ті қонақ ретінде қолданып отырсыз. FAQ, университет бөлімдері немесе кампус картасы туралы сұраңыз, мысалы «F305 қайда?». Өтінім, баланс және кездесулер үшін студент ретінде кіру керек.","Здравствуйте! Вы пользуетесь Help Desk как гость. Спрашивайте про FAQ, отделы университета или карту кампуса, например «Где кабинет F305?». Для заявок, баланса и записей нужно войти как студент."],
- 'g.only':["This needs your student account: tickets, balance, registration and appointments are personal. Please sign in to use them.","Бұл үшін студенттік аккаунт керек: өтінім, баланс, тіркелу және кездесулер жеке деректерге байланысты. Оларды қолдану үшін кіріңіз.","Для этого нужен студенческий аккаунт: заявки, баланс, регистрация и записи — личные функции. Войдите, чтобы ими пользоваться."],
+ 'g.only':["This needs your student account: tickets, balance, grades, attendance, registration and appointments are personal. Please sign in to use them.","Бұл үшін студенттік аккаунт керек: өтінім, баланс, бағалар, сабаққа қатысу, тіркелу және кездесулер жеке деректерге байланысты. Оларды қолдану үшін кіріңіз.","Для этого нужен студенческий аккаунт: заявки, баланс, оценки, посещаемость, регистрация и записи — личные функции. Войдите, чтобы ими пользоваться."],
  'g.nf':["I'm not sure about that, so I won't guess. Try the FAQ or the campus map, or contact the Student Service Center: {c}.","Бұл сұраққа нақты жауабым жоқ, сондықтан болжам жасамаймын. FAQ не кампус картасын қараңыз немесе Студенттерге қызмет көрсету орталығына хабарласыңыз: {c}.","Точного ответа у меня нет, и я не буду гадать. Посмотрите FAQ или карту кампуса либо обратитесь в Центр обслуживания студентов: {c}."],
  'g.faq':["Open FAQ","FAQ ашу","Открыть FAQ"],
 
@@ -426,7 +427,23 @@ const D={
  'kb.a.rollback':["Rolled back from v{f} to v{t}","v{f} нұсқасынан v{t} нұсқасына қайтарылды","Откат с v{f} на v{t}"],
  'kb.a.archive':["Archived","Архивке жіберілді","Отправлена в архив"],
  'kb.a.restore':["Restored","Қалпына келтірілді","Возвращена из архива"],
- 'kb.show':["Show this version","Осы нұсқаны көрсету","Показать эту версию"]
+ 'kb.show':["Show this version","Осы нұсқаны көрсету","Показать эту версию"],
+
+ 'i.grades':["Grades and GPA","Бағалар және GPA","Оценки и GPA"],
+ 'gr.title':["Your grades · Student Portal record","Бағаларыңыз · Student Portal деректері","Ваши оценки · данные Student Portal"],
+ 'gr.sum':["GPA {g} · {n} credits earned","GPA {g} · жинаған кредит: {n}","GPA {g} · всего кредитов: {n}"],
+ 'gr.course':["Course","Пән","Курс"],
+ 'gr.grade':["Grade","Баға","Оценка"],
+ 'gr.cr':["Credits","Кредит","Кредиты"],
+ 'gr.total':["Credits earned","Жинаған кредит","Всего кредитов"],
+ 'gr.np':["not posted yet","әлі қойылмаған","ещё не выставлена"],
+ 'gr.t.f26':["Fall 2026 · in progress","2026 күз · оқылып жатыр","Осень 2026 · идёт"],
+ 'gr.t.s26':["Spring 2026","2026 көктем","Весна 2026"],
+ 'gr.one':["Your final grade in {c}: {g}, credits: {n}.","{c} пәні бойынша қорытынды бағаңыз: {g}, кредит: {n}.","Ваша итоговая оценка по {c}: {g}, кредиты: {n}."],
+ 'gr.npc':["The final grade for {c} is not posted yet. Official grade posting deadline: {d}.","{c} пәні бойынша қорытынды баға әлі қойылмаған. Бағаларды қоюдың ресми мерзімі: {d}.","Итоговая оценка по {c} ещё не выставлена. Официальный срок выставления оценок: {d}."],
+ 'gr.nf':["{c} is not in your record. Your courses: {l}.","{c} пәні сіздің деректеріңізде жоқ. Сіздің пәндеріңіз: {l}.","{c} нет в ваших данных. Ваши курсы: {l}."],
+ 'gr.dl':["Fall 2026 final grades are posted by {d} (academic calendar).","2026 күзгі семестрдің қорытынды бағалары {d} дейін қойылады (академиялық күнтізбе).","Итоговые оценки за осень 2026 выставляются до {d} (академический календарь)."],
+ 'gr.src':["Student Portal · Grades","Student Portal · Бағалар","Student Portal · Оценки"]
 };
 let ui='en';
 try{const s=localStorage.getItem('hd-ui');if(LANGS.includes(s))ui=s}catch(e){}

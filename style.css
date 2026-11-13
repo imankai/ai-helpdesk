@@ -182,6 +182,16 @@ main{min-height:0;display:flex;flex-direction:column}
 .bub li{margin:2px 0}
 .bub .no{color:var(--alert)}
 .bub .yes{color:var(--ok)}
+/* compact table cards in the chat (grades, attendance) */
+.bub .tw{margin-top:8px}
+.bub table.bt{font-size:14px;border-radius:6px}
+.bub table.bt th,.bub table.bt td{padding:6px 9px}
+.bub table.bt th{font-size:11px}
+.bub table.bt td small{display:block;color:var(--muted);font-size:12px}
+.bub table.bt td:not(:first-child){white-space:nowrap}
+.bub .kv{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:8px;font-size:14.5px}
+.bub .kv b{font-size:16px}
+@media (max-width:560px){.row{max-width:96%}.bub table.bt th,.bub table.bt td{padding:5px 6px}}
 .src{display:block;margin-top:8px;font-size:12.5px;color:var(--muted)}
 .src::before{content:"Source · "}
 .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}

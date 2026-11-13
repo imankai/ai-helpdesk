@@ -98,7 +98,29 @@ const CASES=[
  ['сколько платить','bill','visitor'],
  ['мен грантпын ба','bill','visitor'],
  ['хочу к эдвайзеру','guest','visitor'],
- ['летняя школа будет?','summer']          /* entry added below, as staff would add it in Knowledge base */
+ ['летняя школа будет?','summer'],         /* entry added below, as staff would add it in Knowledge base */
+ /* US17 grades: EN / RU / KK, Kazakh without its letters, Latin transliteration */
+ ['What is my GPA?','grades'],
+ ['What is my GPA and how many credits do I have?','grades'],
+ ['What is my grade in INF451?','grades'],
+ ['show my transcript','grades'],
+ ['my grades pls','grades'],
+ ['мои оценки','grades'],
+ ['какой у меня GPA','grades'],
+ ['сколько кредитов','grades'],
+ ['оценка по INF451','grades'],
+ ['транскрипт','grades'],
+ ['какой у меня средний балл','grades'],
+ ['ocenki po inf451','grades'],
+ ['менің бағаларым','grades'],
+ ['GPA қанша','grades'],
+ ['INF451 бойынша қорытынды баға','grades'],
+ ['менин багаларым','grades'],
+ ['GPA канша','grades'],
+ ['bagalarym kandai','grades'],
+ ['нужен транскрипт для визы','registrar'],
+ ['what is my GPA','guest','visitor'],
+ ['мои оценки','guest','visitor']
 ];
 const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
 /* interface functions from ui.js that replies may reference */
@@ -127,7 +149,7 @@ const OLD={human:['human','staff','person','operator','agent','live','опера
  greet:['hi','hello','hey','привет','здравствуйте','сәлем','салем']};
 /* a strong topic must beat a weak word */
 const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
-const LANGT=[['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
+const LANGT=[['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
 /* checks of the QA scenarios in docs/SPRINTS.md */
 const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
 const has=(s,x)=>s.includes(x);
@@ -158,6 +180,16 @@ const QA=[
  check('Test assistant: staff questions stay out of Analytics',()=>{const n=st.events.length;U=ACCOUNTS.staff;respond(route('I forgot my password'),'en','I forgot my password');return st.events.length===n}),
  check('Test assistant: personal answers explain the student account',()=>{U=ACCOUNTS.staff;said=[];const r=route('хочу к эдвайзеру');respond(r,'ru','');return has(said.join(),'аккаунта сотрудника')||said.join()}),
  check('Test assistant: a rating is stored with role staff',()=>{U=ACCOUNTS.staff;const f={_q:'q',_a:'a'};fbEvent(f,false);const e=st.events[st.events.length-1];return e.role==='staff'&&e.k==='fb'&&e.v===false}),
+ check('US17 S1 "What is my GPA and how many credits do I have?" → GPA 3.67 and 134 credits of 249900002',()=>{const a=run('What is my GPA and how many credits do I have?').said;return has(a,'GPA 3.67')&&has(a,'134')||a}),
+ check('US17 S1 another student (249900003) gets their own GPA 2.85 and 121 credits',()=>{U=ACCOUNTS['249900003'];said=[];curQ='какой у меня GPA';respond(route(curQ),'ru',curQ);const a=said.join();return has(a,'2.85')&&has(a,'121')&&!has(a,'3.67')||a}),
+ check('US17 S1 the card lists course, grade and credits',()=>{const a=run('мои оценки').said;return has(a,'INF320 Computer Networks')&&has(a,'A-')&&has(a,'Кредиты')&&has(a,'ещё не выставлена')||a}),
+ check('US17 S2 "What is my grade in INF451?" → not posted yet + deadline 28.12.2026',()=>{const a=run('What is my grade in INF451?').said;return has(a,'not posted yet')&&has(a,'28.12.2026')&&has(a,'INF451')&&!has(a,'MAT301')||a}),
+ check('US17 S2 Kazakh: "INF451 бойынша қорытынды баға" → әлі қойылмаған + 28.12.2026',()=>{const a=run('INF451 бойынша қорытынды баға').said;return has(a,'әлі қойылмаған')&&has(a,'28.12.2026')||a}),
+ check('US17 a posted grade for one course',()=>{const a=run('grade in INF320').said;return has(a,'INF320 Computer Networks: A,')||a}),
+ check('US17 a course not in the record',()=>{const a=run('оценка по CS999').said;return has(a,'CS999 нет')||a}),
+ check('US17 visitor is asked to sign in, no grades shown',()=>{const a=run('what is my GPA','visitor').said;return has(a,'sign in')&&!has(a,'GPA 3')||a}),
+ check('US17 staff in Test assistant: no student grades',()=>{U=ACCOUNTS.staff;said=[];respond(route('what is my GPA'),'en','what is my GPA');const a=said.join();return has(a,'student account')&&!has(a,'GPA 3')||a}),
+ check('US17 every student has different GPA and credits; INF451 not posted for all',()=>{const v=Object.values(ACAD);return new Set(v.map(a=>a.gpa)).size===v.length&&new Set(v.map(a=>a.cr)).size===v.length&&v.every(a=>a.courses.some(c=>c.c==='INF451'&&c.g===null))}),
 ];
 window.clock=()=>new Date();
 function table(rows){return '<table><thead><tr><th>#</th><th>Question</th><th>Expected</th><th>Bot routed to</th><th>Bot answered</th><th>Result</th></tr></thead><tbody>'+
