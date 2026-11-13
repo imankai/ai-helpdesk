@@ -4,12 +4,12 @@ const chip=s=>'<span class="chip'+({Open:' warn','In progress':' prog',Resolved:
 const dt=ts=>new Date(ts).toLocaleString(T[ui].loc,{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 const noteText=n=>n.type==='reply'?tr('n.reply',{n:n.n}):n.type==='status'?tr('n.status',{n:n.n,s:tr('st.'+n.s)}):
   n.type==='pay'?tr('n.pay',{m:money(n.amt),d:dmy(n.due)}):
-  n.type==='att'?tr(n.left?'n.att':'n.att0',{c:n.c+' '+n.t,a:n.abs,l:n.lim,n:n.left}):n.type==='attover'?tr('n.attover',{c:n.c+' '+n.t,a:n.abs,l:n.lim}):n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
+  n.type==='att'?tr(n.left?'n.att':'n.att0',{c:n.c+' '+n.t,a:n.abs,l:n.lim,n:n.left}):n.type==='attover'?tr('n.attover',{c:n.c+' '+n.t,a:n.abs,l:n.lim}):n.type==='hreq'?tr('n.hreq',{n:'H-'+n.n,s:tr('h.st.'+n.s)}):n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
 
 /* ---------- views ---------- */
-const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','kb','ann','att','about','denied'];
+const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','kb','ann','att','housing','about','denied'];
 /* each view is linked to #name in the address; staff-only views show "Access denied" to anyone else and render no data for them */
-const STAFF_VIEWS=['staff','review','analytics','kb','ann','att'];
+const STAFF_VIEWS=['staff','review','analytics','kb','ann','att','housing'];
 const ROLE_VIEWS={student:['home','chat','tickets','appts','campus','faq','about'],guest:['chat','campus','faq','about'],staff:STAFF_VIEWS.concat('chat','campus','faq','about')};
 const isStaff=()=>U&&U.role==='staff';
 const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
@@ -50,7 +50,7 @@ function sync(){
     ap.map(a=>'<tr id="ap-'+a.at+'"><td>'+fmt(a.at,ui)+'</td><td>'+esc(a.with)+'</td><td>'+tr(remOn()?'ap.before':'rem.offs')+'</td><td><button class="link" data-cancel="'+st.appts.indexOf(a)+'">'+tr('ap.cancel')+'</button></td></tr>').join('')+'</tbody></table></div>'
     :'<div class="empty">'+tr('ap.none')+'</div>';
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{st.appts.splice(+b.dataset.cancel,1);save();sync()});
-  renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderAtt();renderBanners();renderCampus();
+  renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderAtt();renderHousing();renderBanners();renderCampus();
 }
 
 /* ---------- campus map page: schematic SVG, colours by room type, selection highlights building / barrel and floor ---------- */
@@ -365,6 +365,21 @@ $('att').onchange=e=>{if(e.target.id==='att-s'){attSel.uid=e.target.value;attSel
 $('att').onsubmit=e=>{e.preventDefault();const a=ACCOUNTS[attSel.uid],sent=markAbsence(attSel.uid,attSel.c),x=attList(attSel.uid).find(y=>y.c===attSel.c);
   attMsg=tr('att.marked',{s:a.name,c:x.c,a:x.abs,l:x.lim})+' '+tr(sent?'att.sent':'att.nosent');sync()};
 
+/* ---------- staff: Housing requests (US20); a status change notifies the student ---------- */
+const H_STATUS=['submitted','progress','done'];
+function renderHousing(){
+  if(!isStaff()){$('hr-list').innerHTML='';return}
+  const list=st.housing.slice().sort((a,b)=>(a.status==='done')-(b.status==='done')||b.at-a.at);
+  $('c-h').textContent=list.filter(h=>h.status!=='done').length;
+  $('hr-list').innerHTML=list.length?list.map(h=>'<article class="rvi hri'+(h.status==='done'?' done':'')+'"><div class="rvh"><span class="mono">H-'+h.n+'</span>'+
+    '<span class="chip'+(h.status==='done'?' done':h.status==='progress'?' prog':' warn')+'">'+tr('h.st.'+h.status)+'</span><span class="who">'+avatar(h.who)+' '+esc(h.who)+' · ID '+esc(h.uid)+'</span><small>'+dt(h.at)+'</small></div>'+
+    '<dl><dt>'+tr('h.dormL')+'</dt><dd>'+esc(tr('h.dorm',{n:h.dorm}))+'</dd><dt>'+tr('h.roomL')+'</dt><dd>'+esc(h.room)+'</dd><dt>'+tr('h.typeL')+'</dt><dd>'+tr('h.t.'+h.type)+'</dd>'+
+    '<dt>'+tr('h.descL')+'</dt><dd>'+esc(h.desc)+'</dd><dt>'+tr('hr.upd')+'</dt><dd>'+dt(h.upd)+'</dd></dl>'+
+    '<label class="fld inline">'+tr('th.status')+'<select data-hr="'+h.n+'">'+H_STATUS.map(s=>'<option value="'+s+'"'+(s===h.status?' selected':'')+'>'+tr('h.st.'+s)+'</option>').join('')+'</select></label></article>').join('')
+    :'<div class="empty">'+tr('hr.none')+'</div>'}
+$('hr-list').onchange=e=>{const n=e.target.dataset&&e.target.dataset.hr;if(!n)return;
+  if(setHStatus(+n,e.target.value))sync()};
+
 /* ---------- staff: announcements; students see active ones as a banner above Home and Chat ---------- */
 function renderAnn(){
   if(!isStaff()){$('ann-list').innerHTML='';return}
@@ -451,6 +466,7 @@ $('bell-list').onclick=e=>{const b=e.target.closest('.note');if(!b)return;
   const type=b.dataset.nt,ref=b.dataset.ref;closeBell();
   if(type==='pay')return ask(tr('q.pay'));
   if(type==='att'||type==='attover')return ask(tr('q.att'));
+  if(type==='hreq')return ask(tr('q.hstatus'));
   const target=type==='reply'||type==='status'?(show('tickets'),$('tk-'+ref)):(show('appts'),$('ap-'+ref));
   if(target){target.scrollIntoView({block:'center'});target.classList.remove('flash');void target.offsetWidth;target.classList.add('flash')}};
 $('user-btn').onclick=()=>{closeBell();const o=$('user-menu').hidden;$('user-menu').hidden=!o;$('user-btn').setAttribute('aria-expanded',String(o))};
@@ -487,7 +503,8 @@ const STORIES=[
   {id:'US16',t:'Knowledge Base Content Management',s:4,o:'Zhanibek',p:6,st:'Done'},
   {id:'US17',t:'Grades & Transcript Lookup',s:5,p:5,st:'Done'},
   {id:'US18',t:'Attendance Tracking & Absence Warnings',s:5,p:4,st:'Done'},
-  {id:'US19',t:'Library Services',s:5,p:5,st:'Done'}];
+  {id:'US19',t:'Library Services',s:5,p:5,st:'Done'},
+  {id:'US20',t:'Dormitory & Housing Requests',s:5,p:6,st:'Done'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];
 let aboutTab='overview';
 const inSprint=n=>STORIES.filter(s=>s.s===n);

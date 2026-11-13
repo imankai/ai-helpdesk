@@ -166,7 +166,34 @@ const CASES=[
  ['how do I look up my grades','grades'],
  ["Is 'Clean Code' available?",'lib','visitor'],
  ['мои книги','guest','visitor'],
- ['my books','loans','staff']
+ ['my books','loans','staff'],
+ /* US20 dormitory requests */
+ ['The light in my room does not work','housing'],
+ ['the tap in my dorm room is leaking','housing'],
+ ['I want to change my room in the dormitory','housing'],
+ ['dormitory repair request','housing'],
+ ['the heating in my dorm room is broken','housing'],
+ ['What is the status of my repair request?','hstatus'],
+ ['repair request status','hstatus'],
+ ['в общаге не работает свет','housing'],
+ ['в комнате течет кран','housing'],
+ ['хочу поменять комнату в общежитии','housing'],
+ ['подать заявку на ремонт в общаге','housing'],
+ ['кран сломался в комнате 214','housing'],
+ ['статус моей заявки по ремонту','hstatus'],
+ ['что с ремонтом','hstatus'],
+ ['v obshage ne rabotaet svet','housing'],
+ ['жатақханада кран сынды','housing'],
+ ['бөлмемде жарық жоқ','housing'],
+ ['жөндеу өтінімінің мәртебесі','hstatus'],
+ ['zhatakhanada kran syndy','housing'],
+ ['wifi в общаге','wifi'],
+ ['вайфай не работает в общаге','wifi'],
+ ['wifi not working in the dorm','wifi'],
+ ['Where is the dormitory?','campus'],
+ ['статус моей заявки','tkstatus'],
+ ['The light in my room does not work','housing','visitor'],
+ ['What is the status of my repair request?','guest','visitor']
 ];
 const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
 /* interface functions from ui.js that replies may reference */
@@ -195,7 +222,7 @@ const OLD={human:['human','staff','person','operator','agent','live','опера
  greet:['hi','hello','hey','привет','здравствуйте','сәлем','салем']};
 /* a strong topic must beat a weak word */
 const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
-const LANGT=[['kitap bar ma','kk'],['кітап бар ма','kk'],['есть ли книга Clean Code','ru'],['my books','en'],['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
+const LANGT=[['жатақханада кран сынды','kk'],['в общаге не работает свет','ru'],['zhatakhanada kran syndy kerek','kk'],['kitap bar ma','kk'],['кітап бар ма','kk'],['есть ли книга Clean Code','ru'],['my books','en'],['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
 /* checks of the QA scenarios in docs/SPRINTS.md */
 const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
 const has=(s,x)=>s.includes(x);
@@ -265,6 +292,24 @@ const QA=[
  check('US19 visitor can search the catalog but "my books" asks to sign in',()=>{const a=run('Is Clean Code available?','visitor').said,b=run('my books','visitor').said;return has(a,'2 of 4')&&has(b,'sign in')&&!has(b,'return by')||a+' / '+b}),
  check('US19 staff in Test assistant: catalog and own loans',()=>{at(2026,11,13,10);const a=run('my books','staff').said,b=run('Is Clean Code available?','staff').said;return has(a,'Software Engineering — return by 27.11.2026')&&!has(a,'Clean Code')&&has(b,'2 of 4')||a+' / '+b}),
  check('US19 catalog has 12–15 books incl. Clean Code; available never above total',()=>CATALOG.length>=12&&CATALOG.length<=15&&CATALOG.some(b=>b.t==='Clean Code')&&CATALOG.every(b=>b.av<=b.n&&(b.av||b.next))),
+ check('US20 S1 "The light in my room does not work" (249900001) → repair, Dormitory 1, room 312, then a request number',()=>{st.housing=seedHousing();st.notes=[];
+   const a=run('The light in my room does not work','249900001').said;if(!(has(a,'Type: Repair')&&has(a,'Dormitory: Dormitory 1')&&has(a,'Room: 312')&&lastO.acts[0][0]==='Confirm'))return a;
+   said=[];lastO.acts[0][1]();const b=said.join(),h=st.housing[st.housing.length-1];return has(b,'Request H-103 created: Repair · Dormitory 1, room 312')&&h.uid==='249900001'&&h.status==='submitted'||b}),
+ check('US20 Russian: "в общаге не работает свет" → Ремонт, Общежитие №1, комната 312',()=>{const a=run('в общаге не работает свет','249900001').said;return has(a,'Тип: Ремонт')&&has(a,'Общежитие №1')&&has(a,'Комната: 312')||a}),
+ check('US20 Kazakh: "жатақханада кран сынды" → Жөндеу, 1-жатақхана',()=>{const a=run('жатақханада кран сынды','249900001').said;return has(a,'Түрі: Жөндеу')&&has(a,'1-жатақхана')||a}),
+ check('US20 the type is suggested and can be changed (room change)',()=>{const a=run('I want to change my room','249900001').said;return has(a,'Type: Room change')&&lastO.acts.some(x=>x[0]==='Change type: Repair')||a}),
+ check('US20 S2 staff sets "in progress" → status and last update; the student is notified',()=>{st.housing=seedHousing();st.notes=[];run('The light in my room does not work','249900001');lastO.acts[0][1]();
+   const ok=setHStatus(103,'progress'),nt=st.notes.find(x=>x.uid==='249900001'&&x.type==='hreq'&&x.s==='progress'),a=run('What is the status of my repair request?','249900001').said;
+   return ok&&!!nt&&has(a,'Request H-103 (Repair): In progress. Last update: ')&&has(a,new Date().getFullYear()+'')||a}),
+ check('US20 S2 Russian: "статус моей заявки по ремонту" → В работе',()=>{const a=run('статус моей заявки по ремонту','249900001').said;return has(a,'Заявка H-103 (Ремонт): В работе')&&has(a,'Последнее обновление')||a}),
+ check('US20 statuses go submitted → in progress → done',()=>setHStatus(103,'done')&&st.housing.find(h=>h.n===103).status==='done'&&!setHStatus(103,'done')),
+ check('US20 a student without a dormitory (249900002) is refused with the Housing Office contacts',()=>{const k=st.housing.length,a=run('The light in my room does not work').said;
+   return has(a,'do not live in a university dormitory')&&has(a,'G206')&&has(a,'000-00-05')&&has(a,'housing@')&&!lastO.acts.some(x=>x[0]==='Confirm')&&st.housing.length===k||a}),
+ check('US20 each student sees only own requests (249900003 → H-101, 249900004 → H-102)',()=>{const a=run('repair request status','249900003').said,b=run('repair request status','249900004').said;
+   return has(a,'H-101')&&!has(a,'H-103')&&has(b,'H-102')&&!has(b,'H-101')||a+' / '+b}),
+ check('US20 visitor: the Housing Office entry, no personal request; status asks to sign in',()=>{const a=run('The light in my room does not work','visitor').said,b=run('What is the status of my repair request?','visitor').said;
+   return has(a,'Housing Office')&&!has(a,'Confirm')&&has(b,'sign in')||a+' / '+b}),
+ check('US20 three students live in a dormitory, one does not',()=>Object.values(ACCOUNTS).filter(a=>a.role==='student'&&a.dorm).length===3&&Object.values(ACCOUNTS).filter(a=>a.role==='student'&&!a.dorm).length===1),
  check('US17 every student has different GPA and credits; INF451 not posted for all',()=>{const v=Object.values(ACAD);return new Set(v.map(a=>a.gpa)).size===v.length&&new Set(v.map(a=>a.cr)).size===v.length&&v.every(a=>a.courses.some(c=>c.c==='INF451'&&c.g===null))}),
 ];
 window.clock=()=>new Date();

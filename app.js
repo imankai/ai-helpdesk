@@ -27,7 +27,9 @@ const ACAD={
     {c:'INF320',t:'Computer Networks',cr:5,g:'B-',term:'s26'},{c:'INF310',t:'Database Systems',cr:5,g:'C+',term:'s26'},{c:'MGT210',t:'Business Communication',cr:3,g:'B',term:'s26'}]},
   '249900004':{gpa:3.40,cr:126,courses:[{c:'INF451',t:'Team Software Project',cr:6,g:null,term:'f26'},{c:'MAT301',t:'Statistics',cr:5,g:null,term:'f26'},
     {c:'INF310',t:'Database Systems',cr:5,g:'B+',term:'s26'},{c:'INF305',t:'Operating Systems',cr:5,g:'A-',term:'s26'},{c:'HIS101',t:'History of Kazakhstan',cr:3,g:'A',term:'s26'}]}};
-Object.entries(ACCOUNTS).forEach(([k,a])=>{a.login=k;a.id=k;a.first=a.name.split('.')[0];if(ACAD[k])a.acad=ACAD[k]});
+/* on-campus housing (US20): dormitory number and room; 249900002 does not live in a dormitory. Fictional. */
+const DORMS={'249900001':{d:1,r:'312'},'249900003':{d:2,r:'105'},'249900004':{d:2,r:'418'}};
+Object.entries(ACCOUNTS).forEach(([k,a])=>{a.login=k;a.id=k;a.first=a.name.split('.')[0];if(ACAD[k])a.acad=ACAD[k];if(a.role==='student')a.dorm=DORMS[k]||null});
 /* attendance (US18): absence limit per course of the current term, and the absences at the start of the demo.
    Absences live in st.att, so a teacher's mark (staff "Attendance (demo)") reaches the student's tab. */
 const ATT_LIM={INF451:6,INF320:6,MAT301:5,INF330:6};
@@ -110,6 +112,10 @@ const KB_OFFICES=[
   {en:"Finance handles tuition payments, billing questions and payment deadlines. Ask the assistant for your balance or create a ticket for Finance.",
    kk:"Finance оқу ақысын төлеу, есепшот сұрақтары және төлем мерзімдерімен айналысады. Қалдықты көмекшіден сұраңыз немесе Finance-қа өтінім ашыңыз.",
    ru:"Finance занимается оплатой обучения, вопросами по счетам и сроками оплаты. Спросите у ассистента свой баланс или создайте заявку в Finance."}],
+ ['housing',{en:["What does the Housing Office do?","Housing Office"],kk:["Housing Office не істейді?","Housing Office бөлімі"],ru:["Чем занимается Housing Office?","Отдел Housing Office"]},
+  {en:"The Housing Office handles dormitory repairs, room changes and other housing requests of students who live on campus. If you live in a dormitory, describe the problem in the chat and the assistant creates a housing request.",
+   kk:"Housing Office кампуста тұратын студенттердің жатақханадағы жөндеу, бөлме ауыстыру және басқа тұрғын үй өтінімдерімен айналысады. Жатақханада тұрсаңыз, мәселені чатта жазыңыз, көмекші өтінім жасайды.",
+   ru:"Housing Office занимается ремонтом в общежитиях, сменой комнаты и другими жилищными заявками студентов, живущих на кампусе. Если вы живёте в общежитии, опишите проблему в чате, и ассистент создаст заявку."}],
  ['affairs',{en:["What does Student Affairs do?","Student Affairs office","Lost student ID"],kk:["Student Affairs не істейді?","Student Affairs бөлімі","Студенттік билетімді жоғалттым"],ru:["Чем занимается Student Affairs?","Отдел Student Affairs","Потерял студенческий билет"]},
   {en:"Student Affairs handles dormitory places, student ID cards and student life questions. Create a ticket for Student Affairs or contact the Student Service Center: "+SSC+".",
    kk:"Student Affairs жатақхана орындары, студенттік билет және студенттік өмір сұрақтарымен айналысады. Student Affairs-қа өтінім ашыңыз немесе Студенттерге қызмет көрсету орталығына хабарласыңыз: "+SSC+".",
@@ -120,14 +126,20 @@ const OFFICE_INFO={
   itsupport:{name:'IT Support',room:'E205',open:9,close:18,tel:'8 (727) 000-00-02',mail:'it@university.demo'},
   finance:{name:'Finance',room:'F205',open:9,close:16,tel:'8 (727) 000-00-03',mail:'finance@university.demo'},
   affairs:{name:'Student Affairs',room:'G205',open:10,close:17,tel:'8 (727) 000-00-04',mail:'affairs@university.demo'},
+  housing:{name:'Housing Office',room:'G206',open:9,close:17,tel:'8 (727) 000-00-05',mail:'housing@university.demo'},
   hours:{name:'Student Service Center',room:'H204',open:9,close:18,tel:'8 (727) 000-00-00',mail:'ssc@university.demo'}};
 function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
   const mk=(id,kind,intent,cat,src,q,a)=>({id,kind,intent:intent||null,status:'published',vn:1,vers:[{n:1,act:'create',by,at,cat,src,q,a}],log:[]});
   const per=f=>Object.fromEntries(LANGS.map(l=>[l,f(l)])),lines=v=>Array.isArray(v)?v.join('\n'):v;
   return FAQ.map(f=>mk(f.id,'faq',KB_INTENT[f.id],f.cat,f.src,per(l=>[f.q(l)]),per(l=>lines(f.a(l)))))
     .concat(KB_OFFICES.map(([id,q,a])=>mk(id,'office',null,'off','ssc',q,a)))}
-const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt()});
-const loadSt=s=>{s.prefs=s.prefs||{};s.att=s.att||seedAtt();s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
+/* housing requests (US20), so the staff list is not empty on first launch. status: submitted -> progress -> done; upd = last update */
+const seedHousing=()=>{const n=Date.now();return[
+  {n:101,uid:'249900003',who:'Kenan',dorm:2,room:'105',type:'repair',desc:'The shower drain in my room is blocked.',status:'progress',at:n-30*HR,upd:n-20*HR},
+  {n:102,uid:'249900004',who:'Zhanibek',dorm:2,room:'418',type:'move',desc:'I would like to move to a quieter room on another floor.',status:'submitted',at:n-6*HR,upd:n-6*HR}]};
+const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt(),housing:seedHousing()});
+const loadSt=s=>{s.prefs=s.prefs||{};s.att=s.att||seedAtt();s.housing=s.housing||seedHousing();
+  if(s.kb&&!s.kb.some(e=>e.id==='housing'))s.kb.push(seedKb().find(e=>e.id==='housing'));   /* data saved before US20 gets the Housing Office entry */s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
   if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
 let st=fresh();
 try{const s=JSON.parse(localStorage.getItem('hd-state')||'null');if(s&&s.v===5&&s.tickets)st=loadSt(s)}catch(e){}
@@ -338,8 +350,11 @@ const WHERE=/where|find|locat|how (do i )?(get|reach)|где|найти|как (
    -> {k:'campus',c} | {k:'kb',e} | {k:'h',i} | {k:'guest',i} | {k:'dym',list} | {k:'fb'} */
 function route(t){
   /* "Where can I find Clean Code?" is a catalog question, not "the library is not on the map" */
-  const c=campusIntent(t);if(c&&!(c.k==='svc'&&bookSearch(t).length))return{k:'campus',c};
-  const q=nluAnalyze(t),rank=kbRank(q,kbLive()),best=rank[0],T=nluTopic(q),stu=U.role==='student'||(U.role==='staff'&&STAFF_SELF.includes(T&&TOPICS[T].intent));
+  /* a dormitory problem ("кран сломался в комнате 214") is a housing request, not a campus room; "where is the dormitory" stays a campus question */
+  const c=campusIntent(t),q=nluAnalyze(t),dormQ=q.tags.has('housing')&&!WHERE.test(t);
+  if(c&&!(c.k==='svc'&&bookSearch(t).length)&&!(dormQ&&c.k!=='rooms'))return{k:'campus',c};
+  let T=nluTopic(q);if(T==='ticket'&&q.tags.has('housing'))T='housing';    /* "подать заявку на ремонт в общаге" */
+  const rank=kbRank(q,kbLive()),best=rank[0],stu=U.role==='student'||(U.role==='staff'&&STAFF_SELF.includes(T&&TOPICS[T].intent));
   /* two equally strong topics with their own entries ("password and wifi"): ask instead of guessing */
   const top=[...q.tags].filter(([,w])=>w===q.tags.get(T)).map(([k])=>TOPICS[k]);
   const amb=top.length>1&&top.every(tp=>!tp.intent)?top.map(tp=>kbLive().find(x=>x.id===tp.kb)).filter(Boolean):[];
@@ -362,6 +377,7 @@ const forEntry=e=>e.intent&&PERSONAL.includes(e.intent)&&U.role==='student'?{k:'
 function answer(t){
   const L=detect(t); lastLang=L; curQ=t;
   if(mode==='desc'){pendingDesc=t;mode=null;return later(()=>askOffice(L))}
+  if(mode==='hdesc'){mode=null;return later(()=>housingCard({desc:t,type:hType(t)||'other'},L))}
   const ep=chatEpoch;later(()=>{if(ep===chatEpoch)respond(route(t),L,t)});     /* dropped if the user logged out in the meantime */
 }
 /* low confidence is logged with the question text for the "Unanswered" list in Analytics */
@@ -375,7 +391,7 @@ function respond(r,L,t){
     return bot({text:trL('nlu.dym',L),acts:r.list.map(e=>[kbData(e).q[L][0],()=>respond(forEntry(e),L,t)])},L)}
   logQ('fb',t);H.fb(L)}
 /* intents that use a student's own data; a visitor is asked to sign in instead */
-const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon','grades','attend','loans'];
+const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon','grades','attend','loans','housing','hstatus'];
 /* personal intents that also work for a staff account with the staff member's own data (library loans) */
 const STAFF_SELF=['loans'];
 const kbData=e=>e.vers.find(v=>v.n===e.vn);
@@ -447,6 +463,15 @@ const H={
    const over=mine.filter(x=>x.late>0);
    bot({title:trL('ln.title',L),list:mine.map(x=>x.late>0?{t:trL('ln.over',L,{t:x.bk.t,d:dmy(x.due),n:x.late}),cls:'no'}:trL('ln.line',L,{t:x.bk.t,d:dmy(x.due)})),
      after:over.length?trL(U.hold==='library'?'ln.hold':'ln.ret',L):'',src,fb:true},L)},
+ /* US20: dormitory repair or housing request; the dormitory and room come from the student's record */
+ housing:L=>{const D=U.dorm,src=trL('h.src',L);
+   if(!D)return noDorm(L);
+   const ty=hType(curQ);if(ty)return housingCard({desc:curQ,type:ty},L);
+   bot({text:trL('h.info',L,{d:dormName(D.d,L),r:D.r}),list:myHousing().slice(0,3).map(h=>hLine(h,L)),src,acts:[[trL('h.new',L),()=>newHousing(L)]]},L)},
+ hstatus:L=>{const mine=myHousing(),src=trL('h.src',L);
+   if(!mine.length)return U.dorm?bot({text:trL('h.none',L),src,acts:[[trL('h.new',L),()=>newHousing(L)]]},L):noDorm(L);
+   const h=mine[0];
+   bot({text:trL('h.stat',L,{n:'H-'+h.n,t:trL('h.t.'+h.type,L),s:trL('h.st.'+h.status,L),u:dtL(h.upd,L)}),after:mine.length>1?trL('h.older',L):'',list:mine.slice(1,3).map(x=>hLine(x,L)),src,fb:true},L)},
  ticket:L=>startTicket(L),
  human:L=>human(L),
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
@@ -475,6 +500,32 @@ function gradeCard(A,list,L){
   return '<div class="tw"><table class="bt"><thead><tr><th>'+esc(trL('gr.course',L))+'</th><th>'+esc(trL('gr.grade',L))+'</th><th>'+esc(trL('gr.cr',L))+'</th></tr></thead><tbody>'+
     list.map(x=>'<tr><td><b>'+esc(x.c)+'</b> '+esc(x.t)+'<small>'+esc(trL('gr.t.'+x.term,L))+'</small></td><td>'+(x.g?'<b>'+esc(x.g)+'</b>':'<span class="no">'+esc(trL('gr.np',L))+'</span>')+'</td><td>'+x.cr+'</td></tr>').join('')+
     '</tbody></table></div><div class="kv"><span>GPA <b>'+A.gpa.toFixed(2)+'</b></span><span>'+esc(trL('gr.total',L))+' <b>'+A.cr+'</b></span></div>'}
+/* ---------- housing requests (US20) ---------- */
+const H_TYPES=['repair','move','other'];
+const H_MOVE=/room change|change (my )?room|another room|different room|move (to|out)|roommate|пересел|сменить комнату|поменять комнату|другую комнату|другой комнат|бөлме ауыстыр|бөлмені ауыстыр|бөлмемді ауыстыр|басқа бөлме/i;
+const H_REPAIR=/light|lamp|bulb|\btap\b|faucet|leak|broken|break|repair|fix|heat|radiator|socket|outlet|door|lock|window|shower|toilet|sink|drain|свет|ламп|кран|теч|протек|слома|ремонт|почин|отоплен|батаре|розетк|двер|замок|окн|душ|туалет|унитаз|раковин|жарық|шам|сынды|сынған|бұзыл|жөнде|ағып|есік|терезе|құлып/i;
+/* suggested request type from the text; null when the text gives no hint */
+const hType=t=>H_MOVE.test(t)?'move':H_REPAIR.test(t)?'repair':null;
+const dormName=(d,L)=>trL('h.dorm',L,{n:d});
+const dtL=(ts,L)=>new Date(ts).toLocaleString(T[L].loc,{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const myHousing=()=>st.housing.filter(h=>h.uid===U.login).sort((a,b)=>b.at-a.at);
+const hLine=(h,L)=>trL('h.line',L,{n:'H-'+h.n,t:trL('h.t.'+h.type,L),s:trL('h.st.'+h.status,L),u:dtL(h.upd,L)});
+/* a student without a dormitory cannot submit a request: explain and give the Housing Office contacts from the office directory */
+function noDorm(L){const of=OFFICE_INFO.housing;
+  bot({text:trL('h.nodorm',L),list:officeRows(of,L),after:officeState(of,L).text,src:trL('h.src',L),acts:[[trL('cm.map',L),()=>openMap(of.room)]],fb:true},L)}
+function newHousing(L){if(!U.dorm)return noDorm(L);mode='hdesc';bot({text:trL('h.ask',L)},L);$('q').focus()}
+/* confirmation card: suggested type, dormitory and room filled in; the type can be changed before confirming */
+function housingCard(d,L){const D=U.dorm;if(!D)return noDorm(L);
+  bot({title:trL('h.confirmT',L),list:[trL('h.typeL',L)+': '+trL('h.t.'+d.type,L),trL('h.dormL',L)+': '+dormName(D.d,L),trL('h.roomL',L)+': '+D.r,trL('h.descL',L)+': '+d.desc],
+    after:trL('h.confirmQ',L),src:trL('h.src',L),
+    acts:[[trL('h.confirm',L),()=>makeHousing(d,L)]].concat(H_TYPES.filter(x=>x!==d.type).map(x=>[trL('h.as',L,{t:trL('h.t.'+x,L)}),()=>housingCard({desc:d.desc,type:x},L)]),
+      [[trL('h.cancel',L),()=>bot({text:trL('h.cancelled',L)},L)]])},L)}
+function makeHousing(d,L){const D=U.dorm,n=Math.max(100,...st.housing.map(h=>h.n))+1,at=Date.now();
+  st.housing.push({n,uid:U.login,who:U.name,dorm:D.d,room:D.r,type:d.type,desc:d.desc.slice(0,300),status:'submitted',at,upd:at});save();sync();
+  bot({text:trL('h.done',L,{n:'H-'+n,t:trL('h.t.'+d.type,L),d:dormName(D.d,L),r:D.r}),after:trL('h.track',L),src:trL('h.src',L)},L)}
+/* staff changes the status (submitted, progress, done): the last update time is saved and the student is notified */
+function setHStatus(n,s){const h=st.housing.find(x=>x.n===n);if(!h||h.status===s)return false;
+  h.status=s;h.upd=Date.now();note(h.uid,'hreq',{n:h.n,s});save();return true}
 /* attendance card: course, absences, limit, absences left */
 function attCard(list,L){
   return '<div class="tw"><table class="bt"><thead><tr><th>'+esc(trL('gr.course',L))+'</th><th>'+esc(trL('att.abs',L))+'</th><th>'+esc(trL('att.lim',L))+'</th><th>'+esc(trL('att.left',L))+'</th></tr></thead><tbody>'+

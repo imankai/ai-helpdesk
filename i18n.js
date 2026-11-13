@@ -490,7 +490,45 @@ const D={
  'ln.none':["You have no library books on loan.","Кітапханадан алған кітабыңыз жоқ.","У вас нет книг из библиотеки."],
  'ln.hold':["The overdue book blocks your course registration (library hold). Return it to the library to clear the hold.","Мерзімі өткен кітап курстарға тіркелуді бұғаттайды (кітапхана шектеуі). Шектеуді алу үшін кітапты кітапханаға қайтарыңыз.","Просроченная книга блокирует регистрацию на курсы (блокировка библиотеки). Верните её в библиотеку, чтобы снять блокировку."],
  'ln.ret':["Please return the overdue book to the library as soon as possible.","Мерзімі өткен кітапты кітапханаға тезірек қайтарыңыз.","Пожалуйста, верните просроченную книгу в библиотеку как можно скорее."],
- 'ln.src':["Library system · Your loans","Кітапхана жүйесі · Сіздің кітаптарыңыз","Библиотечная система · Ваши книги"]
+ 'ln.src':["Library system · Your loans","Кітапхана жүйесі · Сіздің кітаптарыңыз","Библиотечная система · Ваши книги"],
+
+ 'i.housing':["Dormitory requests","Жатақхана өтінімдері","Заявки по общежитию"],
+ 'i.hstatus':["Housing request status","Жатақхана өтінімінің мәртебесі","Статус заявки по общежитию"],
+ 'q.hstatus':["What is the status of my repair request?","Жөндеу өтінімімнің мәртебесі қандай?","Какой статус моей заявки по ремонту?"],
+ 'h.src':["Housing Office · Requests","Housing Office · Өтінімдер","Housing Office · Заявки"],
+ 'h.dorm':["Dormitory {n}","{n}-жатақхана","Общежитие №{n}"],
+ 'h.t.repair':["Repair","Жөндеу","Ремонт"],
+ 'h.t.move':["Room change","Бөлме ауыстыру","Смена комнаты"],
+ 'h.t.other':["Other","Басқа","Другое"],
+ 'h.st.submitted':["Submitted","Жіберілді","Отправлена"],
+ 'h.st.progress':["In progress","Орындалуда","В работе"],
+ 'h.st.done':["Done","Орындалды","Выполнена"],
+ 'h.typeL':["Type","Түрі","Тип"],
+ 'h.dormL':["Dormitory","Жатақхана","Общежитие"],
+ 'h.roomL':["Room","Бөлме","Комната"],
+ 'h.descL':["Description","Сипаттама","Описание"],
+ 'h.confirmT':["New housing request","Жаңа жатақхана өтінімі","Новая заявка по общежитию"],
+ 'h.confirmQ':["Is everything correct? Confirm to send it to the Housing Office, or choose another type.","Барлығы дұрыс па? Housing Office-қа жіберу үшін растаңыз немесе басқа түрін таңдаңыз.","Всё верно? Подтвердите, чтобы отправить заявку в Housing Office, или выберите другой тип."],
+ 'h.confirm':["Confirm","Растау","Подтвердить"],
+ 'h.as':["Change type: {t}","Түрін өзгерту: {t}","Сменить тип: {t}"],
+ 'h.cancel':["Cancel","Болдырмау","Отмена"],
+ 'h.cancelled':["OK, the request was not sent.","Жарайды, өтінім жіберілмеді.","Хорошо, заявка не отправлена."],
+ 'h.done':["Request {n} created: {t} · {d}, room {r}. Status: Submitted.","{n} өтінімі жасалды: {t} · {d}, {r} бөлме. Мәртебесі: Жіберілді.","Заявка {n} создана: {t} · {d}, комната {r}. Статус: Отправлена."],
+ 'h.track':["You will get a notification when the status changes. Ask “What is the status of my repair request?” any time.","Мәртебе өзгергенде хабарлама келеді. Кез келген уақытта «Жөндеу өтінімімнің мәртебесі қандай?» деп сұраңыз.","Когда статус изменится, придёт уведомление. В любой момент спросите «Какой статус моей заявки по ремонту?»."],
+ 'h.info':["You live in {d}, room {r}. Describe the problem and I will create a housing request (repair, room change or other).","Сіз {d}, {r} бөлмеде тұрасыз. Мәселені сипаттаңыз, мен жатақхана өтінімін жасаймын (жөндеу, бөлме ауыстыру немесе басқа).","Вы живёте: {d}, комната {r}. Опишите проблему, и я создам заявку (ремонт, смена комнаты или другое)."],
+ 'h.new':["New request","Жаңа өтінім","Новая заявка"],
+ 'h.ask':["Describe the problem in one or two sentences, for example “The tap in the bathroom is leaking”.","Мәселені бір-екі сөйлеммен сипаттаңыз, мысалы «Жуынатын бөлмеде кран ағып жатыр».","Опишите проблему в одном-двух предложениях, например «В ванной течёт кран»."],
+ 'h.none':["You have no housing requests yet.","Сізде әзірге жатақхана өтінімі жоқ.","У вас пока нет заявок по общежитию."],
+ 'h.stat':["Request {n} ({t}): {s}. Last update: {u}.","{n} өтінімі ({t}): {s}. Соңғы жаңарту: {u}.","Заявка {n} ({t}): {s}. Последнее обновление: {u}."],
+ 'h.older':["Earlier requests:","Бұрынғы өтінімдер:","Предыдущие заявки:"],
+ 'h.line':["{n} · {t} · {s} · updated {u}","{n} · {t} · {s} · жаңартылды {u}","{n} · {t} · {s} · обновлена {u}"],
+ 'h.nodorm':["According to your record you do not live in a university dormitory, so you cannot submit a dormitory request. For housing questions, contact the Housing Office:","Деректеріңіз бойынша сіз университет жатақханасында тұрмайсыз, сондықтан жатақхана өтінімін жібере алмайсыз. Тұрғын үй сұрақтары бойынша Housing Office-қа хабарласыңыз:","По вашим данным вы не живёте в общежитии университета, поэтому подать заявку по общежитию нельзя. По жилищным вопросам обратитесь в Housing Office:"],
+ 'n.hreq':["Housing request {n}: status changed to {s}","{n} жатақхана өтінімі: мәртебесі өзгерді — {s}","Заявка по общежитию {n}: статус изменён — {s}"],
+ 'nav.housing':["Housing requests","Жатақхана өтінімдері","Заявки общежития"],
+ 'hr.title':["Housing requests","Жатақхана өтінімдері","Заявки общежития"],
+ 'hr.hint':["Dormitory repair, room change and other requests from students. Changing the status notifies the student.","Студенттердің жатақханадағы жөндеу, бөлме ауыстыру және басқа өтінімдері. Мәртебені өзгерту студентке хабарлама жібереді.","Заявки студентов на ремонт, смену комнаты и другое. При смене статуса студент получает уведомление."],
+ 'hr.none':["No housing requests yet.","Әзірге жатақхана өтінімі жоқ.","Заявок пока нет."],
+ 'hr.upd':["Updated","Жаңартылды","Обновлена"]
 };
 let ui='en';
 try{const s=localStorage.getItem('hd-ui');if(LANGS.includes(s))ui=s}catch(e){}
@@ -595,9 +633,9 @@ const FAQ=[
  {id:'portal',cat:'it',src:'it',q:x3("I can't log in to the portal","Порталға кіре алмай жүрмін","Не могу войти в портал"),a:L=>T[L].portal},
  {id:'hours',cat:'off',src:'ssc',q:x3("What are the Student Service Center hours?","Студенттерге қызмет көрсету орталығының жұмыс уақыты қандай?","Когда работает Центр обслуживания студентов?"),a:L=>T[L].hours},
  {id:'offices',cat:'off',src:'ssc',q:x3("Which office should I contact?","Қай бөлімге хабарласу керек?","В какой отдел обращаться?"),
-  a:x3("Registrar: courses, certificates, transcripts. IT Support: accounts, Wi-Fi, portal. Finance: payments and billing. Student Affairs: dormitory and student life.",
-       "Registrar: пәндер, анықтамалар, транскрипт. IT Support: аккаунттар, Wi-Fi, портал. Finance: төлемдер. Student Affairs: жатақхана және студенттік өмір.",
-       "Registrar: курсы, справки, транскрипт. IT Support: аккаунты, Wi-Fi, портал. Finance: платежи. Student Affairs: общежитие и студенческая жизнь.")}
+  a:x3("Registrar: courses, certificates, transcripts. IT Support: accounts, Wi-Fi, portal. Finance: payments and billing. Student Affairs: dormitory places and student life. Housing Office: dormitory repairs and room changes.",
+       "Registrar: пәндер, анықтамалар, транскрипт. IT Support: аккаунттар, Wi-Fi, портал. Finance: төлемдер. Student Affairs: жатақханадағы орын және студенттік өмір. Housing Office: жатақханадағы жөндеу және бөлме ауыстыру.",
+       "Registrar: курсы, справки, транскрипт. IT Support: аккаунты, Wi-Fi, портал. Finance: платежи. Student Affairs: места в общежитии и студенческая жизнь. Housing Office: ремонт в общежитии и смена комнаты.")}
 ];
 
 /* small labels used by the chat engine */

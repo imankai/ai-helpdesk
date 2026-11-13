@@ -21,12 +21,13 @@ Developed by a student team as part of INF451.
 - Similar-question suggestions while typing in the chat, and a "Help Desk is typing…" indicator
 - Help tickets with status tracking, staff replies and a 1–5 star rating of resolved tickets
 - Advisor appointment booking with reminders
-- Notification bell (staff reply, status change, appointment reminder, tuition reminder 7 days before the deadline, absence warnings); reminders can be turned off in the user menu or by asking in the chat
+- Notification bell (staff reply, status change, appointment reminder, tuition reminder 7 days before the deadline, absence warnings, housing request status); reminders can be turned off in the user menu or by asking in the chat
 - Ticket status in the chat ("where is my ticket"): number, office and status of the student's own latest tickets
 - Grades and transcript in the chat ("What is my GPA?", "мои оценки", "менің бағаларым", "оценка по INF451"): a card with course, grade and credits, the GPA and the total credits earned, for all courses or for one; a final grade that is not posted yet comes with the official posting deadline (28.12.2026)
 - Attendance in the chat ("How many classes have I missed?", "пропуски", "сабақ босаттым", "сколько я пропустил по INF451"): absences, limit and absences left for every current course or for one
 - Absence warnings in the notification bell: when 2 or fewer absences are left before the limit (with the course and the limit), and a separate warning when the limit is exceeded
 - Library: search the catalog by title, author or course ("Is 'Clean Code' available?", "книги по INF451", "kitap bar ma") for available copies and the shelf, or "not available" with the nearest return date; "My books" lists the user's loans with due dates and marks overdue ones, and explains that an overdue book blocks registration (library hold); visitors can search the catalog, "My books" needs a sign-in
+- Dormitory requests: "The light in my room does not work", "в общаге не работает свет", "жатақханада кран сынды" → the bot suggests a type (repair, room change, other), fills in the student's dormitory and room, asks to confirm and gives a request number (H-…); "What is the status of my repair request?" shows the status (Submitted → In progress → Done) and the last update; a student who does not live in a dormitory is told why and gets the Housing Office contacts; "wifi в общаге" still answers about Wi-Fi
 - Office directory: room on the campus map, hours, phone and email for every office, with "Closed now, opens at…" outside working hours
 - Dashboard with deadlines, recent tickets and quick actions; announcement banners
 - First-login guided tour (can be replayed from the user menu)
@@ -39,6 +40,7 @@ Developed by a student team as part of INF451.
 - Analytics with a period filter (Today / Last 7 days / Last 30 days / All time): questions asked, share of unanswered questions, tickets, escalations to staff, average rating, top 5 questions and an "Unanswered & not helpful" list with a "Create FAQ entry" button; only aggregated data, no student names or IDs
 - Knowledge base: FAQ and office entries with search, Add / Edit / Archive; an entry is published only when the question and the answer are filled in English, Kazakh and Russian; every change is kept as a version with author and date, with "Roll back"; the bot and the FAQ page use the published entries right away
 - Staff sections open by address (for example `#analytics`); students and visitors see "Access denied" and no data
+- Housing requests: every dormitory request with number, student, dormitory, room, type, description and last update; changing the status notifies the student
 - Announcements: publish or unpublish a notice shown to students
 - Attendance (demo): pick a student and a course and press "Mark absence" to act as the teacher; the student gets the absence warning right away; a table shows every student's absences and limits
 
@@ -72,10 +74,11 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 | 5 – More student self-service | US17 Grades & Transcript Lookup | Done | |
 | 5 – More student self-service | US18 Attendance Tracking & Absence Warnings | Done | |
 | 5 – More student self-service | US19 Library Services | Done | |
+| 5 – More student self-service | US20 Dormitory & Housing Requests | Done | |
 
 ## Sprint backlog
 
-The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The table above covers sprints 1–4 (US1–US16) and the Sprint 5 stories built so far; the other Sprint 5 stories and sprints 6–7 are not in the prototype.
+The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The table above covers sprints 1–5 (US1–US20); sprints 6–7 are not in the prototype.
 
 ## Demo accounts
 
@@ -83,11 +86,11 @@ Password for every account: `demo123`
 
 | Login | Role | Notes |
 |---|---|---|
-| `249900001` | Student | Tuition with an unpaid balance, library hold on registration (2 library books, one overdue); GPA 3.12, 128 credits |
-| `249900002` | Student | Studies on a state grant, no balance, no holds; GPA 3.67, 134 credits; 4 of 6 absences in INF451 (absence warning) |
-| `249900003` | Student | Tuition paid in full, no holds; GPA 2.85, 121 credits |
-| `249900004` | Student | Tuition with an unpaid balance, no holds; GPA 3.40, 126 credits |
-| `staff` | Staff | Ticket board, review queue, analytics, knowledge base, announcements, attendance (demo) |
+| `249900001` | Student | Tuition with an unpaid balance, library hold on registration (2 library books, one overdue); GPA 3.12, 128 credits; Dormitory 1, room 312 |
+| `249900002` | Student | Studies on a state grant, no balance, no holds; GPA 3.67, 134 credits; 4 of 6 absences in INF451 (absence warning); does not live in a dormitory |
+| `249900003` | Student | Tuition paid in full, no holds; GPA 2.85, 121 credits; Dormitory 2, room 105 (repair request in progress) |
+| `249900004` | Student | Tuition with an unpaid balance, no holds; GPA 3.40, 126 credits; Dormitory 2, room 418 |
+| `staff` | Staff | Ticket board, review queue, analytics, knowledge base, announcements, attendance (demo), housing requests |
 
 The login screen also lists these accounts; click one to fill in the login. **Continue as visitor** opens the chat without an account.
 
@@ -105,7 +108,7 @@ Notes:
 
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 126 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 152 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
 
 ## Project structure
 

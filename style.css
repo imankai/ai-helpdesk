@@ -580,3 +580,7 @@ body.role-staff #nav-campus,body.role-staff #nav-faq,body.role-staff #nav-about{
 .attnow{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .attmsg{margin:0;padding:8px 12px;border-left:4px solid var(--accent);background:var(--warn-soft);color:var(--warn-ink);font-weight:600}
 @media (max-width:560px){.attform .fld.inline{flex-direction:column;align-items:stretch}}
+
+/* ---------- staff: Housing requests (US20) ---------- */
+.hri .rvh .who{display:flex;align-items:center;gap:6px}
+.hri .fld.inline select{padding:6px 8px}

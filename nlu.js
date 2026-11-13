@@ -70,6 +70,18 @@ const TOPICS={
    'библиотек','книг','учебник','=автор','=автора','каталог','доступн','в наличии','кітап','кітапхана','оқулық','авторы']},
  sched:{kb:'sched',syn:['schedule','timetable','class schedule','my classes','classes today','raspisanie',
    'расписание','расписан','расписание пар','пары','когда пары','занятия','кесте','сабақ кестесі','сабақ']},
+ /* US20 housing: after wifi, so "wifi в общаге" stays Wi-Fi; before rooms and tkstatus, so "in my room" and "статус заявки по ремонту" come here.
+   Risky short words are exact ("=light" is not a typo of "right", "=dorm" not of "form", "=свет" not of "совет") */
+ hstatus:{intent:'hstatus',syn:['status of my repair request','repair request status','status of my housing request','housing request status','repair status','status of my dorm request',
+   'status remonta',
+   'статус заявки по ремонту','статус заявки на ремонт','статус ремонта','что с ремонтом','статус заявки в общежитие','статус заявки в общагу',
+   'жөндеу мәртебесі','жөндеу өтінімінің мәртебесі','жөндеу өтінімі қайда','жатақхана өтінімінің мәртебесі']},
+ housing:{intent:'housing',kb:'housing',syn:['=dorm','=dorms','dormitory','dorm room','residence hall','hostel','housing request','repair request','dorm request','in my room',
+   '=light','=lights','light bulb','=lamp','=tap','faucet','=leak','leaking','broken','=repair','=repairs','=heating','radiator','=socket','room change','change my room','move to another room','roommate',
+   'zhatakhana','obshaga','obshchezhitie','obshezhitie','remont',
+   'общежити','общаг','=свет','=света','лампочк','=кран','=крана','течет','протекает','сломал','сломан','ремонт','почин','отоплени','батаре','розетк','переселени',
+   'сменить комнату','поменять комнату','в комнате','в моей комнате','заявка на ремонт','заявку на ремонт',
+   'жатақхана','=жарық','жарығы','=шам','сынды','сынған','бұзылды','жөндеу','ағып жатыр','бөлмемде','бөлме ауыстыру','басқа бөлмеге']},
  rooms:{intent:'rooms',syn:['room','classroom','lecture hall','auditorium','building',
    'кабинет','аудитори','корпус','=ауд','бөлме','дәрісхана']},
  tkstatus:{intent:'tkstatus',syn:['status of my ticket','ticket status','where is my ticket','check my ticket','my tickets','what happened to my ticket',
@@ -148,7 +160,7 @@ const KK_WORDS=new Set('мен сен ба бе ма ме па пе керек �
 const KK_STEMS=['тиркел','купиясоз','кенесши','отиним','кесте','анык','толем','грантпын','багалар','босат','калдыр'];
 const RU_WORDS=new Set('я мне меня как где что когда хочу это на не почему какой какая можно нужно надо у в и'.split(' '));
 /* Kazakh typed in Latin letters ("kitap bar ma"): at least one clearly Kazakh word and two Kazakh words in all; "bar", "ma", "me" alone are English too */
-const KK_LAT=new Set('kitap kitaptarym kitapty kitaptar kerek kaida qaida kashan qashan kansha qansha menin sabak bagalarym bagalar kandai qandai zhatakhana zhataqhana bolme rakhmet salem bar ma me ba be'.split(' '));
+const KK_LAT=new Set('kitap kitaptarym kitapty kitaptar kerek kaida qaida kashan qashan kansha qansha menin sabak bagalarym bagalar kandai qandai zhatakhana zhataqhana zhatakhanada zhataqhanada syndy bolme bolmemde rakhmet salem bar ma me ba be'.split(' '));
 const KK_LAT_WEAK=new Set(['bar','ma','me','ba','be']);
 function isKazakh(t){
   if(/[әғқңөұүһі]/i.test(t))return true;
