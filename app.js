@@ -28,6 +28,12 @@ const ACAD={
   '249900004':{gpa:3.40,cr:126,courses:[{c:'INF451',t:'Team Software Project',cr:6,g:null,term:'f26'},{c:'MAT301',t:'Statistics',cr:5,g:null,term:'f26'},
     {c:'INF310',t:'Database Systems',cr:5,g:'B+',term:'s26'},{c:'INF305',t:'Operating Systems',cr:5,g:'A-',term:'s26'},{c:'HIS101',t:'History of Kazakhstan',cr:3,g:'A',term:'s26'}]}};
 Object.entries(ACCOUNTS).forEach(([k,a])=>{a.login=k;a.id=k;a.first=a.name.split('.')[0];if(ACAD[k])a.acad=ACAD[k]});
+/* attendance (US18): absence limit per course of the current term, and the absences at the start of the demo.
+   Absences live in st.att, so a teacher's mark (staff "Attendance (demo)") reaches the student's tab. */
+const ATT_LIM={INF451:6,INF320:6,MAT301:5,INF330:6};
+const ATT_SEED={'249900001':{INF451:2,INF320:1},'249900002':{INF451:4,MAT301:1},'249900003':{INF451:1,INF330:3},'249900004':{INF451:0,MAT301:2}};
+const seedAtt=()=>JSON.parse(JSON.stringify(ATT_SEED));
+const ATT_WARN=2;             /* warn when this many absences or fewer are left before the limit */
 /* visitor without an account: general questions only, nothing personal is stored (US14) */
 const GUEST={role:'guest',login:'guest',id:null,ini:'?',color:'#5a6a80'};
 const HOLD_INFO={library:['Library','Overdue book blocks registration'],finance:['Finance','Unpaid tuition blocks registration']};
@@ -100,8 +106,8 @@ function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
   const per=f=>Object.fromEntries(LANGS.map(l=>[l,f(l)])),lines=v=>Array.isArray(v)?v.join('\n'):v;
   return FAQ.map(f=>mk(f.id,'faq',KB_INTENT[f.id],f.cat,f.src,per(l=>[f.q(l)]),per(l=>lines(f.a(l)))))
     .concat(KB_OFFICES.map(([id,q,a])=>mk(id,'office',null,'off','ssc',q,a)))}
-const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{}});
-const loadSt=s=>{s.prefs=s.prefs||{};s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
+const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt()});
+const loadSt=s=>{s.prefs=s.prefs||{};s.att=s.att||seedAtt();s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
   if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
 let st=fresh();
 try{const s=JSON.parse(localStorage.getItem('hd-state')||'null');if(s&&s.v===5&&s.tickets)st=loadSt(s)}catch(e){}
@@ -117,6 +123,18 @@ function payReminder(){
   const b=U.tuition-U.paid,now=clock(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   if(b<=0||(new Date(U.due+'T00:00')-today)/864e5>7||st.notes.some(n=>n.uid===U.login&&n.type==='pay'&&n.due===U.due))return;
   note(U.login,'pay',{due:U.due,amt:b,at:now.getTime()});save()}
+/* one student's current-term courses with absences and limit; left < 0 means the limit is exceeded */
+function attList(uid){const a=ACCOUNTS[uid]&&ACCOUNTS[uid].acad,m=(st.att&&st.att[uid])||{};
+  return a?a.courses.filter(x=>x.term==='f26').map(x=>({c:x.c,t:x.t,abs:m[x.c]||0,lim:ATT_LIM[x.c],left:ATT_LIM[x.c]-(m[x.c]||0)})):[]}
+/* absence warnings go to the student's notifications: "close to the limit" (2 or fewer left) and, separately, "limit exceeded".
+   One warning per course and absence count, so every new absence near the limit warns again. They are warnings, not reminders, so they are always sent. */
+function attCheck(uid){let n=0;
+  attList(uid).forEach(x=>{const type=x.left<0?'attover':x.left<=ATT_WARN?'att':null;if(!type)return;
+    if(st.notes.some(o=>o.uid===uid&&o.type===type&&o.c===x.c&&o.abs===x.abs))return;
+    note(uid,type,{c:x.c,t:x.t,abs:x.abs,lim:x.lim,left:Math.max(x.left,0)});n++});
+  if(n)save();return n}
+/* staff demo: a teacher marks one more absence; returns the number of warnings sent */
+function markAbsence(uid,code){const m=st.att[uid]=st.att[uid]||{};m[code]=(m[code]||0)+1;save();return attCheck(uid)}
 /* visitors are anonymous: no ID is stored with their questions or ratings */
 const uidOf=()=>U&&U.role!=='guest'?U.login:null;
 /* staff questions in Test assistant are not real demand, so they stay out of Analytics */
@@ -325,6 +343,7 @@ function answer(t){
 }
 /* low confidence is logged with the question text for the "Unanswered" list in Analytics */
 function respond(r,L,t){
+  if(t!=null)curQ=t;          /* handlers read the course or ticket number from curQ; a second question sent quickly must not replace it */
   if(r.k==='campus'){logQ('campus');return H.campus(L,r.c)}
   if(r.k==='kb'){logQ(r.e.intent||'kb:'+r.e.id);return kbAnswer(r.e,L)}
   if(r.k==='h'){logQ(r.i);return U.role==='guest'&&PERSONAL.includes(r.i)?guestOnly(L):H[r.i](L)}
@@ -333,7 +352,7 @@ function respond(r,L,t){
     return bot({text:trL('nlu.dym',L),acts:r.list.map(e=>[kbData(e).q[L][0],()=>respond(forEntry(e),L,t)])},L)}
   logQ('fb',t);H.fb(L)}
 /* intents that use a student's own data; a visitor is asked to sign in instead */
-const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon','grades'];
+const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon','grades','attend'];
 const kbData=e=>e.vers.find(v=>v.n===e.vn);
 const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published');
 /* languages that still lack a question variant or an answer; publishing is blocked while any is missing */
@@ -386,6 +405,11 @@ const H={
    if(code&&!one)return bot({text:trL('gr.nf',L,{c:code,l:A.courses.map(x=>x.c).join(', ')}),html:gradeCard(A,A.courses,L),src,fb:true},L);
    if(one)return bot({text:one.g?trL('gr.one',L,{c:one.c+' '+one.t,g:one.g,n:one.cr}):trL('gr.npc',L,{c:one.c+' '+one.t,d:dl}),html:gradeCard(A,[one],L),src,fb:true},L);
    bot({title:trL('gr.title',L),text:sum,html:gradeCard(A,A.courses,L),after:A.courses.some(x=>!x.g)?trL('gr.dl',L,{d:dl}):'',src,fb:true},L)},
+ /* US18: absences and limit of the signed-in student's current courses, all or the one named in the question */
+ attend:L=>{const list=attList(U.login),code=courseCode(curQ),src=trL('att.src',L),one=code&&list.find(x=>x.c===code);
+   if(code&&!one)return bot({text:trL('att.nf',L,{c:code,l:list.map(x=>x.c).join(', ')}),html:attCard(list,L),src,fb:true},L);
+   if(one)return bot({text:trL('att.one',L,{c:one.c+' '+one.t,a:one.abs,l:one.lim,n:Math.max(one.left,0)}),html:attCard([one],L),after:attWarnText(one,L),src,fb:true},L);
+   bot({title:trL('att.title',L),html:attCard(list,L),after:list.map(x=>attWarnText(x,L)).filter(Boolean).join(' '),src,fb:true},L)},
  ticket:L=>startTicket(L),
  human:L=>human(L),
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
@@ -414,6 +438,13 @@ function gradeCard(A,list,L){
   return '<div class="tw"><table class="bt"><thead><tr><th>'+esc(trL('gr.course',L))+'</th><th>'+esc(trL('gr.grade',L))+'</th><th>'+esc(trL('gr.cr',L))+'</th></tr></thead><tbody>'+
     list.map(x=>'<tr><td><b>'+esc(x.c)+'</b> '+esc(x.t)+'<small>'+esc(trL('gr.t.'+x.term,L))+'</small></td><td>'+(x.g?'<b>'+esc(x.g)+'</b>':'<span class="no">'+esc(trL('gr.np',L))+'</span>')+'</td><td>'+x.cr+'</td></tr>').join('')+
     '</tbody></table></div><div class="kv"><span>GPA <b>'+A.gpa.toFixed(2)+'</b></span><span>'+esc(trL('gr.total',L))+' <b>'+A.cr+'</b></span></div>'}
+/* attendance card: course, absences, limit, absences left */
+function attCard(list,L){
+  return '<div class="tw"><table class="bt"><thead><tr><th>'+esc(trL('gr.course',L))+'</th><th>'+esc(trL('att.abs',L))+'</th><th>'+esc(trL('att.lim',L))+'</th><th>'+esc(trL('att.left',L))+'</th></tr></thead><tbody>'+
+    list.map(x=>'<tr><td><b>'+esc(x.c)+'</b> '+esc(x.t)+'</td><td>'+x.abs+'</td><td>'+x.lim+'</td><td'+(x.left<=ATT_WARN?' class="no"':'')+'>'+(x.left<0?esc(trL('att.over',L)):x.left)+'</td></tr>').join('')+
+    '</tbody></table></div>'}
+function attWarnText(x,L){const c=x.c+' '+x.t;
+  return x.left<0?trL('att.w.over',L,{c,a:x.abs,l:x.lim}):x.left===0?trL('att.w.0',L,{c,l:x.lim}):x.left<=ATT_WARN?trL('att.w',L,{c,n:x.left,l:x.lim}):''}
 function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
   if(r.b)rows.push(trL('cm.building',L)+': '+r.b);
   if(r.f)rows.push(trL('cm.floor',L)+': '+r.f);

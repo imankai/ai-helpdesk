@@ -49,6 +49,11 @@ const TOPICS={
    'otsenki','ocenki','bagalarym','bagalar','kredit','transkript',
    'оценк','мои оценки','итоговая оценка','средний балл','гпа','джипиэй','кредит','сколько кредитов','транскрипт','мой транскрипт','успеваемост',
    '=баға','=бағам','бағалар','менің бағаларым','қорытынды баға','баға қойыл','орташа балл','кредит саны']},
+ /* listed before sched, so "пропустил пары" is about attendance; pay is listed earlier, so "пропустил оплату" stays with billing */
+ attend:{intent:'attend',syn:['missed','missed classes','how many classes','=miss','absen','attendance','skipped','skip class','absence limit',
+   'propusk','propuski','poseshaemost','bosattym','sabak bosattym',
+   'пропуск','пропуст','посещаемост','прогул','пропущенные занятия','лимит пропусков','не был на паре',
+   'сабақ босат','босат','сабақ қалдыр','сабаққа қатысу','=қатысу','келмеген сабақ','босатқан сабақ']},
  reg:{intent:'reg',kb:'reg',syn:['registration','register','registering','enroll','enrol','enrollment','course registration','sign up for courses','sign up for classes',
    'prerequisite','prereq','hold','registraciya',
    'регистрация','регистрац','зарегистр','рега','регаться','записаться на курсы','запись на курсы','записаться на предметы','выбор курсов','выбрать курсы',
@@ -133,7 +138,7 @@ function nluTopic(a){let best=null,bw=0;for(const t of Object.keys(TOPICS)){cons
 /* ---------- language of the question ---------- */
 /* Kazakh written without its special letters ("мен грантпын ба"): common words, stems and the endings -пын / -мын / -бын, weighed against common Russian words */
 const KK_WORDS=new Set('мен сен ба бе ма ме па пе керек калай кайда кашан канша жок рахмет салем сабак туралы жане кандай маган менин сиз сизге'.split(' '));
-const KK_STEMS=['тиркел','купиясоз','кенесши','отиним','кесте','анык','толем','грантпын','багалар'];
+const KK_STEMS=['тиркел','купиясоз','кенесши','отиним','кесте','анык','толем','грантпын','багалар','босат','калдыр'];
 const RU_WORDS=new Set('я мне меня как где что когда хочу это на не почему какой какая можно нужно надо у в и'.split(' '));
 function isKazakh(t){
   if(/[әғқңөұүһі]/i.test(t))return true;

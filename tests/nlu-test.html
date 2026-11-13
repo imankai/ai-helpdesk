@@ -120,7 +120,26 @@ const CASES=[
  ['bagalarym kandai','grades'],
  ['нужен транскрипт для визы','registrar'],
  ['what is my GPA','guest','visitor'],
- ['мои оценки','guest','visitor']
+ ['мои оценки','guest','visitor'],
+ /* US18 attendance */
+ ['How many classes have I missed?','attend'],
+ ['How many classes have I missed in INF451?','attend'],
+ ['my absences','attend'],
+ ['attendance in MAT301','attend'],
+ ['am I close to the absence limit?','attend'],
+ ['пропуски','attend'],
+ ['сколько я пропустил по INF451','attend'],
+ ['посещаемость','attend'],
+ ['сколько пар я пропустил','attend'],
+ ['propuski po inf451','attend'],
+ ['сабақ босаттым','attend'],
+ ['қанша сабақ қалдырдым','attend'],
+ ['INF451 бойынша қанша сабақ босаттым','attend'],
+ ['сабак босаттым','attend'],
+ ['канша сабак калдырдым','attend'],
+ ['я пропустил срок оплаты','bill'],
+ ['how many classes have I missed','guest','visitor'],
+ ['пропуски','guest','visitor']
 ];
 const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
 /* interface functions from ui.js that replies may reference */
@@ -149,7 +168,7 @@ const OLD={human:['human','staff','person','operator','agent','live','опера
  greet:['hi','hello','hey','привет','здравствуйте','сәлем','салем']};
 /* a strong topic must beat a weak word */
 const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
-const LANGT=[['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
+const LANGT=[['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
 /* checks of the QA scenarios in docs/SPRINTS.md */
 const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
 const has=(s,x)=>s.includes(x);
@@ -189,6 +208,21 @@ const QA=[
  check('US17 a course not in the record',()=>{const a=run('оценка по CS999').said;return has(a,'CS999 нет')||a}),
  check('US17 visitor is asked to sign in, no grades shown',()=>{const a=run('what is my GPA','visitor').said;return has(a,'sign in')&&!has(a,'GPA 3')||a}),
  check('US17 staff in Test assistant: no student grades',()=>{U=ACCOUNTS.staff;said=[];respond(route('what is my GPA'),'en','what is my GPA');const a=said.join();return has(a,'student account')&&!has(a,'GPA 3')||a}),
+ check('US18 S1 "How many classes have I missed in INF451?" → 4 absences, limit 6',()=>{st.att=seedAtt();const a=run('How many classes have I missed in INF451?').said;return has(a,'4 of 6 allowed absences, 2 left')&&!has(a,'MAT301')||a}),
+ check('US18 S1 all courses: INF451 and MAT301 with absences and limit',()=>{st.att=seedAtt();const a=run('сколько у меня пропусков').said;return has(a,'INF451')&&has(a,'MAT301')&&has(a,'Лимит')||a}),
+ check('US18 Kazakh: "INF451 бойынша қанша сабақ босаттым" → 4 / 6',()=>{st.att=seedAtt();const a=run('INF451 бойынша қанша сабақ босаттым').said;return has(a,'рұқсат етілген 6 босатудың 4-і')||a}),
+ check('US18 seeded 4 of 6 → warning "2 left" with course and limit',()=>{st.att=seedAtt();st.notes=[];attCheck('249900002');const n=st.notes.filter(x=>x.type==='att');return n.length===1&&n[0].c==='INF451'&&n[0].left===2&&n[0].lim===6||JSON.stringify(st.notes)}),
+ check('US18 S2 limit 6, missed 4, teacher marks one more → "only 1 left", course and limit named',()=>{st.att=seedAtt();st.notes=[];attCheck('249900002');const sent=markAbsence('249900002','INF451');const n=st.notes[st.notes.length-1],t=trL('n.att','en',{c:n.c+' '+n.t,a:n.abs,l:n.lim,n:n.left});
+   return sent===1&&n.uid==='249900002'&&n.left===1&&has(t,'INF451 Team Software Project')&&has(t,'5 of 6')&&has(t,'only 1 left')||t}),
+ check('US18 the chat then says 1 left',()=>{const a=run('сколько я пропустил по INF451').said;return has(a,'пропущено 5 из 6')&&has(a,'осталось 1')||a}),
+ check('US18 at the limit (6 of 6) → "reached the limit" warning',()=>{markAbsence('249900002','INF451');const n=st.notes[st.notes.length-1];return n.type==='att'&&n.left===0&&n.abs===6||JSON.stringify(n)}),
+ check('US18 over the limit (7 of 6) → separate "limit exceeded" warning',()=>{markAbsence('249900002','INF451');const n=st.notes[st.notes.length-1];return n.type==='attover'&&n.abs===7&&n.lim===6&&has(trL('n.attover','ru',{c:n.c,a:n.abs,l:n.lim}),'превышен')||JSON.stringify(n)}),
+ check('US18 no repeated warning for the same absence count',()=>{const k=st.notes.length;attCheck('249900002');attCheck('249900002');return st.notes.length===k}),
+ check('US18 no warning while more than 2 are left (249900004, MAT301 2 of 5 → 3)',()=>{st.att=seedAtt();st.notes=[];return attCheck('249900004')===0}),
+ check('US18 a mark for one student does not change another student',()=>{st.att=seedAtt();st.notes=[];markAbsence('249900002','INF451');return st.att['249900001'].INF451===2&&!st.notes.some(n=>n.uid!=='249900002')}),
+ check('US18 a student sees only own absences (249900001: INF451 2 of 6)',()=>{st.att=seedAtt();U=ACCOUNTS['249900001'];said=[];curQ='How many classes have I missed in INF451?';respond(route(curQ),'en',curQ);const a=said.join();return has(a,'2 of 6')&&!has(a,'4 of 6')||a}),
+ check('US18 visitor is asked to sign in, no absences shown',()=>{const a=run('How many classes have I missed in INF451?','visitor').said;return has(a,'sign in')&&!has(a,'of 6')||a}),
+ check('US18 every student has INF451 with limit 6; one has 4 absences',()=>Object.keys(ATT_SEED).every(k=>attList(k).some(x=>x.c==='INF451'&&x.lim===6))&&Object.values(ATT_SEED).filter(m=>m.INF451===4).length===1),
  check('US17 every student has different GPA and credits; INF451 not posted for all',()=>{const v=Object.values(ACAD);return new Set(v.map(a=>a.gpa)).size===v.length&&new Set(v.map(a=>a.cr)).size===v.length&&v.every(a=>a.courses.some(c=>c.c==='INF451'&&c.g===null))}),
 ];
 window.clock=()=>new Date();

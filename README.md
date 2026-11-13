@@ -21,9 +21,11 @@ Developed by a student team as part of INF451.
 - Similar-question suggestions while typing in the chat, and a "Help Desk is typing…" indicator
 - Help tickets with status tracking, staff replies and a 1–5 star rating of resolved tickets
 - Advisor appointment booking with reminders
-- Notification bell (staff reply, status change, appointment reminder, tuition reminder 7 days before the deadline); reminders can be turned off in the user menu or by asking in the chat
+- Notification bell (staff reply, status change, appointment reminder, tuition reminder 7 days before the deadline, absence warnings); reminders can be turned off in the user menu or by asking in the chat
 - Ticket status in the chat ("where is my ticket"): number, office and status of the student's own latest tickets
 - Grades and transcript in the chat ("What is my GPA?", "мои оценки", "менің бағаларым", "оценка по INF451"): a card with course, grade and credits, the GPA and the total credits earned, for all courses or for one; a final grade that is not posted yet comes with the official posting deadline (28.12.2026)
+- Attendance in the chat ("How many classes have I missed?", "пропуски", "сабақ босаттым", "сколько я пропустил по INF451"): absences, limit and absences left for every current course or for one
+- Absence warnings in the notification bell: when 2 or fewer absences are left before the limit (with the course and the limit), and a separate warning when the limit is exceeded
 - Office directory: room on the campus map, hours, phone and email for every office, with "Closed now, opens at…" outside working hours
 - Dashboard with deadlines, recent tickets and quick actions; announcement banners
 - First-login guided tour (can be replayed from the user menu)
@@ -37,6 +39,7 @@ Developed by a student team as part of INF451.
 - Knowledge base: FAQ and office entries with search, Add / Edit / Archive; an entry is published only when the question and the answer are filled in English, Kazakh and Russian; every change is kept as a version with author and date, with "Roll back"; the bot and the FAQ page use the published entries right away
 - Staff sections open by address (for example `#analytics`); students and visitors see "Access denied" and no data
 - Announcements: publish or unpublish a notice shown to students
+- Attendance (demo): pick a student and a course and press "Mark absence" to act as the teacher; the student gets the absence warning right away; a table shows every student's absences and limits
 
 **General**
 - Interface in English, Kazakh and Russian (English by default; the choice is remembered)
@@ -66,6 +69,7 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 | 4 – Campus, feedback and knowledge base | US15 Help Desk Analytics Dashboard | Done | |
 | 4 – Campus, feedback and knowledge base | US16 Knowledge Base Content Management | Done | |
 | 5 – More student self-service | US17 Grades & Transcript Lookup | Done | |
+| 5 – More student self-service | US18 Attendance Tracking & Absence Warnings | Done | |
 
 ## Sprint backlog
 
@@ -78,10 +82,10 @@ Password for every account: `demo123`
 | Login | Role | Notes |
 |---|---|---|
 | `249900001` | Student | Tuition with an unpaid balance, library hold on registration; GPA 3.12, 128 credits |
-| `249900002` | Student | Studies on a state grant, no balance, no holds; GPA 3.67, 134 credits |
+| `249900002` | Student | Studies on a state grant, no balance, no holds; GPA 3.67, 134 credits; 4 of 6 absences in INF451 (absence warning) |
 | `249900003` | Student | Tuition paid in full, no holds; GPA 2.85, 121 credits |
 | `249900004` | Student | Tuition with an unpaid balance, no holds; GPA 3.40, 126 credits |
-| `staff` | Staff | Ticket board, review queue, analytics, knowledge base, announcements |
+| `staff` | Staff | Ticket board, review queue, analytics, knowledge base, announcements, attendance (demo) |
 
 The login screen also lists these accounts; click one to fill in the login. **Continue as visitor** opens the chat without an account.
 
@@ -94,12 +98,12 @@ No server, build step or installation is needed.
 
 Notes:
 - Data (tickets, appointments, chat history, notifications) is stored in the browser's `localStorage`, separately for each student ID. Use **Reset demo** in the user menu to restore the initial data.
-- Because storage is per browser, tickets are not shared between different computers. To see "student writes, staff replies", use two tabs in the same browser.
+- Because storage is per browser, tickets are not shared between different computers. To see "student writes, staff replies" or "staff marks an absence, the student gets a warning", use two tabs in the same browser.
 - Fonts are loaded from Google Fonts; without internet the page falls back to system fonts.
 
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 82 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 100 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
 
 ## Project structure
 

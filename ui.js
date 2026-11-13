@@ -3,12 +3,13 @@ const yearLbl=n=>tr('year',{n:ui==='en'?n+['th','st','nd','rd'][n<4?n:0]:n});
 const chip=s=>'<span class="chip'+({Open:' warn','In progress':' prog',Resolved:' done'}[s]||'')+'">'+esc(tr('st.'+s))+'</span>';
 const dt=ts=>new Date(ts).toLocaleString(T[ui].loc,{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 const noteText=n=>n.type==='reply'?tr('n.reply',{n:n.n}):n.type==='status'?tr('n.status',{n:n.n,s:tr('st.'+n.s)}):
-  n.type==='pay'?tr('n.pay',{m:money(n.amt),d:dmy(n.due)}):n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
+  n.type==='pay'?tr('n.pay',{m:money(n.amt),d:dmy(n.due)}):
+  n.type==='att'?tr(n.left?'n.att':'n.att0',{c:n.c+' '+n.t,a:n.abs,l:n.lim,n:n.left}):n.type==='attover'?tr('n.attover',{c:n.c+' '+n.t,a:n.abs,l:n.lim}):n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
 
 /* ---------- views ---------- */
-const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','kb','ann','about','denied'];
+const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','kb','ann','att','about','denied'];
 /* each view is linked to #name in the address; staff-only views show "Access denied" to anyone else and render no data for them */
-const STAFF_VIEWS=['staff','review','analytics','kb','ann'];
+const STAFF_VIEWS=['staff','review','analytics','kb','ann','att'];
 const ROLE_VIEWS={student:['home','chat','tickets','appts','campus','faq','about'],guest:['chat','campus','faq','about'],staff:STAFF_VIEWS.concat('chat','campus','faq','about')};
 const isStaff=()=>U&&U.role==='staff';
 const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
@@ -37,6 +38,7 @@ function ask(t){show('chat');userMsg(t);answer(t)}
 function sync(){
   const stu=U&&U.role==='student',mine=stu?st.tickets.filter(isMine):[],ap=stu?myAppts():[];
   payReminder();
+  if(stu)attCheck(U.login);           /* absence warnings (US18), e.g. seeded 4 of 6 in INF451 */
   if(stu&&remOn())ap.forEach(a=>{const d=a.at-Date.now();if(d>0&&d<864e5&&!a.rem){a.rem=1;note(U.login,'appt2',{at:a.at});save()}});
   $('c-t').textContent=mine.length;$('c-a').textContent=ap.length;
   renderHome(mine,ap);
@@ -48,7 +50,7 @@ function sync(){
     ap.map(a=>'<tr id="ap-'+a.at+'"><td>'+fmt(a.at,ui)+'</td><td>'+esc(a.with)+'</td><td>'+tr(remOn()?'ap.before':'rem.offs')+'</td><td><button class="link" data-cancel="'+st.appts.indexOf(a)+'">'+tr('ap.cancel')+'</button></td></tr>').join('')+'</tbody></table></div>'
     :'<div class="empty">'+tr('ap.none')+'</div>';
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{st.appts.splice(+b.dataset.cancel,1);save();sync()});
-  renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderBanners();renderCampus();
+  renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderAtt();renderBanners();renderCampus();
 }
 
 /* ---------- campus map page: schematic SVG, colours by room type, selection highlights building / barrel and floor ---------- */
@@ -342,6 +344,27 @@ $('kb-detail').onclick=ev=>{if(ev.target.closest('[data-kbx]'))return kbClose();
 $('kb-detail').onsubmit=ev=>{ev.preventDefault();kbPublish(ev.target)};
 $('kb-detail').oninput=ev=>{const fs=ev.target.closest('.kbl');if(fs&&fs.classList.contains('bad')){const d=kbForm($('kb-form'));fs.classList.toggle('bad',kbMissing(d).includes(fs.dataset.l))}};
 
+/* ---------- staff: Attendance (demo) — simulates a teacher marking an absence (US18) ---------- */
+let attSel={uid:'249900002',c:'INF451'},attMsg='';
+const STUDENTS=()=>Object.values(ACCOUNTS).filter(a=>a.role==='student');
+function renderAtt(){
+  if(!isStaff()){$('att').innerHTML='';attMsg='';return}
+  const list=attList(attSel.uid);if(!list.some(x=>x.c===attSel.c))attSel.c=list[0].c;
+  const cur=list.find(x=>x.c===attSel.c),opt=(v,cur,l)=>'<option value="'+v+'"'+(v===cur?' selected':'')+'>'+esc(l)+'</option>';
+  const stat=x=>x.left<0?'<span class="chip warn">'+tr('att.st.over')+'</span>':x.left<=ATT_WARN?'<span class="chip warn">'+tr('att.st.warn')+'</span>':'<span class="chip done">'+tr('att.st.ok')+'</span>';
+  $('att').innerHTML='<form class="attform" id="att-form"><div class="selrow">'+
+      '<label class="fld inline">'+tr('d.student')+'<select id="att-s">'+STUDENTS().map(a=>opt(a.login,attSel.uid,a.name+' · '+a.login)).join('')+'</select></label>'+
+      '<label class="fld inline">'+tr('gr.course')+'<select id="att-c">'+list.map(x=>opt(x.c,attSel.c,x.c+' '+x.t)).join('')+'</select></label></div>'+
+      '<p class="attnow">'+tr('att.now',{a:'<b>'+cur.abs+'</b>',l:'<b>'+cur.lim+'</b>'})+' '+stat(cur)+'</p>'+
+      '<div class="btns"><button type="submit" class="primary">'+tr('att.mark')+'</button></div>'+
+      (attMsg?'<p class="attmsg" role="status">'+esc(attMsg)+'</p>':'')+'</form>'+
+    '<h3 class="sect">'+tr('att.all')+'</h3><div class="tw"><table><thead><tr><th>'+tr('d.student')+'</th><th>'+tr('gr.course')+'</th><th>'+tr('att.abs')+'</th><th>'+tr('att.lim')+'</th><th>'+tr('th.status')+'</th></tr></thead><tbody>'+
+    STUDENTS().flatMap(a=>attList(a.login).map(x=>'<tr><td>'+avatar(a.name)+' '+esc(a.name)+' <small class="mono">'+a.login+'</small></td><td><b>'+x.c+'</b> '+esc(x.t)+'</td><td>'+x.abs+'</td><td>'+x.lim+'</td><td>'+stat(x)+'</td></tr>')).join('')+
+    '</tbody></table></div>'}
+$('att').onchange=e=>{if(e.target.id==='att-s'){attSel.uid=e.target.value;attSel.c=''}else if(e.target.id==='att-c')attSel.c=e.target.value;attMsg='';renderAtt()};
+$('att').onsubmit=e=>{e.preventDefault();const a=ACCOUNTS[attSel.uid],sent=markAbsence(attSel.uid,attSel.c),x=attList(attSel.uid).find(y=>y.c===attSel.c);
+  attMsg=tr('att.marked',{s:a.name,c:x.c,a:x.abs,l:x.lim})+' '+tr(sent?'att.sent':'att.nosent');sync()};
+
 /* ---------- staff: announcements; students see active ones as a banner above Home and Chat ---------- */
 function renderAnn(){
   if(!isStaff()){$('ann-list').innerHTML='';return}
@@ -427,6 +450,7 @@ $('bell').onclick=()=>{if($('bell-pop').hidden){closeUserMenu();$('bell-pop').hi
 $('bell-list').onclick=e=>{const b=e.target.closest('.note');if(!b)return;
   const type=b.dataset.nt,ref=b.dataset.ref;closeBell();
   if(type==='pay')return ask(tr('q.pay'));
+  if(type==='att'||type==='attover')return ask(tr('q.att'));
   const target=type==='reply'||type==='status'?(show('tickets'),$('tk-'+ref)):(show('appts'),$('ap-'+ref));
   if(target){target.scrollIntoView({block:'center'});target.classList.remove('flash');void target.offsetWidth;target.classList.add('flash')}};
 $('user-btn').onclick=()=>{closeBell();const o=$('user-menu').hidden;$('user-menu').hidden=!o;$('user-btn').setAttribute('aria-expanded',String(o))};
@@ -461,7 +485,8 @@ const STORIES=[
   {id:'US14',t:'Answer Feedback & Rating',s:4,p:3,st:'Done'},
   {id:'US15',t:'Help Desk Analytics Dashboard',s:4,o:'Kenan',p:7,st:'Done'},
   {id:'US16',t:'Knowledge Base Content Management',s:4,o:'Zhanibek',p:6,st:'Done'},
-  {id:'US17',t:'Grades & Transcript Lookup',s:5,p:5,st:'Done'}];
+  {id:'US17',t:'Grades & Transcript Lookup',s:5,p:5,st:'Done'},
+  {id:'US18',t:'Attendance Tracking & Absence Warnings',s:5,p:4,st:'Done'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];
 let aboutTab='overview';
 const inSprint=n=>STORIES.filter(s=>s.s===n);

@@ -443,7 +443,36 @@ const D={
  'gr.npc':["The final grade for {c} is not posted yet. Official grade posting deadline: {d}.","{c} пәні бойынша қорытынды баға әлі қойылмаған. Бағаларды қоюдың ресми мерзімі: {d}.","Итоговая оценка по {c} ещё не выставлена. Официальный срок выставления оценок: {d}."],
  'gr.nf':["{c} is not in your record. Your courses: {l}.","{c} пәні сіздің деректеріңізде жоқ. Сіздің пәндеріңіз: {l}.","{c} нет в ваших данных. Ваши курсы: {l}."],
  'gr.dl':["Fall 2026 final grades are posted by {d} (academic calendar).","2026 күзгі семестрдің қорытынды бағалары {d} дейін қойылады (академиялық күнтізбе).","Итоговые оценки за осень 2026 выставляются до {d} (академический календарь)."],
- 'gr.src':["Student Portal · Grades","Student Portal · Бағалар","Student Portal · Оценки"]
+ 'gr.src':["Student Portal · Grades","Student Portal · Бағалар","Student Portal · Оценки"],
+
+ 'i.attend':["Attendance and absences","Сабаққа қатысу және босатулар","Посещаемость и пропуски"],
+ 'q.att':["How many classes have I missed?","Қанша сабақ босаттым?","Сколько у меня пропусков?"],
+ 'att.title':["Your absences · Fall 2026","Босатқан сабақтарыңыз · 2026 күз","Ваши пропуски · осень 2026"],
+ 'att.abs':["Absences","Босату","Пропуски"],
+ 'att.lim':["Limit","Шек","Лимит"],
+ 'att.left':["Left","Қалды","Осталось"],
+ 'att.over':["exceeded","асып кетті","превышен"],
+ 'att.one':["{c}: {a} of {l} allowed absences, {n} left before the limit.","{c}: рұқсат етілген {l} босатудың {a}-і пайдаланылды, шекке дейін {n} қалды.","{c}: пропущено {a} из {l} допустимых, до лимита осталось {n}."],
+ 'att.w':["Careful: only {n} left in {c} (limit {l}).","Абайлаңыз: {c} пәнінде тек {n} қалды (шек: {l}).","Внимание: по {c} осталось всего {n} (лимит {l})."],
+ 'att.w.0':["You have reached the absence limit in {c} ({l}). One more absence exceeds it.","{c} пәнінде босату шегіне ({l}) жеттіңіз. Тағы бір босату шектен асады.","По {c} вы достигли лимита пропусков ({l}). Ещё один пропуск превысит лимит."],
+ 'att.w.over':["The absence limit in {c} is exceeded: {a} absences, limit {l}. Contact your advisor.","{c} пәнінде босату шегі асып кетті: {a} босату, шек: {l}. Кеңесшіңізге хабарласыңыз.","Лимит пропусков по {c} превышен: пропущено {a}, лимит {l}. Свяжитесь с эдвайзером."],
+ 'att.nf':["{c} is not among your courses this term. Your courses: {l}.","{c} пәні осы семестрдегі пәндеріңіздің арасында жоқ. Сіздің пәндеріңіз: {l}.","{c} нет среди ваших курсов в этом семестре. Ваши курсы: {l}."],
+ 'att.src':["Attendance records · Fall 2026","Сабаққа қатысу журналы · 2026 күз","Журнал посещаемости · осень 2026"],
+ 'n.att':["Attendance warning: {c} — {a} of {l} absences used, only {n} left before the limit.","Сабаққа қатысу туралы ескерту: {c} — {l} босатудың {a}-і пайдаланылды, шекке дейін тек {n} қалды.","Предупреждение о посещаемости: {c} — пропущено {a} из {l}, до лимита осталось всего {n}."],
+ 'n.att0':["Attendance warning: {c} — you have reached the absence limit of {l}. One more absence exceeds it.","Сабаққа қатысу туралы ескерту: {c} — босату шегіне ({l}) жеттіңіз. Тағы бір босату шектен асады.","Предупреждение о посещаемости: {c} — вы достигли лимита пропусков ({l}). Ещё один пропуск превысит лимит."],
+ 'n.attover':["Absence limit exceeded: {c} — {a} absences, the limit is {l}. Contact your advisor.","Босату шегі асып кетті: {c} — {a} босату, шек: {l}. Кеңесшіңізге хабарласыңыз.","Лимит пропусков превышен: {c} — пропущено {a}, лимит {l}. Свяжитесь с эдвайзером."],
+ 'nav.att':["Attendance (demo)","Сабаққа қатысу (демо)","Посещаемость (демо)"],
+ 'att.h':["Attendance (demo)","Сабаққа қатысу (демо)","Посещаемость (демо)"],
+ 'att.hint':["Simulates a teacher marking an absence. The student gets a warning in notifications when 2 or fewer absences are left before the limit, and a separate one when the limit is exceeded.","Оқытушының босатуды белгілеуін имитациялайды. Шекке дейін 2 не одан аз босату қалғанда студентке хабарлама түрінде ескерту келеді, шек асқанда — бөлек ескерту.","Имитирует отметку пропуска преподавателем. Когда до лимита остаётся 2 пропуска или меньше, студент получает предупреждение в уведомлениях, а при превышении лимита — отдельное предупреждение."],
+ 'att.now':["Absences: {a} of {l}","Босату: {a} / {l}","Пропуски: {a} из {l}"],
+ 'att.mark':["Mark absence","Босатуды белгілеу","Отметить пропуск"],
+ 'att.marked':["Absence marked: {s}, {c} — {a} of {l}.","Босату белгіленді: {s}, {c} — {a} / {l}.","Пропуск отмечен: {s}, {c} — {a} из {l}."],
+ 'att.sent':["A warning was sent to the student's notifications.","Студенттің хабарламаларына ескерту жіберілді.","Студенту отправлено предупреждение в уведомления."],
+ 'att.nosent':["No warning yet: more than 2 absences are left.","Әзірге ескерту жоқ: 2-ден көп босату қалды.","Предупреждения пока нет: осталось больше 2 пропусков."],
+ 'att.all':["All students","Барлық студенттер","Все студенты"],
+ 'att.st.ok':["OK","Қалыпты","В норме"],
+ 'att.st.warn':["Close to the limit","Шекке жақын","Близко к лимиту"],
+ 'att.st.over':["Limit exceeded","Шек асып кетті","Лимит превышен"]
 };
 let ui='en';
 try{const s=localStorage.getItem('hd-ui');if(LANGS.includes(s))ui=s}catch(e){}
