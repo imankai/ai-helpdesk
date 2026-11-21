@@ -466,6 +466,17 @@ button.primary.sm{padding:7px 14px;font-size:14px;align-self:flex-start}
 .campus g.plc:focus-visible .pf{stroke:var(--focus);stroke-width:4}
 .campus .exa{stroke:var(--c-ent);stroke-width:3;stroke-dasharray:6 4;fill:none}
 .campus .exh{fill:var(--c-ent)}
+.campus .wing{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:5 4}
+.campus .wt{fill:var(--muted);font-size:11px;font-weight:700}
+.campus .orm{cursor:pointer}
+.campus .orm .seg{stroke:transparent;stroke-width:3}
+.campus .orm:hover .seg{stroke:var(--muted)}
+.campus .orm.sel .seg{stroke:var(--ink)}
+.campus g.orm:focus-visible .seg{stroke:var(--focus);stroke-width:3}
+.campus .ot{fill:var(--on-accent);font-size:11px;font-weight:800}
+.campus .et{font-size:12px;font-weight:800;fill:var(--ink)}
+.campus .mia{stroke:var(--c-ent);stroke-width:3;fill:none}
+.campus .mih{fill:var(--c-ent)}
 .campus .st,.campus .scale,.campus .na text{fill:var(--muted);font-size:12px;font-weight:700}
 .campus .scale{font-style:italic;font-weight:600}
 .campus .na path{fill:var(--muted)}

@@ -242,7 +242,7 @@ const TEACH_SEED=[
  ['t-nightingale','Dr. Leo Nightingale','Лео Найтингейл',['INF415'],'l.nightingale','I305',[[3,'11:00','12:30']],1]];
 const KB_X=['event','club','teacher','place'];
 /* services and separate buildings of the campus map (see the campus map section below) */
-const PLACES=['library','canteen','market','print','tennis','medical','exit','studenthouse','sdulife','journalism'];
+const PLACES=['library','canteen','market','print','tennis','medical','mainexit','southexit','gexit','studenthouse','sdulife'];
 function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
   const mk=(id,kind,intent,cat,src,q,a,x)=>({id,kind,intent:intent||null,status:'published',vn:1,vers:[Object.assign({n:1,act:'create',by,at,cat,src,q,a},x?{x}:{})],log:[]});
   const per=f=>Object.fromEntries(LANGS.map(l=>[l,f(l)])),lines=v=>Array.isArray(v)?v.join('\n'):v;
@@ -260,6 +260,7 @@ const seedHousing=()=>{const n=Date.now();return[
 const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt(),housing:seedHousing(),evreg:{}});
 const loadSt=s=>{s.prefs=s.prefs||{};s.att=s.att||seedAtt();s.housing=s.housing||seedHousing();s.evreg=s.evreg||{};
   /* data saved before US20–US22 gets the new built-in entries (Housing Office, Dean's Office, events, clubs, teachers) */
+  if(s.kb)s.kb=s.kb.filter(e=>e.id!=='p-journalism'&&e.id!=='p-exit');   /* replaced by the main, south and block G exits */
   if(s.kb)seedKb().forEach(e=>{if((e.id==='housing'||e.id==='deans'||KB_X.includes(e.kind))&&!s.kb.some(x=>x.id===e.id))s.kb.push(e)});
   s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
   if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
@@ -399,21 +400,27 @@ const CAMPUS=(()=>{
   rng('H',1,101,103,'classroom');
   rng('H',2,201,203,'classroom');rng('H',2,204,209,'office');
   rng('H',3,301,303,'classroom');rng('H',3,304,309,'office');
-  rng('I',1,101,103,'classroom');add('I110','I',1,'lecture');add('I111','I',1,'lecture');
+  rng('I',1,101,103,'classroom');add('I109','I',1,'study');add('I110','I',1,'lecture');add('I111','I',1,'lecture');
   rng('I',2,201,203,'classroom');rng('I',2,204,208,'office');add('I209','I',2,'study');add('I210','I',2,'lecture');add('I211','I',2,'lecture');
   rng('I',3,301,303,'classroom');rng('I',3,304,308,'office');add('I309','I',3,'study');add('I310','I',3,'lecture');add('I311','I',3,'lecture');
   ['A1','A2','B1','B2','C1','C2'].forEach(id=>add(id,null,null,'lecture',true));   /* "barrels": separate lecture halls */
+  /* these rooms belong to their block but are across the main corridor from it (opp: true) */
+  ['H01','H02','H03','I109','I110','I111','I209','I210','I211','I309','I310','I311'].forEach(id=>{m.get(id).opp=true});
   return m})();
 const CAMPUS_BLDS=['D','E','F','G','H','I'];
 /* Services and separate buildings of the real campus layout (a simplified drawing, not to scale). The main building is one long
    corridor from south to north with blocks I, H, G, F, E, D along it and the Library north of D; across the corridor are the barrels
-   B (opposite D) and C (opposite E), the Canteen and Market (opposite F), the Print center, Table tennis & chess and the Main exit
-   (opposite G); the Medical point is in the corridor between G and H. Student House is west of the main building, SDU Life south of it,
-   the Journalism school and barrels A1, A2 at the north end. Names and "where" texts: sv.<id> and sv.<id>.w in i18n.js; descriptions are
+   B (opposite D) and C (opposite E), the Canteen and Market (opposite F), the Print center, Table tennis & chess and an exit to the street
+   (opposite G), and the lecture halls of blocks H and I (opposite their blocks); the Medical point is in the corridor between G and H.
+   The Main exit is at the north end of the corridor, the South exit at its south end.
+   Between every two neighbouring blocks (D–E, E–F, F–G, G–H, H–I) there is a small entrance. Student House is west of the main
+   building, SDU Life south of it, barrels A1, A2 at the north end. Names and "where" texts: sv.<id> and sv.<id>.w in i18n.js; descriptions are
    knowledge base entries p-<id>. No opening hours are shown: the map has none. */
 /* what a question asks for; the first match wins (exit before entrance words, tennis before the chess club is decided in route) */
 const PLACE_RE=[
-  ['exit',/main exit|main entrance|way out|\bexit\b|get out(side)?|go outside|выйти на улицу|выход на улицу|главный выход|выход|выйти|көшеге шығ|сыртқа шығ|басты шығу|шығатын есік/i],
+  ['southexit',/south(ern)? exit|exit at the (south|end)|end of the corridor|южн\S* выход|выход в конце коридора|в конце коридора|оңтүстік шығу|дәліздің соңы/i],
+  ['gexit',/(exit|выход|шығу)\S*.*(opposite|напротив|қарама)\S*.*\bg\b|\bg\b.*(exit|выход|шығу)/i],
+  ['mainexit',/main exit|main entrance|way out|\bexit\b|get out(side)?|go outside|выйти на улицу|выход на улицу|главн\S* (выход|вход)|выход|выйти|көшеге шығ|сыртқа шығ|басты шығу|басты кіреберіс|шығатын есік/i],
   ['medical',/medical|clinic|nurse|first aid|медпункт|медицинск|медсестр|врач|дәрігер|медбике|алғашқы көмек|medpunkt/i],
   ['library',/librar|библиотек|кітапхана|китапхана|kitaphana|kitapkhana|biblioteka/i],
   ['canteen',/canteen|cafeteria|dining|\beat\b|food|lunch|столов|буфет|поесть|покушать|пообедать|перекусить|(^|[^а-яё])ед[аыу]([^а-яё]|$)|асхана|тамақ|тамак|asxana|ashana|stolov/i],
@@ -421,11 +428,10 @@ const PLACE_RE=[
   ['print',/print|xerox|photocop|\bcopy\b|распечат|печат|ксерокс|принтер|басып шығар|raspechat/i],
   ['tennis',/tennis|ping ?pong|chess|теннис|пинг-?понг|шахмат/i],
   ['studenthouse',/student house|\bdorm|dormitor|hostel|общежити|общаг|жатақхана|жатакхана|zhatakhana|obshag/i],
-  ['sdulife',/sdu ?life/i],
-  ['journalism',/journalis|журналист/i]];
+  ['sdulife',/sdu ?life/i]];
 const placeOf=t=>{const m=PLACE_RE.find(([,re])=>re.test(t||''));return m?m[0]:null};
 /* what is next to each block (for room cards and the block panel); "br:B" = barrels B1, B2 */
-const NEAR={D:['library','br:B'],E:['br:C'],F:['canteen','market'],G:['print','tennis','exit','medical'],H:['medical'],I:['sdulife']};
+const NEAR={D:['library','mainexit','br:B'],E:['br:C'],F:['canteen','market'],G:['print','tennis','gexit','medical'],H:['medical'],I:['southexit','sdulife']};
 const nearText=(b,L)=>(NEAR[b]||[]).map(k=>k.startsWith('br:')?trL('cm.brs',L,{a:k[3]+'1',b:k[3]+'2',w:trL('cm.br.'+k[3],L)}):trL('sv.'+k,L)+' ('+trL('sv.'+k+'.w',L)+')').join('; ');
 /* description of a place: its knowledge base entry (staff can edit it), else the "where" text */
 function placeDesc(id,L){const e=(st.kb||[]).find(x=>x.id==='p-'+id&&x.status==='published');return e?kbData(e).a[L]:trL('sv.'+id,L)+': '+trL('sv.'+id+'.w',L)}
@@ -462,7 +468,7 @@ function typeSummary(type,L){
 /* recognise room numbers: F305, f305, F 305, F-305, H01, A1 (letters A–I; Cyrillic look-alikes accepted) */
 const HOMO={'А':'A','В':'B','С':'C','Е':'E','Н':'H','І':'I'};
 const LOC=/where|find|locat|room|hall|office|barrel|how (do i )?(get|find|reach)|где|кабинет|аудитори|зал|бочк|как (пройти|найти|добраться)|қайда|бөшке|бөлме|қалай|kaida|qaida|gde/i;
-/* "как выйти на улицу", "how do I get out": the main exit, even without a where-word */
+/* "как выйти на улицу", "how do I get out": the exit to the street, even without a where-word */
 const EXITQ=/как выйти|выйти на улицу|выход на улицу|how (do|can) i (get|go) out|way out|көшеге қалай шығ|сыртқа қалай шығ|көшеге шығу|сыртқа шығу/i;
 function roomTokens(text,force){
   const s=text.toUpperCase().replace(/[АВСЕНІ]/g,c=>HOMO[c]),out=[],re=/(^|[^A-Z0-9А-ЯЁӘІҢҒҮҰҚӨҺ])([A-I])([\s-]?)(\d{1,3})(?!\d)/g;
@@ -486,7 +492,7 @@ function similarRooms(id){const b=id[0],n=id.slice(1),same=[...CAMPUS.keys()].fi
 function campusIntent(t){
   const loc=LOC.test(t),ids=roomTokens(t,loc);
   if(ids.length)return{k:'rooms',ids:[...new Set(ids)].slice(0,3)};
-  if(EXITQ.test(t))return{k:'svc',id:'exit'};
+  if(EXITQ.test(t))return{k:'svc',id:placeOf(t)==='southexit'?'southexit':'mainexit'};
   if(!loc)return null;
   const n=bareNum(t);if(n)return{k:'bare',n};
   const pl=placeOf(t);if(pl&&(WHERE.test(t)||/где|қайда|kaida|qaida|gde/i.test(t)))return{k:'svc',id:pl};
@@ -757,6 +763,7 @@ function evRangeText(r,L,head){const a=dmText(r.from),b=dmText(addDays(r.to,-1))
   return head?trL('ev.h.'+r.k,L,{a,b}):a+'–'+b}
 /* a place of the campus map with its type and building */
 function placeText(id,L){if(PLACES.includes(id))return trL('sv.'+id,L)+' ('+trL('sv.'+id+'.w',L)+')';const r=CAMPUS.get(id);if(!r)return id;const t=trL('cm.t.'+r.t,L).toLowerCase();
+  if(r.opp)return r.f?trL('pl.of',L,{r:id,t,b:r.b,f:r.f}):trL('pl.ob',L,{r:id,t,b:r.b});
   return r.barrel?trL('pl.br',L,{r:id,t}):r.f?trL('pl.f',L,{r:id,t,b:r.b,f:r.f}):trL('pl.b',L,{r:id,t,b:r.b})}
 /* registrations stay inside the site: per account in the demo data, for a visitor only until the page is closed */
 let guestReg=[];
@@ -846,6 +853,8 @@ const libQuery=t=>nluAnalyze(t).words.filter(w=>!KK_LAT.has(w)).join(' ');
 function bookRows(b,L){return[trL('lib.author',L)+': '+b.a,trL('gr.course',L)+': '+b.c,
   b.av?{t:trL('lib.av',L,{n:b.av,m:b.n}),cls:'yes'}:{t:trL('lib.nav',L,{m:b.n,d:dmy(b.next)}),cls:'no'},trL('lib.shelf',L,{s:b.sh})]}
 const bookLine=(b,L)=>b.t+' — '+b.a+' ('+b.c+'): '+(b.av?trL('lib.av',L,{n:b.av,m:b.n}):trL('lib.nav',L,{m:b.n,d:dmy(b.next)}))+' · '+trL('lib.shelf',L,{s:b.sh});
+/* a room across the corridor from its block */
+const roomOppHint=(r,L)=>r.f?trL('cm.hint.opp',L,{id:r.id,b:r.b,f:r.f}):trL('cm.hint.opp0',L,{id:r.id,b:r.b});
 /* a service or separate building: description and Show on map */
 function placeCard(id,L){bot({title:trL('sv.'+id,L),text:placeDesc(id,L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap(id)]],fb:true},L)}
 function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
@@ -853,8 +862,9 @@ function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
   if(r.f)rows.push(trL('cm.floor',L)+': '+r.f);
   rows.push(trL('cm.type',L)+': '+trL('cm.t.'+r.t,L)+(r.barrel?' ('+trL('cm.t.barrel',L)+')':''));
   if(r.b)rows.push(trL('cm.ent',L)+': '+trL('cm.ent.'+r.b,L));
+  if(r.opp)rows.push(trL('cm.opp',L,{b:r.b}));
   if(r.b&&NEAR[r.b])rows.push(trL('cm.near',L,{l:nearText(r.b,L)}));
-  const hint=r.barrel?trL('cm.hint.barrel',L,{id,w:trL('cm.br.'+id[0],L)}):r.f?trL('cm.hint.floor',L,{b:r.b,f:r.f,r:floorSummary(r.b,r.f,L)}):trL('cm.hint.nofloor',L,{id,b:r.b});
+  const hint=r.barrel?trL('cm.hint.barrel',L,{id,w:trL('cm.br.'+id[0],L)}):r.opp?roomOppHint(r,L):r.f?trL('cm.hint.floor',L,{b:r.b,f:r.f,r:floorSummary(r.b,r.f,L)}):trL('cm.hint.nofloor',L,{id,b:r.b});
   bot({title:id,list:rows,after:hint,src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap(id)]],fb:true},L)}
 let presetOffice=null;
 /* personal features: a visitor is asked to sign in; staff in Test assistant are told it needs a student account */

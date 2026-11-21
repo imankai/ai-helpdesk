@@ -325,29 +325,36 @@ const QA=[
  check('US11 no reminder for a grant student',()=>{st.notes=[];U=ACCOUNTS['249900002'];at(2026,11,6,9);payReminder();return st.notes.length===0}),
  check('US11 "Stop sending me reminders" turns them off and none arrive',()=>{st.notes=[];const a=run('Stop sending me reminders');U=ACCOUNTS['249900002'];const off=!remOn();U=ACCOUNTS['249900004'];setRem(false);at(2026,11,6,9);payReminder();const none=st.notes.length===0;setRem(true);U=ACCOUNTS['249900002'];setRem(true);return off&&none&&has(a.said,'turned off')||a.said}),
  check('US11 "включи напоминания" turns them on',()=>{U=ACCOUNTS['249900002'];setRem(false);run('включи напоминания');U=ACCOUNTS['249900002'];return remOn()}),
- check('US13 room card shows the nearest entrance and a map button',()=>{const a=run('Where is room F305?').said;return has(a,'Nearest entrance: south entrance')&&lastO.acts.length===1||a}),
+ check('US13 room card shows the nearest entrance and a map button',()=>{const a=run('Where is room F305?').said;return has(a,'Nearest entrance: small entrances between blocks E and F or F and G')&&lastO.acts.length===1||a}),
  check('Map: "where" questions about services and buildings reach the right place (EN / RU / KK, slang, transliteration)',()=>{
    const W=[['Where is the library?','library'],['где библиотека','library'],['кітапхана қайда','library'],['kitaphana kaida','library'],
      ['где столовая','canteen'],['где поесть','canteen'],['Where can I eat?','canteen'],['асхана қайда','canteen'],['asxana qaida','canteen'],
      ['где магазин','market'],['where is the market','market'],['где распечатать','print'],['Where can I print?','print'],['қайда басып шығаруға болады','print'],
      ['где медпункт','medical'],['медпункт қайда','medical'],['where is the medical point','medical'],['где поиграть в теннис','tennis'],['where can I play chess','tennis'],
-     ['как выйти на улицу','exit'],['How do I get out to the street?','exit'],['көшеге қалай шығамын','exit'],['где главный выход','exit'],
-     ['где общежитие','studenthouse'],['Where is Student House?','studenthouse'],['жатақхана қайда','studenthouse'],['Where is SDU Life?','sdulife'],['где школа журналистики','journalism']];
+     ['как выйти на улицу','mainexit'],['How do I get out to the street?','mainexit'],['көшеге қалай шығамын','mainexit'],['где выход','mainexit'],['где главный выход','mainexit'],['басты шығу қайда','mainexit'],
+     ['где южный выход','southexit'],['where is the exit at the end of the corridor','southexit'],['оңтүстік шығу қайда','southexit'],['где выход напротив корпуса G','gexit'],
+     ['где общежитие','studenthouse'],['Where is Student House?','studenthouse'],['жатақхана қайда','studenthouse'],['Where is SDU Life?','sdulife']];
    for(const [q,id] of W){mapped=null;const a=run(q);if(a.r.k!=='campus'||a.r.c.id!==id)return q+' → '+JSON.stringify(a.r.c||a.r.k);
      lastO.acts[0][1]();if(mapped!==id||!has(a.said,trL('sv.'+id+'.w',detect(q)).split(',')[0]))return q+' → '+a.said}
    return true}),
  check('Map: answers in the language of the question with where the place is',()=>{const a=run('асхана қайда').said,b=run('где медпункт').said,c=run('Where can I print?').said;
    return has(a,'F корпусына қарама-қарсы')&&has(b,'между корпусами G и H')&&has(c,'opposite block G')||a+' / '+b+' / '+c}),
  check('Map: "где кабинет F305" → room card as before plus what is nearby (canteen opposite F)',()=>{const a=run('где кабинет F305').said;return has(a,'Корпус: F')&&has(a,'Этаж: 3')&&has(a,'Рядом: Столовая (напротив корпуса F')&&has(a,'Магазин')||a}),
- check('Map: nearest entrance of blocks G and H is the main exit; D104 card names the Library and barrels B1, B2 nearby',()=>{const g=run('Where is G205?').said,h=run('Where is H203?').said,d=run('Where is D104?').said;
-   return has(g,'Nearest entrance: main exit, across the corridor from block G')&&has(h,'Nearest entrance: main exit opposite block G')&&has(d,'Library (north of block D')&&has(d,'barrels B1, B2 (opposite block D')||g+' / '+h+' / '+d}),
- check('Map: barrels are placed as in reality: A at the Journalism school, B opposite D, C opposite E',()=>{const a=run('Where is A1?').said,b=run('где B2').said,c=run('C1 қайда').said;
-   return has(a,'next to the Journalism school')&&has(b,'напротив корпуса D')&&has(c,'E корпусына қарама-қарсы')||a+' / '+b+' / '+c}),
+ check('Map: nearest entrances are the small entrances between neighbouring blocks; D104 card names the Library and barrels B1, B2 nearby',()=>{const g=run('Where is G205?').said,h=run('Where is H203?').said,d=run('Where is D104?').said,i=run('I102 қайда').said;
+   return has(g,'Nearest entrance: small entrances between blocks F and G or G and H')&&has(h,'between blocks G and H or H and I')&&has(d,'Nearest entrance: small entrance between blocks D and E')&&has(i,'H және I корпустарының арасындағы шағын кіреберіс')&&has(d,'Library (north of block D')&&has(d,'barrels B1, B2 (opposite block D')||g+' / '+h+' / '+d}),
+ check('Map: barrels are placed as in reality: A at the north end, B opposite D, C opposite E',()=>{const a=run('Where is A1?').said,b=run('где B2').said,c=run('C1 қайда').said;
+   return has(a,'at the north end of the campus')&&has(b,'напротив корпуса D')&&has(c,'E корпусына қарама-қарсы')||a+' / '+b+' / '+c}),
  check('Map: a place that is not on the map (gym) is not invented',()=>{const a=run('Where is the gym?').said;return has(a,'not on the campus map')||a}),
- check('Map: 10 places are knowledge base entries in three languages, with no opening hours and no phone',()=>{const e=PLACES.map(id=>st.kb.find(x=>x.id==='p-'+id));
-   return e.length===10&&e.every(x=>x&&x.kind==='place'&&LANGS.every(l=>kbData(x).q[l].length&&kbData(x).a[l])&&!/\d{1,2}:\d\d|\+?\d[\d ()-]{6,}\d/.test(JSON.stringify([kbData(x).q,kbData(x).a])))}),
+ check('Map: 11 places are knowledge base entries in three languages, with no opening hours and no phone; no Journalism school',()=>{const e=PLACES.map(id=>st.kb.find(x=>x.id==='p-'+id));
+   return e.length===11&&!PLACES.includes('journalism')&&!st.kb.some(x=>x.id==='p-journalism')&&e.every(x=>x&&x.kind==='place'&&LANGS.every(l=>kbData(x).q[l].length&&kbData(x).a[l])&&!/\d{1,2}:\d\d|\+?\d[\d ()-]{6,}\d/.test(JSON.stringify([kbData(x).q,kbData(x).a])))}),
  check('Map: a description edited by staff in the knowledge base is what the bot answers',()=>{const e=st.kb.find(x=>x.id==='p-market'),v=kbData(e),old=v.a.en;v.a.en='Opposite block F. Test text.';
    const a=run('where is the market').said;v.a.en=old;return has(a,'Test text')||a}),
+ check('Map: H01–H03 and I109–I111, I209–I211, I309–I311 are across the corridor, opposite their block',()=>{const a=run('Where is H02?').said,b=run('где I210').said,c=run('Where is I109?').said,d=run('Where is I102?').said;
+   return ['H01','H02','H03','I109','I110','I111','I209','I210','I211','I309','I310','I311'].every(id=>CAMPUS.get(id).opp)&&has(a,'H02 is a lecture hall across the corridor, opposite block H')&&
+     has(b,'Через коридор, напротив корпуса I')&&has(b,'этаж 2')&&has(c,'opposite block I')&&has(c,'Type: Study room')&&['I109','I209','I309'].every(id=>CAMPUS.get(id).t==='study')&&!has(d,'opposite block I')||a+' / '+b+' / '+c+' / '+d}),
+ check('Map: the main exit is at the north end of the corridor, the south exit at its south end; every block has a small-entrance text',()=>((a,b)=>has(a,'в северном конце главного коридора')&&has(b,'south end of the main corridor'))(run('где главный выход').said,run('where is the south exit').said)&&
+   has(run('Where is D104?').said,'the main exit is at the north end')&&has(run('Where is I102?').said,'the south exit')&&
+   CAMPUS_BLDS.every(b=>LANGS.every(l=>/small entrance|шағын кіреберіс|малы[йе] вход/.test(trL('cm.ent.'+b,l))))),
  check('US13 every building has an entrance in three languages',()=>CAMPUS_BLDS.every(b=>LANGS.every(l=>!trL('cm.ent.'+b,l).startsWith('cm.')))),
  check('Language "мен грантпын ба" gets a Kazakh answer',()=>{const a=run('мен грантпын ба').said;return has(a,'Оқуыңыз')||a}),
  check('Test assistant: staff questions stay out of Analytics',()=>{const n=st.events.length;U=ACCOUNTS.staff;respond(route('I forgot my password'),'en','I forgot my password');return st.events.length===n}),
@@ -417,7 +424,7 @@ const QA=[
    return /^Campus events in the next 7 days \(21.11–27.11\)$/.test(outs[0].title)&&cards.length===5&&has(t,'Guest Lecture')&&has(t,'Python Workshop')&&has(t,'Campus Hackathon')&&has(t,'Career Fair')&&has(t,'Friday Movie Night')&&!has(t,'Chess')&&
      cards.every(o=>o.list.some(x=>/^Date: /.test(x))&&o.list.some(x=>/^Time: \d\d:\d\d–\d\d:\d\d$/.test(x))&&o.list.some(x=>/^Place: /.test(x))&&o.acts[0][0]==='Register'&&o.acts[1][0]==='Show on map')||outs[0].title+' / '+t}),
  check('US21 S1 the card shows the date, time and place of the Hackathon (in 2 days, 10:00–18:00, I210)',()=>{at(2026,11,21,10);run('What events are on campus this week?');const o=outs.find(x=>x.title==='Campus Hackathon');
-   return /^Date: Mon, 23.11.2026$/.test(o.list[0])&&o.list[1]==='Time: 10:00–18:00'&&o.list[2]==='Place: I210 (lecture hall, building I, floor 2)'||o.list.join(' | ')}),
+   return /^Date: Mon, 23.11.2026$/.test(o.list[0])&&o.list[1]==='Time: 10:00–18:00'&&o.list[2]==='Place: I210 (lecture hall, opposite block I, floor 2)'||o.list.join(' | ')}),
  check('US21 S1 Russian "события на этой неделе" and Kazakh "осы аптадағы іс-шаралар" answer in their language',()=>{at(2026,11,21,10);const a=run('события на этой неделе').said,b=run('осы аптадағы іс-шаралар').said;
    return has(a,'События кампуса на ближайшие 7 дней')&&has(a,'Хакатон на кампусе')&&has(a,'Место: I210')&&has(b,'Алдағы 7 күндегі')&&has(b,'Кампус хакатоны')||a.slice(0,200)+' / '+b.slice(0,200)}),
  check('US21 "что будет в пятницу" → the events of the coming Friday (27.11) only',()=>{at(2026,11,21,10);const a=run('что будет в пятницу').said,cards=outs.slice(1);

@@ -55,9 +55,10 @@ function sync(){
 }
 
 /* ---------- campus map page: our own simplified drawing of the real layout (north at the top, not to scale).
-   The main corridor runs south to north with blocks I → D and the Library on its east side; across it (west) are the barrels B, C,
-   the services opposite F and G and the Main exit; the Medical point is in the corridor between G and H; Student House, SDU Life
-   and the Journalism school (with barrels A1, A2) are separate buildings. A click on a block, barrel or place opens its card. ---------- */
+   The main corridor runs south to north with blocks I → D and the Library on its east side; small entrances lead out between
+   neighbouring blocks. Across the corridor (west) are the barrels B, C, the services opposite F and G with the Exit to the street,
+   and the lecture halls of H and I opposite their blocks; the Medical point is in the corridor between G and H; Student House and
+   SDU Life are separate buildings, barrels A1, A2 are at the north end. A click on a block, room, barrel or place opens its card. ---------- */
 let campus={b:null,room:null,f:null,nf:null,svc:null};
 function campusSelect(id){
   if(PLACES.includes(id)){campus={b:null,room:null,f:null,nf:null,svc:id};return}
@@ -74,20 +75,25 @@ function svgLabel(x,y,text,cls,max){const w=String(text).split(' ');let a=text,b
   if(text.length>max&&w.length>1){let i=1;while(i<w.length&&w.slice(0,i+1).join(' ').length<=max)i++;a=w.slice(0,i).join(' ');b=w.slice(i).join(' ')}
   return '<text class="'+cls+'" x="'+x+'" y="'+(b?y-7:y)+'" text-anchor="middle">'+esc(a)+(b?'<tspan x="'+x+'" dy="15">'+esc(b)+'</tspan>':'')+'</text>'}
 /* geometry: west column (separate buildings), west side (barrels and services), corridor, blocks */
-const CMG={W:760,H:960,ox:10,ow:140,wx:168,ww:194,cx:368,cw:50,bx:426,bw:324,bh:100,
+const CMG={W:800,H:960,ox:10,ow:140,wx:168,ww:194,cx:370,cw:70,bx:448,bw:324,bh:100,
   by:{D:178,E:288,F:398,G:508,H:648,I:758}};
 function campusSvg(){
-  const g=CMG,roomsOf=(b,f)=>[...CAMPUS.values()].filter(r=>r.b===b&&r.f===f);
+  const g=CMG,roomsOf=(b,f)=>[...CAMPUS.values()].filter(r=>r.b===b&&r.f===f&&!r.opp);
   const place=(id,x,y,w,h,cls,max)=>'<g class="plc '+cls+(campus.svc===id?' sel':'')+'" data-s="'+id+'" tabindex="0" role="button" aria-label="'+esc(tr('sv.'+id))+'">'+
     '<rect class="pf" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="5"/>'+svgLabel(x+w/2,y+h/2+5,tr(PLACE_SHORT.includes(id)?'sv.'+id+'.s':'sv.'+id),'pt',max||Math.floor(w/7.5))+'</g>';
   const barrel=(id,x,y)=>'<g class="brl'+(campus.room===id?' sel':'')+'" data-r="'+id+'" tabindex="0" role="button" aria-label="'+id+'"><rect class="seg lecture" x="'+x+'" y="'+y+'" width="90" height="50" rx="25"/><text class="bt" x="'+(x+45)+'" y="'+(y+31)+'" text-anchor="middle">'+id+'</text></g>';
   let s='<svg viewBox="0 0 '+g.W+' '+g.H+'" class="campus" role="img" aria-label="'+esc(tr('cm.title'))+'">';
   /* north arrow and the corridor */
   s+='<g class="na"><path d="M60 300 l-9 22 l9 -6 l9 6 z"/><text x="60" y="340" text-anchor="middle">'+esc(tr('cm.N'))+'</text></g>';
-  s+='<rect class="corr" x="'+g.cx+'" y="14" width="'+g.cw+'" height="'+(g.by.I+g.bh-14)+'" rx="4"/>';
-  s+='<text class="ct" transform="translate('+(g.cx+g.cw/2+5)+' 120) rotate(90)">'+esc(tr('cm.corr'))+'</text>';
-  /* north end: Journalism school with barrels A1, A2 */
-  s+=place('journalism',g.ox,14,g.ow,70,'oth',17);
+  s+='<rect class="corr" x="'+g.cx+'" y="52" width="'+g.cw+'" height="'+(g.by.I+g.bh-52)+'" rx="4"/>';
+  s+='<text class="ct" transform="translate('+(g.cx+g.cw/2+5)+' 200) rotate(90)">'+esc(tr('cm.corr'))+'</text>';
+  /* exits at both ends of the corridor: the Main exit (north) and the South exit */
+  const endExit=(id,y,up)=>{const ax=g.cx+g.cw/2,ay=up?y-2:y+32;
+    return '<g class="plc ent'+(campus.svc===id?' sel':'')+'" data-s="'+id+'" tabindex="0" role="button" aria-label="'+esc(tr('sv.'+id))+'">'+
+      '<rect class="pf" x="'+(g.cx+4)+'" y="'+y+'" width="'+(g.cw-8)+'" height="30" rx="5"/><path class="exh" d="M'+ax+' '+(up?ay-10:ay+10)+' l-8 '+(up?10:-10)+' h16 z"/>'+
+      '<text class="et" x="'+(g.bx+6)+'" y="'+(y+20)+'">'+esc(tr('sv.'+id))+'</text></g>'};
+  s+=endExit('mainexit',16,true)+endExit('southexit',g.by.I+g.bh+6,false);
+  /* north end: barrels A1, A2 */
   s+=barrel('A1',g.wx+2,24)+barrel('A2',g.wx+g.ww-92,24);
   /* Library: a separate three-storey building north of block D */
   s+=place('library',g.bx,96,g.bw,70,'svc lib');
@@ -96,7 +102,6 @@ function campusSvg(){
     const x=g.bx,y=g.by[b],bw=g.bw;
     s+='<g class="bld'+(campus.b===b?' sel':'')+'" data-b="'+b+'" tabindex="0" role="button" aria-label="'+esc(tr('cm.building'))+' '+b+'"><rect class="frame" x="'+x+'" y="'+y+'" width="'+bw+'" height="'+g.bh+'" rx="6"/>'+
       '<text class="bl-t" x="'+(x+12)+'" y="'+(y+19)+'">'+b+'</text>';
-    if(b==='H')s+='<rect class="seg lecture" x="'+(x+bw-96)+'" y="'+(y+4)+'" width="90" height="17" rx="3"/><text class="tab-t" x="'+(x+bw-51)+'" y="'+(y+16)+'" text-anchor="middle">H01–H03</text>';
     [3,2,1].forEach((f,k)=>{
       const fy=y+26+k*24,rooms=roomsOf(b,f);let cx=x+24;const inner=bw-32;
       s+='<g class="fl'+(campus.b===b&&campus.f===f?' sel':'')+'"><text class="fl-n" x="'+(x+10)+'" y="'+(fy+15)+'">'+f+'</text>';
@@ -107,12 +112,22 @@ function campusSvg(){
   /* across the corridor: barrels B (opposite D) and C (opposite E) */
   s+=barrel('B1',g.wx+2,g.by.D+25)+barrel('B2',g.wx+g.ww-92,g.by.D+25);
   s+=barrel('C1',g.wx+2,g.by.E+25)+barrel('C2',g.wx+g.ww-92,g.by.E+25);
-  /* opposite F: Canteen and Market; opposite G: Print center, Table tennis & chess, Main exit */
+  /* opposite F: Canteen and Market; opposite G: Print center, Table tennis & chess, an exit to the street */
   s+=place('canteen',g.wx,g.by.F+10,118,80,'svc')+place('market',g.wx+124,g.by.F+10,g.ww-124,80,'svc',9);
   s+=place('print',g.wx,g.by.G+6,95,48,'svc',12)+place('tennis',g.wx+99,g.by.G+6,g.ww-99,48,'svc',12);
-  s+=place('exit',g.wx,g.by.G+60,g.ww,36,'ent');
+  s+=place('gexit',g.wx,g.by.G+60,g.ww,36,'ent');
   s+='<path class="exa" d="M'+g.wx+' '+(g.by.G+78)+' H'+(g.ox+g.ow-34)+'"/><path class="exh" d="M'+(g.ox+g.ow-34)+' '+(g.by.G+78)+' l12 -8 v16 z"/>'+
     '<text class="st" x="'+(g.ox+g.ow-40)+'" y="'+(g.by.G+70)+'" text-anchor="end">'+esc(tr('cm.street'))+'</text>';
+  /* lecture halls across the corridor: H01–H03 opposite block H; I109–I311 opposite block I (three floors) */
+  const cell=(id,x,y,w,h)=>{const r=CAMPUS.get(id);return '<g class="orm'+(campus.room===id?' sel':'')+'" data-r="'+id+'" tabindex="0" role="button" aria-label="'+id+'"><rect class="seg '+r.t+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+Math.min(8,h/2)+'"/><text class="ot" x="'+(x+w/2)+'" y="'+(y+h/2+4)+'" text-anchor="middle">'+id+'</text></g>'};
+  s+='<rect class="wing" x="'+g.wx+'" y="'+(g.by.H+14)+'" width="'+g.ww+'" height="72" rx="6"/><text class="wt" x="'+(g.wx+8)+'" y="'+(g.by.H+28)+'">'+esc(tr('cm.oppw',{b:'H'}))+'</text>';
+  ['H01','H02','H03'].forEach((id,i)=>{s+=cell(id,g.wx+8+i*61,g.by.H+36,56,40)});
+  s+='<rect class="wing" x="'+g.wx+'" y="'+g.by.I+'" width="'+g.ww+'" height="'+g.bh+'" rx="6"/><text class="wt" x="'+(g.wx+8)+'" y="'+(g.by.I+14)+'">'+esc(tr('cm.oppw',{b:'I'}))+'</text>';
+  [3,2,1].forEach((f,k)=>{const y=g.by.I+20+k*26;s+='<text class="fl-n" x="'+(g.wx+8)+'" y="'+(y+16)+'">'+f+'</text>';
+    [9,10,11].forEach((n,i)=>{s+=cell('I'+f+(n<10?'0':'')+n,g.wx+22+i*56,y,52,22)})});
+  /* small entrances between neighbouring blocks: from the corridor out to the east side */
+  [['D','E'],['E','F'],['F','G'],['G','H'],['H','I']].forEach(([a,b])=>{const y=b==='H'?g.by.H-6:(g.by[a]+g.bh+g.by[b])/2,lab=tr('cm.mini',{a,b});
+    s+='<g class="mini"><title>'+esc(lab)+'</title><path class="mia" d="M'+(g.cx+g.cw)+' '+y+' H'+(g.bx+g.bw+2)+'"/><path class="mih" d="M'+(g.bx+g.bw+3)+' '+(y-6)+' l10 6 l-10 6 z"/></g>'});
   /* Medical point: in the corridor between G and H */
   const my=g.by.G+g.bh+6;
   s+='<g class="plc med'+(campus.svc==='medical'?' sel':'')+'" data-s="medical" tabindex="0" role="button" aria-label="'+esc(tr('sv.medical'))+'">'+
@@ -124,7 +139,7 @@ function campusSvg(){
   s+='<text class="scale" x="'+(g.W-10)+'" y="'+(g.H-14)+'" text-anchor="end">'+esc(tr('cm.scale'))+'</text>';
   return s+'</svg>'}
 /* places whose map label is a shorter form of the name */
-const PLACE_SHORT=['tennis','journalism'];
+const PLACE_SHORT=['tennis','gexit'];
 function renderCampus(){
   $('cm-svg').innerHTML=campusSvg();
   const p=$('cm-panel'),chip=r=>'<button type="button" class="rm '+r.t+'" data-r="'+r.id+'">'+esc(r.id)+'</button>';
@@ -133,15 +148,14 @@ function renderCampus(){
     p.innerHTML='<div class="cmcard svc"><h3>'+esc(tr('sv.'+id))+'</h3><dl><dt>'+tr('cm.where')+'</dt><dd>'+esc(tr('sv.'+id+'.w'))+'</dd></dl><p>'+esc(placeDesc(id,ui))+'</p></div>';return}
   if(campus.nf){p.innerHTML='<div class="cmcard nf"><p>'+esc(tr('cm.nf',{r:campus.nf}))+'</p></div>';return}
   if(campus.room){const r=CAMPUS.get(campus.room);
-    const hint=r.barrel?tr('cm.hint.barrel',{id:r.id,w:tr('cm.br.'+r.id[0])}):r.f?tr('cm.hint.floor',{b:r.b,f:r.f,r:floorSummary(r.b,r.f,ui)}):tr('cm.hint.nofloor',{id:r.id,b:r.b});
+    const hint=r.barrel?tr('cm.hint.barrel',{id:r.id,w:tr('cm.br.'+r.id[0])}):r.opp?roomOppHint(r,ui):r.f?tr('cm.hint.floor',{b:r.b,f:r.f,r:floorSummary(r.b,r.f,ui)}):tr('cm.hint.nofloor',{id:r.id,b:r.b});
     p.innerHTML='<div class="cmcard"><h3>'+esc(r.id)+'</h3><dl>'+
       (r.b?'<dt>'+tr('cm.building')+'</dt><dd>'+r.b+'</dd>':'')+(r.f?'<dt>'+tr('cm.floor')+'</dt><dd>'+r.f+'</dd>':'')+(r.b?'<dt>'+tr('cm.ent')+'</dt><dd>'+tr('cm.ent.'+r.b)+'</dd>':'')+
       '<dt>'+tr('cm.type')+'</dt><dd><i class="sw '+r.t+'"></i> '+esc(typeName(r))+'</dd></dl><p>'+esc(hint)+'</p>'+(r.b&&NEAR[r.b]?'<p>'+esc(tr('cm.near',{l:nearText(r.b,ui)}))+'</p>':'')+'</div>';return}
   if(campus.b){const rooms=[...CAMPUS.values()].filter(r=>r.b===campus.b);
-    const nofl=rooms.filter(r=>!r.f);
     p.innerHTML='<div class="cmcard"><h3>'+tr('cm.building')+' '+campus.b+'</h3><p>'+tr('cm.ent')+': '+tr('cm.ent.'+campus.b)+'</p>'+(NEAR[campus.b]?'<p>'+esc(tr('cm.near',{l:nearText(campus.b,ui)}))+'</p>':'')+
-      [3,2,1].map(f=>{const rs=rooms.filter(r=>r.f===f);return rs.length?'<div class="cmfl"><b>'+tr('cm.fl',{n:f})+'</b><div class="chips">'+rs.map(chip).join('')+'</div></div>':''}).join('')+
-      (nofl.length?'<div class="cmfl"><b>'+tr('cm.p.lecture').replace(/^./,c=>c.toUpperCase())+'</b><div class="chips">'+nofl.map(chip).join('')+'</div></div>':'')+'</div>';return}
+      [3,2,1].map(f=>{const rs=rooms.filter(r=>r.f===f&&!r.opp);return rs.length?'<div class="cmfl"><b>'+tr('cm.fl',{n:f})+'</b><div class="chips">'+rs.map(chip).join('')+'</div></div>':''}).join('')+
+      (rooms.some(r=>r.opp)?'<div class="cmfl"><b>'+esc(tr('cm.oppw',{b:campus.b}))+'</b><div class="chips">'+rooms.filter(r=>r.opp).map(chip).join('')+'</div></div>':'')+'</div>';return}
   p.innerHTML='<div class="cmcard"><p>'+esc(tr('cm.pick'))+'</p></div>';
 }
 $('cm-svg').onclick=e=>{const g=e.target.closest('[data-r],[data-b],[data-s]');if(!g)return;
