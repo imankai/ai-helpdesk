@@ -284,7 +284,7 @@ function renderKb(){
 }
 const LANG_NAME={en:'English',kk:'Қазақша',ru:'Русский'};
 /* events, clubs and teachers (US21, US22) have extra fields (x); office hours and weekdays are typed with English day names */
-const KB_KINDS=['faq','office','event','club'];
+const KB_KINDS=['faq','office','event','club','teacher'];
 const WD_EN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],WD_ORDER=[1,2,3,4,5,6,0];
 const KB_KDEF={event:['life','ev'],club:['life','clubs'],teacher:['acad','fac']};    /* category and source suggested for a new entry of this type */
 const MAIL_RE=/^[a-z0-9._-]+@university\.demo$/i,TIME_RE=/^\d{2}:\d{2}$/,PHONE_RE=/\+?\d[\d ()-]{6,}\d/;
@@ -569,7 +569,7 @@ const STORIES=[
   {id:'US19',t:'Library Services',s:5,p:5,st:'Done'},
   {id:'US20',t:'Dormitory & Housing Requests',s:5,p:6,st:'Done'},
   {id:'US21',t:'Campus Events & Club Announcements',s:6,p:4,st:'Done'},
-  {id:'US22',t:'Teacher Contact & Office Hours',s:6,p:4,st:'Planned'},
+  {id:'US22',t:'Teacher Contact & Office Hours',s:6,p:4,st:'Done'},
   {id:'US23',t:'Conversation History',s:6,p:3,st:'Planned'},
   {id:'US24',t:'Accessibility & Voice Input',s:6,p:5,st:'Planned'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];

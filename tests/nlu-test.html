@@ -227,7 +227,33 @@ const CASES=[
  ['What events are on campus this week?','events','visitor'],
  ['Is there a programming club?','clubs','visitor'],
  ['события на этой неделе','events','staff'],
- ['какая погода в пятницу','fb']
+ ['какая погода в пятницу','fb'],
+ /* US22 teacher contacts and office hours */
+ ['When are office hours for INF451?','teacher'],
+ ['When are office hours for my INF451 teacher?','teacher'],
+ ['email of my teacher','teacher'],
+ ['Dr. Demova email','teacher'],
+ ['who teaches MAT301','teacher'],
+ ["Where is Dr. Quill's office?",'teacher'],
+ ["What is the email of professor Ivanov?",'teacher'],
+ ['мой преподаватель по INF451','teacher'],
+ ['консультация по INF451','teacher'],
+ ['почта преподавателя','teacher'],
+ ['где кабинет препода','teacher'],
+ ['где кабинет преподавателя Демовой','teacher'],
+ ['кто ведет INF451','teacher'],
+ ['pochta prepoda po inf451','teacher'],
+ ['INF451 оқытушым','teacher'],
+ ['оқытушының поштасы','teacher'],
+ ['консультация қашан','teacher'],
+ ['консультация кашан','teacher'],
+ ['Демованың кабинеті қайда','teacher'],
+ ['oqytushy poshtasy','teacher'],
+ ["Where are the teachers' offices?",'campus'],
+ ['консультация','adv'],
+ ['деканат','deans'],
+ ['When are office hours for INF451?','teacher','visitor'],
+ ['who teaches MAT301','teacher','staff']
 ];
 const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
 /* interface functions from ui.js that replies may reference */
@@ -258,7 +284,7 @@ const OLD={human:['human','staff','person','operator','agent','live','опера
 /* a strong topic must beat a weak word */
 const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
 const LANGT=[['жатақханада кран сынды','kk'],['в общаге не работает свет','ru'],['zhatakhanada kran syndy kerek','kk'],['kitap bar ma','kk'],['кітап бар ма','kk'],['есть ли книга Clean Code','ru'],['my books','en'],['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en'],
- ['осы аптадағы іс-шаралар','kk'],['osy aptadagy is sharalar','kk'],['что будет в пятницу','ru'],['Is there a programming club?','en']];
+ ['осы аптадағы іс-шаралар','kk'],['osy aptadagy is sharalar','kk'],['что будет в пятницу','ru'],['Is there a programming club?','en'],['консультация кашан','kk'],['INF451 оқытушым','kk'],['oqytushy poshtasy','kk'],['почта преподавателя','ru']];
 /* checks of the QA scenarios in docs/SPRINTS.md */
 const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
 const has=(s,x)=>s.includes(x);
@@ -389,11 +415,34 @@ const QA=[
      q:{en:['Board Game Evening'],kk:['Үстел ойындары кеші'],ru:['Вечер настольных игр']},a:{en:'Games.',kk:'Ойындар.',ru:'Игры.'},x:{date:'2026-11-24',a:'18:00',b:'20:00',place:'I309'}}]});
    const a=run('What events are on campus this week?').said;st.kb.find(e=>e.id==='kbtest').status='archived';const b=run('What events are on campus this week?').said;st.kb=st.kb.filter(e=>e.id!=='kbtest');
    return has(a,'Board Game Evening')&&has(a,'I309')&&!has(b,'Board Game Evening')||a.slice(0,300)}),
-
- check('QA 7: no phone number in any events or clubs answer (all roles)',()=>{at(2026,11,23,11);const qs=['What events are on campus this week?','upcoming events','When is the hackathon?','Is there a programming club?','what student clubs are there',
-     'осы аптадағы іс-шаралар'];
+ /* US22 */
+ check('US22 S1 signed-in student: "When are office hours for my INF451 teacher?" → the INF451 teachers from the schedule with email, room, hours',()=>{const a=run('When are office hours for my INF451 teacher?').said;
+   return has(a,'Your INF451 Team Software Project teachers, from your schedule')&&has(a,'Dr. Aidana Demova')&&has(a,'a.demova@university.demo')&&has(a,'Office: E206 (building E, floor 2)')&&has(a,'Office hours: Mon 14:00–16:00, Wed 10:00–11:00')&&
+     has(a,'Prof. Timur Specimenov')&&has(a,'t.specimenov@university.demo')&&!has(a,'Quill')&&!has(a,'Lumen')||a}),
+ check('US22 S1 Russian and Kazakh: "мой преподаватель по INF451", "INF451 оқытушым"',()=>{const a=run('мой преподаватель по INF451').said,b=run('INF451 оқытушым').said;
+   return has(a,'Ваши преподаватели по INF451')&&has(a,'Кабинет: E206')&&has(a,'Часы консультаций: пн 14:00–16:00')&&has(b,'Сабақ кестеңіз бойынша INF451')&&has(b,'Айдана Демова')||a.slice(0,250)+' / '+b.slice(0,250)}),
+ check('US22 S1 another student (249900003): "my INF330 teacher" → Dr. Nora Quill only',()=>{const a=run('When are office hours for my INF330 teacher?','249900003').said;return has(a,'Your INF330 Information Systems Analysis teacher, from your schedule')&&has(a,'n.quill@')&&!has(a,'Demova')||a}),
+ check('US22 "email of my teacher" → the teachers of the student\'s own courses (INF451, MAT301)',()=>{run('email of my teacher');const n=outs.slice(1).map(o=>o.title).join(', ');return n==='Dr. Aidana Demova, Prof. Timur Specimenov, Dr. Marat Primerbekov, Dr. Iris Lumen'||n}),
+ check('US22 search by name, with a Russian ending: "почта Демовой"',()=>{const a=run('почта Демовой').said;return has(a,'Айдана Демова')&&has(a,'a.demova@')&&outs.length===1||a}),
+ check('US22 Show on map opens the teacher\'s office',()=>{mapped=null;run('Dr. Quill email');lastO.acts[0][1]();return mapped==='F207'||mapped}),
+ check('US22 S2 unknown teacher → "not found" and the Dean\'s Office from the office directory',()=>{at(2026,11,23,11);const a=run('What is the email of professor Ivanov?').said;
+   return has(a,'Teacher not found: there is no “Ivanov”')&&has(a,"Dean's Office")&&has(a,'H205')&&has(a,'deans@university.demo')&&has(a,'Open now')||a}),
+ check('US22 S2 unknown teacher in Russian and Kazakh',()=>{const a=run('почта преподавателя Иванова').said,b=run('Иванов оқытушының поштасы қандай').said;
+   return has(a,'Преподаватель не найден: «Иванова»')&&has(a,'деканат')&&has(b,'Оқытушы табылмады: анықтамалықта «Иванов»')&&has(b,'H205')||a+' / '+b}),
+ check('US22 a course with no teacher in the directory → the Dean\'s Office',()=>{const a=run('who teaches CS999').said;return has(a,'No teacher for CS999')&&has(a,'deans@')||a}),
+ check('US22 a teacher who does not teach the course is not returned for it',()=>{const a=run('Is Dr. Lumen the INF451 teacher?').said,cards=outs.slice(1).map(o=>o.title);
+   return has(a,'Dr. Iris Lumen does not teach INF451')&&cards.join()==='Dr. Aidana Demova,Prof. Timur Specimenov'||a}),
+ check('US22 for every course, only teachers of that course are shown',()=>{for(const c of Object.keys(COURSE_T)){const a=run('who teaches '+c).said;
+   const bad=kbKind('teacher').find(e=>{const d=kbData(e);return d.x.courses.includes(c)!==has(a,d.q.en[0])});if(bad)return c+': '+kbData(bad).q.en[0]}return true}),
+ check('US22 the directory: 8–10 teachers, emails @university.demo, offices are teacher offices of the map, every demo student course and INF451 (2 teachers) covered',()=>{const t=kbKind('teacher').map(e=>kbData(e).x);
+   return t.length>=8&&t.length<=10&&t.every(x=>/^[a-z.]+@university\.demo$/.test(x.mail)&&CAMPUS.get(x.room).t==='office'&&!Object.values(OFFICE_INFO).some(o=>o.room===x.room)&&x.oh.length)&&
+     Object.keys(COURSE_T).every(c=>t.some(x=>x.courses.includes(c)))&&t.filter(x=>x.courses.includes('INF451')).length===2}),
+ check('US22 visitor: office hours by course code work without signing in',()=>{const a=run('When are office hours for INF451?','visitor').said;return has(a,'INF451 Team Software Project is taught by 2 teachers')&&has(a,'E206')||a}),
+ check('US22 "консультация" alone stays an advisor question',()=>run('консультация').r.i==='adv'),
+ check('QA 7: no phone number in any events, clubs or teacher answer (all roles)',()=>{at(2026,11,23,11);const qs=['What events are on campus this week?','upcoming events','When is the hackathon?','Is there a programming club?','what student clubs are there',
+     'When are office hours for my INF451 teacher?','email of my teacher','What is the email of professor Ivanov?','who teaches CS999','почта преподавателя Иванова','консультация қашан','осы аптадағы іс-шаралар','Is Dr. Lumen the INF451 teacher?'];
    for(const who of ['249900002','249900001','visitor','staff'])for(const q of qs){const a=run(q,who).said;if(/\+?\d[\d ()-]{6,}\d/.test(a)||/phone|телефон/i.test(a))return who+': '+q+' → '+a.slice(0,200)}
-   return kbKind('event').concat(kbKind('club')).every(e=>{const d=kbData(e);return !/\+?\d[\d ()-]{6,}\d/.test(JSON.stringify([d.q,d.a,d.x]))})}),
+   return !OFFICE_INFO.deans.tel&&kbKind('teacher').concat(kbKind('event'),kbKind('club')).every(e=>{const d=kbData(e);return !/\+?\d[\d ()-]{6,}\d/.test(JSON.stringify([d.q,d.a,d.x]))})}),
  check('US17 every student has different GPA and credits; INF451 not posted for all',()=>{const v=Object.values(ACAD);return new Set(v.map(a=>a.gpa)).size===v.length&&new Set(v.map(a=>a.cr)).size===v.length&&v.every(a=>a.courses.some(c=>c.c==='INF451'&&c.g===null))}),
 ];
 window.clock=()=>new Date();

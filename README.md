@@ -31,6 +31,7 @@ Developed by a student team as part of INF451.
 - Office directory: room on the campus map, hours, phone and email for every office, with "Closed now, opens at…" outside working hours
 - Campus events ("What events are on campus this week?", "события на этой неделе", "осы аптадағы іс-шаралар", "что будет в пятницу", "When is the hackathon?"): event cards with date, time and place from the campus map, a **Register** button (registration inside the site with a confirmation; a visitor's registration lasts until the page is closed) and **Show on map**; demo dates are counted from today, so there are always events this week and later, and past events are never shown as upcoming
 - Student clubs ("Is there a programming club?", "есть ли клуб программирования", "бағдарламалау үйірмесі бар ма"): description, meeting day, time and place, contact person with a name@university.demo email; a club that does not exist gets "not found" and the list of clubs
+- Teacher contacts and office hours ("When are office hours for INF451?", "консультация по INF451", "почта Демовой", "оқытушының поштасы"): search by teacher name or course code; a signed-in student's "my INF451 teacher" is found from the student's own schedule, all teachers of a course are shown, and a teacher who does not teach the course is never returned; email, office on the campus map (with **Show on map**) and office hours, no phone numbers; an unknown teacher gets "Teacher not found" and the Dean's Office contacts
 - Dashboard with deadlines, recent tickets and quick actions; announcement banners
 - First-login guided tour (can be replayed from the user menu)
 
@@ -78,7 +79,7 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 | 5 – More student self-service | US19 Library Services | Done | |
 | 5 – More student self-service | US20 Dormitory & Housing Requests | Done | |
 | 6 – Campus life and accessibility | US21 Campus Events & Club Announcements | Done | |
-| 6 – Campus life and accessibility | US22 Teacher Contact & Office Hours | Planned | |
+| 6 – Campus life and accessibility | US22 Teacher Contact & Office Hours | Done | |
 | 6 – Campus life and accessibility | US23 Conversation History | Planned | |
 | 6 – Campus life and accessibility | US24 Accessibility & Voice Input | Planned | |
 

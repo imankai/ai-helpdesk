@@ -123,7 +123,12 @@ const KB_OFFICES=[
  ['affairs',{en:["What does Student Affairs do?","Student Affairs office","Lost student ID"],kk:["Student Affairs не істейді?","Student Affairs бөлімі","Студенттік билетімді жоғалттым"],ru:["Чем занимается Student Affairs?","Отдел Student Affairs","Потерял студенческий билет"]},
   {en:"Student Affairs handles dormitory places, student ID cards and student life questions. Create a ticket for Student Affairs or contact the Student Service Center: "+SSC+".",
    kk:"Student Affairs жатақхана орындары, студенттік билет және студенттік өмір сұрақтарымен айналысады. Student Affairs-қа өтінім ашыңыз немесе Студенттерге қызмет көрсету орталығына хабарласыңыз: "+SSC+".",
-   ru:"Student Affairs занимается местами в общежитии, студенческими билетами и вопросами студенческой жизни. Создайте заявку в Student Affairs или обратитесь в Центр обслуживания студентов: "+SSC+"."}]];
+   ru:"Student Affairs занимается местами в общежитии, студенческими билетами и вопросами студенческой жизни. Создайте заявку в Student Affairs или обратитесь в Центр обслуживания студентов: "+SSC+"."}],
+ /* US22: the bot sends students here when a teacher is not in the directory */
+ ['deans',{en:["What does the Dean's Office do?","Dean's Office","Dean's Office contacts"],kk:["Деканат не істейді?","Деканат","Деканат байланыстары"],ru:["Чем занимается деканат?","Деканат","Контакты деканата"]},
+  {en:"The Dean's Office handles academic questions of the faculty: teachers and courses, academic leave, exam re-takes and transfers. Come during office hours or write an email.",
+   kk:"Деканат факультеттің академиялық мәселелерімен айналысады: оқытушылар мен курстар, академиялық демалыс, емтиханды қайта тапсыру және ауысу. Жұмыс уақытында келіңіз немесе электрондық хат жазыңыз.",
+   ru:"Деканат занимается академическими вопросами факультета: преподаватели и курсы, академический отпуск, пересдачи и переводы. Приходите в часы работы или напишите на почту."}]];
 /* office directory (US10): rooms are real rooms of the campus map; hours are Monday to Friday; all contacts are fictional. "hours" is the Student Service Center entry */
 const OFFICE_INFO={
   registrar:{name:'Registrar',room:'D205',open:9,close:17,tel:'8 (727) 000-00-01',mail:'registrar@university.demo'},
@@ -131,8 +136,10 @@ const OFFICE_INFO={
   finance:{name:'Finance',room:'F205',open:9,close:16,tel:'8 (727) 000-00-03',mail:'finance@university.demo'},
   affairs:{name:'Student Affairs',room:'G205',open:10,close:17,tel:'8 (727) 000-00-04',mail:'affairs@university.demo'},
   housing:{name:'Housing Office',room:'G206',open:9,close:17,tel:'8 (727) 000-00-05',mail:'housing@university.demo'},
-  hours:{name:'Student Service Center',room:'H204',open:9,close:18,tel:'8 (727) 000-00-00',mail:'ssc@university.demo'}};
-/* ---------- campus life (US21): knowledge base entries with extra fields (x), edited by staff like the others.
+  hours:{name:'Student Service Center',room:'H204',open:9,close:18,tel:'8 (727) 000-00-00',mail:'ssc@university.demo'},
+  /* the Dean's Office has no phone in the directory: teacher answers (US22) never show a phone number */
+  deans:{name:"Dean's Office",room:'H205',open:9,close:17,mail:'deans@university.demo'}};
+/* ---------- campus life and teachers (US21, US22): knowledge base entries with extra fields (x), edited by staff like the others.
    q[lang]: first line is the title / name, other lines are other names or keywords the bot recognises; a[lang]: description or note.
    Event dates are relative to today (rel: days from today, wd: the next such weekday, 0 = Sunday), so the demo is always current;
    an event edited by staff gets a fixed date. Places are rooms of the campus map only. All people and emails are fictional. ---------- */
@@ -219,22 +226,38 @@ const CLUB_SEED=[
   {en:'Charity events, help at campus events and city projects. Volunteer hours are recorded for your activity certificate.',
    kk:'Қайырымдылық шаралары, кампус іс-шаралары мен қалалық жобаларға көмек. Еріктілік сағаттары белсенділік анықтамасына жазылады.',
    ru:'Благотворительные акции, помощь на мероприятиях кампуса и городские проекты. Волонтёрские часы записываются в справку об активности.'}]];
-const KB_X=['event','club'];
+/* teacher directory: courses (INF451 and every course of the demo students), email, office (teacher's offices of the campus map only), office hours (d: 0 = Sunday … 6 = Saturday). No phones. */
+const T_NOTE=[{en:'Outside office hours, please email first to agree on a time.',kk:'Консультация уақытынан тыс кездесу үшін алдымен электрондық пошта арқылы уақытты келісіңіз.',ru:'Вне часов консультаций сначала напишите на почту, чтобы договориться о времени.'},
+  {en:'Please write the course code in the subject of your email.',kk:'Хаттың тақырыбына курс кодын жазыңыз.',ru:'Пожалуйста, указывайте код курса в теме письма.'}];
+const TEACH_SEED=[
+ ['t-demova','Dr. Aidana Demova','Айдана Демова',['INF451','INF401'],'a.demova','E206',[[1,'14:00','16:00'],[3,'10:00','11:00']],0],
+ ['t-specimenov','Prof. Timur Specimenov','Тимур Спесименов',['INF451','INF390'],'t.specimenov','E207',[[2,'15:00','17:00']],1],
+ ['t-brightwater','Dr. Selena Brightwater','Селена Брайтуотер',['INF320','INF360'],'s.brightwater','D206',[[4,'11:00','13:00']],0],
+ ['t-primerbekov','Dr. Marat Primerbekov','Марат Примербеков',['MAT301','INF380'],'m.primerbekov','F206',[[1,'10:00','12:00'],[5,'14:00','15:00']],1],
+ ['t-quill','Dr. Nora Quill','Нора Квилл',['INF330','INF370','INF340'],'n.quill','F207',[[3,'14:00','16:00']],0],
+ ['t-mockbayev','Dr. Ruslan Mockbayev','Руслан Мокбаев',['INF310','INF305'],'r.mockbayev','D207',[[5,'10:00','12:00']],1],
+ ['t-lumen','Dr. Iris Lumen','Ирис Люмен',['INF350','MAT301'],'i.lumen','G207',[[2,'10:00','12:00']],0],
+ ['t-sampleuly','Prof. Ernar Sampleuly','Ернар Сэмплұлы',['MGT210','MGT301'],'e.sampleuly','G208',[[4,'14:00','16:00']],1],
+ ['t-imaginova','Dr. Asel Imaginova','Әсел Имагинова',['ENG210','HIS101'],'a.imaginova','H305',[[1,'15:00','17:00']],0],
+ ['t-nightingale','Dr. Leo Nightingale','Лео Найтингейл',['INF415'],'l.nightingale','I305',[[3,'11:00','12:30']],1]];
+const KB_X=['event','club','teacher'];
 function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
   const mk=(id,kind,intent,cat,src,q,a,x)=>({id,kind,intent:intent||null,status:'published',vn:1,vers:[Object.assign({n:1,act:'create',by,at,cat,src,q,a},x?{x}:{})],log:[]});
   const per=f=>Object.fromEntries(LANGS.map(l=>[l,f(l)])),lines=v=>Array.isArray(v)?v.join('\n'):v;
   return FAQ.map(f=>mk(f.id,'faq',KB_INTENT[f.id],f.cat,f.src,per(l=>[f.q(l)]),per(l=>lines(f.a(l)))))
     .concat(KB_OFFICES.map(([id,q,a])=>mk(id,'office',null,'off','ssc',q,a)))
     .concat(EV_SEED.map(([id,x,q,a])=>mk(id,'event',null,'life','ev',q,a,x)))
-    .concat(CLUB_SEED.map(([id,x,q,a])=>mk(id,'club',null,'life','clubs',q,a,x)))}
+    .concat(CLUB_SEED.map(([id,x,q,a])=>mk(id,'club',null,'life','clubs',q,a,x)))
+    .concat(TEACH_SEED.map(([id,en,cy,courses,m,room,oh,nt])=>mk(id,'teacher',null,'acad','fac',{en:[en],kk:[cy],ru:[cy.replace('ұ','у').replace('Ә','А')]},T_NOTE[nt],
+      {courses,mail:m+'@university.demo',room,oh:oh.map(([d,a,b])=>({d,a,b}))})))}
 /* housing requests (US20), so the staff list is not empty on first launch. status: submitted -> progress -> done; upd = last update */
 const seedHousing=()=>{const n=Date.now();return[
   {n:101,uid:'249900003',who:'Kenan',dorm:2,room:'105',type:'repair',desc:'The shower drain in my room is blocked.',status:'progress',at:n-30*HR,upd:n-20*HR},
   {n:102,uid:'249900004',who:'Zhanibek',dorm:2,room:'418',type:'move',desc:'I would like to move to a quieter room on another floor.',status:'submitted',at:n-6*HR,upd:n-6*HR}]};
 const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt(),housing:seedHousing(),evreg:{}});
 const loadSt=s=>{s.prefs=s.prefs||{};s.att=s.att||seedAtt();s.housing=s.housing||seedHousing();s.evreg=s.evreg||{};
-  /* data saved before US20–US21 gets the new built-in entries (Housing Office, events, clubs) */
-  if(s.kb)seedKb().forEach(e=>{if((e.id==='housing'||KB_X.includes(e.kind))&&!s.kb.some(x=>x.id===e.id))s.kb.push(e)});
+  /* data saved before US20–US22 gets the new built-in entries (Housing Office, Dean's Office, events, clubs, teachers) */
+  if(s.kb)seedKb().forEach(e=>{if((e.id==='housing'||e.id==='deans'||KB_X.includes(e.kind))&&!s.kb.some(x=>x.id===e.id))s.kb.push(e)});
   s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
   if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
 let st=fresh();
@@ -448,7 +471,9 @@ function route(t){
   /* "Where can I find Clean Code?" is a catalog question, not "the library is not on the map" */
   /* a dormitory problem ("кран сломался в комнате 214") is a housing request, not a campus room; "where is the dormitory" stays a campus question */
   const c=campusIntent(t),q=nluAnalyze(t),dormQ=q.tags.has('housing')&&!WHERE.test(t);
-  if(c&&!(c.k==='svc'&&bookSearch(t).length)&&!(dormQ&&c.k!=='rooms'))return{k:'campus',c};
+  /* "где кабинет преподавателя" asks about one teacher (US22); "Where are the teachers' offices?" stays a campus question */
+  const teachQ=q.tags.has('teacher')&&c&&c.k==='type'&&!/offices|кабинеты|кабинетов|кабинеттер/i.test(t);
+  if(c&&!teachQ&&!(c.k==='svc'&&bookSearch(t).length)&&!(dormQ&&c.k!=='rooms'))return{k:'campus',c};
   let T=nluTopic(q);if(T==='ticket'&&q.tags.has('housing'))T='housing';    /* "подать заявку на ремонт в общаге" */
   const rank=kbRank(q,kbLive()),best=rank[0],stu=U.role==='student'||(U.role==='staff'&&STAFF_SELF.includes(T&&TOPICS[T].intent));
   /* two equally strong topics with their own entries ("password and wifi"): ask instead of guessing */
@@ -457,7 +482,7 @@ function route(t){
   if(amb.length>1&&!(best&&best.s>=.9))return{k:'dym',list:amb.slice(0,3)};    /* a near-exact question variant still wins */
   /* a ticket number asks about that ticket, not for a new one */
   if(T==='ticket'&&/\b\d{4,6}\b/.test(t))return stu?{k:'h',i:'tkstatus'}:{k:'guest',i:'tkstatus'};
-  /* campus events and clubs (US21): open to everyone */
+  /* campus events, clubs and teachers (US21, US22): open to everyone */
   const kr=kindRoute(t,q,T);if(kr)return{k:'h',i:kr};
   /* high confidence in a knowledge base entry: answer it (a student still gets the personal answer for registration or billing).
      A question with only a weak word ("office") needs a near-exact variant, otherwise its topic decides */
@@ -495,7 +520,7 @@ const STAFF_SELF=['loans'];
 const kbData=e=>e.vers.find(v=>v.n===e.vn);
 /* FAQ and office entries: the bot's general answers, chat suggestions and the FAQ page */
 const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published'&&!KB_X.includes(e.kind));
-/* published events or clubs (US21) */
+/* published events, clubs or teachers (US21, US22) */
 const kbKind=k=>(st.kb||[]).filter(e=>e.status==='published'&&e.kind===k);
 /* languages that still lack a question variant or an answer; publishing is blocked while any is missing */
 const kbMissing=d=>LANGS.filter(l=>!(d.q[l]||[]).some(s=>s.trim())||!(d.a[l]||'').trim());
@@ -512,7 +537,7 @@ function kbAnswer(e,L){const d=kbData(e),S=T[L],lines=d.a[L].split('\n').map(s=>
   if(it)later(()=>bot({text:S.helped,acts:[[S.yes,()=>bot({text:S.yesR},L)],[S.no,()=>bot({text:S.noR,acts:[[S.mkT,()=>startTicket(L,'IT Support')],[S.talk,()=>human(L)]]},L)]]},L),250)}
 function officeRows(of,L){const r=CAMPUS.get(of.room);return[
   trL('of.room',L,{r:of.room,b:r.b,f:r.f}),trL('cm.ent',L)+': '+trL('cm.ent.'+r.b,L),
-  trL('of.hours',L,{a:of.open+':00',b:of.close+':00'}),trL('of.phone',L)+': '+of.tel,'Email: '+of.mail]}
+  trL('of.hours',L,{a:of.open+':00',b:of.close+':00'})].concat(of.tel?[trL('of.phone',L)+': '+of.tel]:[],['Email: '+of.mail])}
 /* open or closed right now (Monday to Friday, local time) */
 function officeState(of,L){const now=clock(),d=now.getDay(),h=now.getHours()+now.getMinutes()/60,work=d>=1&&d<=5,t=of.open+':00';
   if(work&&h>=of.open&&h<of.close)return{open:true,text:trL('of.open',L,{t:of.close+':00'})};
@@ -590,6 +615,19 @@ const H={
    const ask=clubAsked(curQ),list=all.map(e=>{const d=kbData(e);return d.q[L][0]+' — '+clubWhen(d.x,L)});
    bot({title:trL('cl.title',L),text:ask?trL('cl.nf',L,{q:ask}):trL('cl.list',L,{n:all.length}),list,src,fb:true,
      acts:all.map(e=>[kbData(e).q[L][0],()=>clubCard(e,L)])},L)},
+ /* US22: teacher by name, by course code, or the teachers of the signed-in student's own courses; never a teacher who does not teach the course */
+ teacher:L=>{const t=curQ,src=trL('t.src',L),code=courseCode(t),hits=bestHits('teacher',t),my=myCourses();
+   const cn=c=>c+(COURSE_T[c]?' '+COURSE_T[c]:''),many=(head,list)=>{if(list.length===1)return tCard(list[0],L,{text:head,fb:true});bot({text:head,src,fb:true},L);list.forEach(e=>tCard(e,L))};
+   if(hits.length){
+     if(code&&hits.every(e=>!kbData(e).x.courses.includes(code))){const tl=teachersOf(code),n=kbData(hits[0]).q[L][0];
+       return tl.length?many(trL('t.no',L,{n,c:cn(code)}),tl):deanNf(trL('t.no0',L,{n,c:cn(code)}),L)}
+     return hits.forEach((e,i)=>tCard(e,L,{fb:!i}))}
+   if(code){const tl=teachersOf(code);if(!tl.length)return deanNf(trL('t.nfc',L,{c:cn(code)}),L);
+     const mine=my.includes(code),k=mine?(tl.length>1?'t.minen':'t.mine1'):my.length&&MYQ.test(t)?'t.notmine':tl.length>1?'t.many':'t.one';
+     return many(trL(k,L,{c:cn(code),n:tl.length,l:my.join(', ')}),tl)}
+   const nm=teacherAsked(t);if(nm)return deanNf(trL('t.nf',L,{q:nm}),L);
+   if(my.length){const tl=[...new Set(my.flatMap(teachersOf))];return many(trL('t.myall',L,{l:my.join(', ')}),tl)}
+   bot({text:trL('t.ask',L),src,fb:true},L)},
  ticket:L=>startTicket(L),
  human:L=>human(L),
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
@@ -644,7 +682,7 @@ function makeHousing(d,L){const D=U.dorm,n=Math.max(100,...st.housing.map(h=>h.n
 /* staff changes the status (submitted, progress, done): the last update time is saved and the student is notified */
 function setHStatus(n,s){const h=st.housing.find(x=>x.n===n);if(!h||h.status===s)return false;
   h.status=s;h.upd=Date.now();note(h.uid,'hreq',{n:h.n,s});save();return true}
-/* ---------- campus events and clubs (US21) ---------- */
+/* ---------- campus events, clubs and teachers (US21, US22) ---------- */
 const pad2=n=>String(n).padStart(2,'0');
 const isoDay=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
 const today0=()=>{const n=clock();return new Date(n.getFullYear(),n.getMonth(),n.getDate())};
@@ -703,21 +741,27 @@ const clubWhen=(x,L)=>wdName(x.wd,L,true)+', '+x.a+'–'+x.b+' · '+x.place;
 function clubCard(e,L,o){const d=kbData(e),x=d.x;
   bot({title:d.q[L][0],text:d.a[L],list:[trL('cl.meets',L)+': '+wdName(x.wd,L,true)+', '+x.a+'–'+x.b,trL('ev.place',L)+': '+placeText(x.place,L),trL('cl.contact',L)+': '+x.who+', '+x.mail],
     src:trL('cl.src',L),fb:!!(o&&o.fb),acts:[[trL('cm.map',L),()=>openMap(x.place)]]},L)}
-/* how well a question names an entry: the longest title or keyword line whose words all appear in the question.
-   Word endings and 1–2 typos are allowed ("хакатоне", "программирования"). */
+/* how well a question names an entry. Events and clubs: the longest title or keyword line whose words all appear in the question.
+   Teachers: the surname (last word of a name line). Word endings and 1–2 typos are allowed ("хакатоне", "Демовой", "программирования"). */
 const lineWords=s=>nluToks(s).filter(w=>w.length>=3&&!NSTOP.has(w));
 const nearW=(t,w)=>t===w||(w.length>=4&&t.startsWith(w)&&t.length-w.length<=5)||(w.length>=5&&Math.abs(t.length-w.length)<=2&&lev(t,w,w.length>=7?2:1)<=(w.length>=7?2:1));
+/* Russian forms of a surname ending in -a: "Демовой", "Демову" */
+const surnameForm=(t,w)=>w.length>=5&&/а$/.test(w)&&t.startsWith(w.slice(0,-1))&&Math.abs(t.length-w.length)<=2;
 function hitScore(e,toks){const d=kbData(e);let best=0;
   LANGS.forEach(l=>(d.q[l]||[]).forEach(s=>{const w=lineWords(s);if(!w.length)return;
-    if(w.every(x=>toks.some(t=>nearW(t,x))))best=Math.max(best,w.length)}));
+    if(e.kind==='teacher'){const sn=w[w.length-1];if(sn.length>=4&&toks.some(t=>nearW(t,sn)||surnameForm(t,sn)))best=1}
+    else if(w.every(x=>toks.some(t=>nearW(t,x))))best=Math.max(best,w.length)}));
   return best}
 function bestHits(kind,t){const toks=nluToks(t),sc=kbKind(kind).map(e=>[e,hitScore(e,toks)]).filter(x=>x[1]>0),max=Math.max(0,...sc.map(x=>x[1]));
   return sc.filter(x=>x[1]===max).map(x=>x[0])}
 const topHit=(kind,t)=>{const toks=nluToks(t);return Math.max(0,...kbKind(kind).map(e=>hitScore(e,toks)))};
-/* which handler, if any, a question about events or clubs goes to */
+/* which handler, if any, a question about events, clubs or teachers goes to */
+const CONSULT=/консульт|consult|konsult|кеңес бер/i;
 const WHATON=/what'?s on|what is on|what is happening|what'?s happening|что (будет|проходит|интересного)|чем заняться|не болады|не өтеді|chto budet|ne bolady/i;
 function kindRoute(t,q,T){const strong=q.tags.size>0;
+  if(T==='teacher'||(T==='adv'&&CONSULT.test(t)&&courseCode(t)))return 'teacher';   /* "консультация по INF451"; "консультация" alone stays with the advisor */
   if(T==='events'||T==='clubs')return T;
+  if(T!=='lib'&&topHit('teacher',t))return 'teacher';                                 /* a teacher's surname */
   if((!strong||T==='reg')&&!bookTitleIn(t)){const e=topHit('event',t),c=topHit('club',t);if(e||c)return e>=c?'events':'clubs'}   /* "register for the hackathon" */
   if(!strong&&WHATON.test(t)&&(DAYANY(t)||/campus|кампус|kampus/i.test(t)))return 'events';                                      /* "что будет в пятницу" */
   return null}
@@ -725,6 +769,28 @@ function kindRoute(t,q,T){const strong=q.tags.size>0;
 const CLUB_GEN=new Set('student students university campus join any there студенческий студенческие студентов студент университет кампус вступить студенттік университет кампус'.split(' ').map(nluFold));
 function clubAsked(t){const w=nluAnalyze(t).words.filter(x=>!CLUB_GEN.has(x)&&!KK_LAT.has(x));if(!w.length)return null;
   const ws=t.match(/\p{L}[\p{L}'’-]*/gu)||[];return ws.filter(x=>w.includes(nluToks(x)[0])).join(' ')||w.join(' ')}
+const teachersOf=code=>kbKind('teacher').filter(e=>kbData(e).x.courses.includes(code));
+/* the signed-in student's current schedule */
+const myCourses=()=>U&&U.role==='student'&&U.acad?U.acad.courses.filter(x=>x.term==='f26').map(x=>x.c):[];
+const MYQ=/(^|[^\p{L}])(my|мой|моя|моего|моих|мои|моему|менің|менин|moi|moy)([^\p{L}]|$)|\p{L}(ым|ім)([^\p{L}]|$)/iu;
+/* a teacher name that is not in the directory: a capitalised word not explained by any topic, or the word after "Dr" / "преподаватель" */
+const T_CUE=/^(dr|prof|professor|mr|mrs|ms|профессор|доктор|преподавател\p{L}*|препод\p{L}*|учител\p{L}*|оқытушы\p{L}*|мұғалім\p{L}*|named|зовут)$/iu;
+const T_GEN=new Set(('email mail почта пошта room office hours show tell give find need help hello thanks покажи скажи дай найди нужна нужен кто такой такая '+
+  'спасибо здравствуйте көрсет көрсетіңіз кім қай рахмет').split(' ').map(nluFold));
+function teacherAsked(t){const q=nluAnalyze(t),ws=t.match(/\p{L}[\p{L}'’-]*/gu)||[];
+  for(let i=0;i<ws.length;i++){const w=ws[i],k=nluToks(w)[0];if(!k||!q.words.includes(k)||T_GEN.has(k)||courseCode(w))continue;
+    if(/^\p{Lu}/u.test(w)||(i>0&&T_CUE.test(ws[i-1])))return w.replace(/['’]s$/,'')}
+  return null}
+const ohText=(oh,L)=>oh.map(h=>wdName(h.d,L)+' '+h.a+'–'+h.b).join(', ');
+/* teacher card: courses, email, office on the map, office hours. No phone. */
+function tCard(e,L,o){o=o||{};const d=kbData(e),x=d.x,r=CAMPUS.get(x.room),name=d.q[L][0];
+  bot(Object.assign(o.text?{text:o.text,html:'<b class="t">'+esc(name)+'</b>'}:{title:name},{
+    list:[trL('t.courses',L)+': '+x.courses.map(c=>c+(COURSE_T[c]?' '+COURSE_T[c]:'')).join(', '),'Email: '+x.mail,
+      trL('t.room',L,{r:x.room,b:r?r.b:'',f:r?r.f:''}),trL('t.oh',L)+': '+ohText(x.oh,L)],
+    after:d.a[L],src:trL('t.src',L),fb:!!o.fb,acts:[[trL('cm.map',L),()=>openMap(x.room)]]}),L)}
+/* teacher or course not in the directory: the Dean's Office from the office directory (room, hours, email; no phone) */
+function deanNf(text,L){const of=OFFICE_INFO.deans;
+  bot({text,list:officeRows(of,L),after:officeState(of,L).text,src:trL('t.src',L),acts:[[trL('cm.map',L),()=>openMap(of.room)]],fb:true},L)}
 /* attendance card: course, absences, limit, absences left */
 function attCard(list,L){
   return '<div class="tw"><table class="bt"><thead><tr><th>'+esc(trL('gr.course',L))+'</th><th>'+esc(trL('att.abs',L))+'</th><th>'+esc(trL('att.lim',L))+'</th><th>'+esc(trL('att.left',L))+'</th></tr></thead><tbody>'+

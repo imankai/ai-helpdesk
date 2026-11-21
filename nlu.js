@@ -58,6 +58,12 @@ const TOPICS={
    'prerequisite','prereq','hold','registraciya',
    'регистрация','регистрац','зарегистр','рега','регаться','записаться на курсы','запись на курсы','записаться на предметы','выбор курсов','выбрать курсы',
    'пререквизит','блокировк','тіркел','тіркеу','курсқа жазылу','пәнге жазылу','=пән','пәнге','пәндер','курс']},
+ /* US22 teachers: before adv, so "консультация когда" and "meeting with my teacher" come here; "консультация" alone stays with the advisor.
+   "prof", "dr" and "lecturer" are exact ("profile" is not a teacher, "lecture hall" is a room) */
+ teacher:{intent:'teacher',syn:['teacher','teachers','my teacher','professor','=prof','=lecturer','instructor','office hours','consultation hours','teacher email','teacher contact','=dr','who teaches',
+   'prepod','prepodavatel','okytushy','oqytushy','okytushym','oqytushym','mugalim','ustaz','konsultaciya kogda','pochta prepoda',
+   'преподавател','препод','преподша','учител','почта преподавателя','почта препода','часы консультаций','консультация когда','кабинет препода','кабинет преподавателя','кто ведет',
+   'оқытушы','оқытушым','мұғалім','ұстаз','консультация қашан','консультация уақыты','кеңес беру уақыты','оқытушының поштасы','оқытушының кабинеті','кім жүргізеді']},
  adv:{intent:'adv',syn:['advisor','adviser','advising','appointment','advisor meeting','meeting with advisor','book advisor','edvaizer',
    'meeting','эдвайзер','адвайзер','эдвизор','эдвайзор','советник','куратор','записаться к эдвайзеру','встреча с эдвайзером','консультац','встреч',
    'кеңесші','кеңесшіге жазылу','кездесу']},
@@ -169,7 +175,7 @@ const KK_STEMS=['тиркел','купиясоз','кенесши','отиним
 const RU_WORDS=new Set('я мне меня как где что когда хочу это на не почему какой какая можно нужно надо у в и'.split(' '));
 /* Kazakh typed in Latin letters ("kitap bar ma"): at least one clearly Kazakh word and two Kazakh words in all; "bar", "ma", "me" alone are English too */
 const KK_LAT=new Set(('kitap kitaptarym kitapty kitaptar kerek kaida qaida kashan qashan kansha qansha menin sabak bagalarym bagalar kandai qandai zhatakhana zhataqhana zhatakhanada zhataqhanada syndy bolme bolmemde rakhmet salem bar ma me ba be '+
-  'osy aptadagy aptada sharalar uiirme uiirmesi uyirme uyirmesi bagdarlamalau zhumada').split(' '));
+  'osy aptadagy aptada sharalar oqytushy okytushy oqytushym okytushym oqytushynyn okytushynyn poshtasy uiirme uiirmesi uyirme uyirmesi bagdarlamalau zhumada').split(' '));
 const KK_LAT_WEAK=new Set(['bar','ma','me','ba','be']);
 function isKazakh(t){
   if(/[әғқңөұүһі]/i.test(t))return true;

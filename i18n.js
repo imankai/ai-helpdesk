@@ -564,7 +564,23 @@ const D={
  'cl.nf':["I couldn't find a “{q}” club. These are the student clubs:","«{q}» үйірмесі табылмады. Студенттік үйірмелер тізімі:","Клуб «{q}» не найден. Вот студенческие клубы:"],
  'cl.meets':["Meets","Кездесу уақыты","Встречи"],
  'cl.contact':["Contact person","Байланыс адамы","Контактное лицо"],
-
+ /* US22 teacher directory */
+ 'i.teacher':["Teacher contacts and office hours","Оқытушы байланыстары мен консультация уақыты","Контакты и консультации преподавателей"],
+ 't.src':["Faculty directory","Оқытушылар анықтамалығы","Справочник преподавателей"],
+ 't.courses':["Courses","Курстары","Курсы"],
+ 't.room':["Office: {r} (building {b}, floor {f})","Кабинеті: {r} ({b} корпусы, {f}-қабат)","Кабинет: {r} (корпус {b}, этаж {f})"],
+ 't.oh':["Office hours","Консультация уақыты","Часы консультаций"],
+ 't.one':["{c} is taught by:","{c} курсын жүргізетін оқытушы:","{c} ведёт:"],
+ 't.many':["{c} is taught by {n} teachers:","{c} курсын {n} оқытушы жүргізеді:","{c} ведут {n} преподавателя:"],
+ 't.mine1':["Your {c} teacher, from your schedule:","Сабақ кестеңіз бойынша {c} оқытушыңыз:","Ваш преподаватель по {c} по вашему расписанию:"],
+ 't.minen':["Your {c} teachers, from your schedule ({n} teachers):","Сабақ кестеңіз бойынша {c} оқытушыларыңыз ({n} оқытушы):","Ваши преподаватели по {c} по вашему расписанию ({n}):"],
+ 't.notmine':["{c} is not in your current courses ({l}). Teachers of {c} in the directory:","{c} қазіргі курстарыңызда жоқ ({l}). Анықтамалықтағы {c} оқытушылары:","{c} нет среди ваших текущих курсов ({l}). Преподаватели {c} в справочнике:"],
+ 't.myall':["Teachers of your current courses ({l}):","Қазіргі курстарыңыздың оқытушылары ({l}):","Преподаватели ваших текущих курсов ({l}):"],
+ 't.no':["{n} does not teach {c}. {c} is taught by:","{n} {c} курсын жүргізбейді. {c} курсын жүргізетіндер:","{n} не ведёт {c}. {c} ведут:"],
+ 't.no0':["{n} does not teach {c}, and no teacher for {c} is listed in the directory. Please contact the Dean's Office:","{n} {c} курсын жүргізбейді, анықтамалықта {c} оқытушысы жоқ. Деканатқа хабарласыңыз:","{n} не ведёт {c}, и преподавателя {c} в справочнике нет. Обратитесь в деканат:"],
+ 't.nf':["Teacher not found: there is no “{q}” in the faculty directory. Check the spelling, or contact the Dean's Office:","Оқытушы табылмады: анықтамалықта «{q}» жоқ. Жазылуын тексеріңіз немесе деканатқа хабарласыңыз:","Преподаватель не найден: «{q}» нет в справочнике. Проверьте написание или обратитесь в деканат:"],
+ 't.nfc':["No teacher for {c} is listed in the faculty directory. Please contact the Dean's Office:","Анықтамалықта {c} оқытушысы жоқ. Деканатқа хабарласыңыз:","Преподавателя {c} нет в справочнике. Обратитесь в деканат:"],
+ 't.ask':["Which teacher do you need? Write a name or a course code, for example “Demova” or “office hours for INF451”.","Қай оқытушы керек? Аты-жөнін немесе курс кодын жазыңыз, мысалы «Демова» немесе «INF451 консультация қашан».","Какой преподаватель нужен? Напишите фамилию или код курса, например «Демова» или «консультация по INF451»."],
  /* knowledge base: events, clubs and teachers */
  'kb.event':["Event","Іс-шара","Событие"],
  'kb.club':["Club","Үйірме","Клуб"],
@@ -702,9 +718,9 @@ const FAQ=[
  {id:'portal',cat:'it',src:'it',q:x3("I can't log in to the portal","Порталға кіре алмай жүрмін","Не могу войти в портал"),a:L=>T[L].portal},
  {id:'hours',cat:'off',src:'ssc',q:x3("What are the Student Service Center hours?","Студенттерге қызмет көрсету орталығының жұмыс уақыты қандай?","Когда работает Центр обслуживания студентов?"),a:L=>T[L].hours},
  {id:'offices',cat:'off',src:'ssc',q:x3("Which office should I contact?","Қай бөлімге хабарласу керек?","В какой отдел обращаться?"),
-  a:x3("Registrar: courses, certificates, transcripts. IT Support: accounts, Wi-Fi, portal. Finance: payments and billing. Student Affairs: dormitory places and student life. Housing Office: dormitory repairs and room changes.",
-       "Registrar: пәндер, анықтамалар, транскрипт. IT Support: аккаунттар, Wi-Fi, портал. Finance: төлемдер. Student Affairs: жатақханадағы орын және студенттік өмір. Housing Office: жатақханадағы жөндеу және бөлме ауыстыру.",
-       "Registrar: курсы, справки, транскрипт. IT Support: аккаунты, Wi-Fi, портал. Finance: платежи. Student Affairs: места в общежитии и студенческая жизнь. Housing Office: ремонт в общежитии и смена комнаты.")}
+  a:x3("Registrar: courses, certificates, transcripts. IT Support: accounts, Wi-Fi, portal. Finance: payments and billing. Student Affairs: dormitory places and student life. Housing Office: dormitory repairs and room changes. Dean's Office: teachers, courses and academic questions.",
+       "Registrar: пәндер, анықтамалар, транскрипт. IT Support: аккаунттар, Wi-Fi, портал. Finance: төлемдер. Student Affairs: жатақханадағы орын және студенттік өмір. Housing Office: жатақханадағы жөндеу және бөлме ауыстыру. Деканат: оқытушылар, курстар және академиялық сұрақтар.",
+       "Registrar: курсы, справки, транскрипт. IT Support: аккаунты, Wi-Fi, портал. Finance: платежи. Student Affairs: места в общежитии и студенческая жизнь. Housing Office: ремонт в общежитии и смена комнаты. Деканат: преподаватели, курсы и академические вопросы.")}
 ];
 
 /* small labels used by the chat engine */
