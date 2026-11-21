@@ -70,6 +70,14 @@ const TOPICS={
    'библиотек','книг','учебник','=автор','=автора','каталог','доступн','в наличии','кітап','кітапхана','оқулық','авторы']},
  sched:{kb:'sched',syn:['schedule','timetable','class schedule','my classes','classes today','raspisanie',
    'расписание','расписан','расписание пар','пары','когда пары','занятия','кесте','сабақ кестесі','сабақ']},
+ /* US21 campus events and clubs: after sched, so "пары в пятницу" stays the schedule; before rooms, so "in which room does the club meet" is a club question.
+   Event and club names ("hackathon", "programming club") are matched from the knowledge base entries in app.js */
+ events:{intent:'events',syn:['event','events','campus events','upcoming events','whats on','what is happening','happening on campus','activities','=fair','festival','concert','workshop','meetup',
+   'sobytiya','sobytie','meropriyatiya','meropriyatie','ivent','ivents','sharalar','is shara',
+   'событи','мероприяти','ивент','афиша','движ','тусовк','фестивал','концерт','воркшоп',
+   'іс шара','іс шаралар','шаралар','кампуста не болады']},
+ clubs:{intent:'clubs',syn:['club','clubs','student club','student clubs','society','kruzhok','klub','klubtar','uiirme','uyirme','uiirmesi',
+   'клуб','кружок','кружк','секци','студенческий клуб','үйірме','клубтар','студенттік клуб']},
  /* US20 housing: after wifi, so "wifi в общаге" stays Wi-Fi; before rooms and tkstatus, so "in my room" and "статус заявки по ремонту" come here.
    Risky short words are exact ("=light" is not a typo of "right", "=dorm" not of "form", "=свет" not of "совет") */
  hstatus:{intent:'hstatus',syn:['status of my repair request','repair request status','status of my housing request','housing request status','repair status','status of my dorm request',
@@ -160,7 +168,8 @@ const KK_WORDS=new Set('мен сен ба бе ма ме па пе керек �
 const KK_STEMS=['тиркел','купиясоз','кенесши','отиним','кесте','анык','толем','грантпын','багалар','босат','калдыр'];
 const RU_WORDS=new Set('я мне меня как где что когда хочу это на не почему какой какая можно нужно надо у в и'.split(' '));
 /* Kazakh typed in Latin letters ("kitap bar ma"): at least one clearly Kazakh word and two Kazakh words in all; "bar", "ma", "me" alone are English too */
-const KK_LAT=new Set('kitap kitaptarym kitapty kitaptar kerek kaida qaida kashan qashan kansha qansha menin sabak bagalarym bagalar kandai qandai zhatakhana zhataqhana zhatakhanada zhataqhanada syndy bolme bolmemde rakhmet salem bar ma me ba be'.split(' '));
+const KK_LAT=new Set(('kitap kitaptarym kitapty kitaptar kerek kaida qaida kashan qashan kansha qansha menin sabak bagalarym bagalar kandai qandai zhatakhana zhataqhana zhatakhanada zhataqhanada syndy bolme bolmemde rakhmet salem bar ma me ba be '+
+  'osy aptadagy aptada sharalar uiirme uiirmesi uyirme uyirmesi bagdarlamalau zhumada').split(' '));
 const KK_LAT_WEAK=new Set(['bar','ma','me','ba','be']);
 function isKazakh(t){
   if(/[әғқңөұүһі]/i.test(t))return true;

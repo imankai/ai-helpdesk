@@ -30,6 +30,10 @@ const ACAD={
 /* on-campus housing (US20): dormitory number and room; 249900002 does not live in a dormitory. Fictional. */
 const DORMS={'249900001':{d:1,r:'312'},'249900003':{d:2,r:'105'},'249900004':{d:2,r:'418'}};
 Object.entries(ACCOUNTS).forEach(([k,a])=>{a.login=k;a.id=k;a.first=a.name.split('.')[0];if(ACAD[k])a.acad=ACAD[k];if(a.role==='student')a.dorm=DORMS[k]||null});
+/* course code -> title, from the students' records and their registration lists ("INF 401 Software Engineering") */
+const COURSE_T={};
+Object.values(ACAD).forEach(a=>a.courses.forEach(x=>{COURSE_T[x.c]=x.t}));
+Object.values(ACCOUNTS).forEach(a=>(a.courses||[]).forEach(x=>{const m=/^([A-Z]+) (\d+) (.+)$/.exec(x.c);if(m&&!COURSE_T[m[1]+m[2]])COURSE_T[m[1]+m[2]]=m[3]}));
 /* attendance (US18): absence limit per course of the current term, and the absences at the start of the demo.
    Absences live in st.att, so a teacher's mark (staff "Attendance (demo)") reaches the student's tab. */
 const ATT_LIM={INF451:6,INF320:6,MAT301:5,INF330:6};
@@ -98,7 +102,7 @@ const seedReview=()=>{const n=Date.now();return[
    The bot, chat suggestions and the FAQ page read only the active version of published entries. ---------- */
 /* built-in FAQ entries linked to a chat intent; for a signed-in student the personal answer (registration check, balance) wins */
 const KB_INTENT={reg:'reg',adddrop:'adddrop',sched:'sched',pay:'bill',grant:'bill',pw:'pw',wifi:'wifi',portal:'portal',hours:'hours',offices:'offices'};
-const KB_CATS=['reg','pay','grant','it','off'],KB_SRCS=['reg','bill','adv','it','cal','ssc','portal'];
+const KB_CATS=['reg','pay','grant','it','off','life','acad'],KB_SRCS=['reg','bill','adv','it','cal','ssc','portal','ev','clubs','fac'];
 const KB_OFFICES=[
  ['registrar',{en:["What does the Registrar do?","Registrar office"],kk:["Registrar не істейді?","Registrar бөлімі"],ru:["Чем занимается Registrar?","Отдел Registrar"]},
   {en:"Registrar handles course registration, enrollment certificates and transcripts. Send a request with a Help Desk ticket (office: Registrar) or contact the Student Service Center: "+SSC+".",
@@ -128,18 +132,110 @@ const OFFICE_INFO={
   affairs:{name:'Student Affairs',room:'G205',open:10,close:17,tel:'8 (727) 000-00-04',mail:'affairs@university.demo'},
   housing:{name:'Housing Office',room:'G206',open:9,close:17,tel:'8 (727) 000-00-05',mail:'housing@university.demo'},
   hours:{name:'Student Service Center',room:'H204',open:9,close:18,tel:'8 (727) 000-00-00',mail:'ssc@university.demo'}};
+/* ---------- campus life (US21): knowledge base entries with extra fields (x), edited by staff like the others.
+   q[lang]: first line is the title / name, other lines are other names or keywords the bot recognises; a[lang]: description or note.
+   Event dates are relative to today (rel: days from today, wd: the next such weekday, 0 = Sunday), so the demo is always current;
+   an event edited by staff gets a fixed date. Places are rooms of the campus map only. All people and emails are fictional. ---------- */
+const EV_SEED=[
+ ['ev-ai',{rel:0,a:'17:00',b:'18:30',place:'H02'},
+  {en:['Guest Lecture: AI in Everyday Life','guest lecture'],kk:['Қонақ дәрісі: Күнделікті өмірдегі жасанды интеллект','қонақ дәрісі'],ru:['Гостевая лекция: ИИ в повседневной жизни','гостевая лекция']},
+  {en:'An open lecture about how AI tools help with study, work and daily life, followed by questions from the audience. Open to students, staff and visitors.',
+   kk:'Жасанды интеллект құралдарының оқуға, жұмысқа және күнделікті өмірге қалай көмектесетіні туралы ашық дәріс, соңында сұрақ-жауап. Студенттерге, қызметкерлерге және қонақтарға ашық.',
+   ru:'Открытая лекция о том, как инструменты ИИ помогают в учёбе, работе и повседневной жизни, после неё — вопросы из зала. Открыта для студентов, сотрудников и гостей.'}],
+ ['ev-python',{rel:1,a:'16:00',b:'18:00',place:'I211'},
+  {en:['Python Workshop for Beginners','Python workshop','python'],kk:['Бастаушыларға арналған Python шеберханасы','Python шеберханасы'],ru:['Воркшоп по Python для начинающих','воркшоп по Python','питон']},
+  {en:'A hands-on introduction to Python: variables, loops and a small project. Bring a laptop; no experience needed.',
+   kk:'Python тіліне практикалық кіріспе: айнымалылар, циклдер және шағын жоба. Ноутбук ала келіңіз; тәжірибе қажет емес.',
+   ru:'Практическое введение в Python: переменные, циклы и небольшой проект. Возьмите ноутбук; опыт не нужен.'}],
+ ['ev-hack',{rel:2,a:'10:00',b:'18:00',place:'I210'},
+  {en:['Campus Hackathon','hackathon'],kk:['Кампус хакатоны','хакатон'],ru:['Хакатон на кампусе','хакатон']},
+  {en:'A one-day team hackathon: build a prototype that makes student life easier. Teams of 3–4 people; lunch is provided.',
+   kk:'Бір күндік командалық хакатон: студенттік өмірді жеңілдететін прототип жасаңыз. Командада 3–4 адам; түскі ас беріледі.',
+   ru:'Однодневный командный хакатон: создайте прототип, который упростит студенческую жизнь. Команды по 3–4 человека; обед предоставляется.'}],
+ ['ev-career',{rel:4,a:'11:00',b:'15:00',place:'H01'},
+  {en:['Career Fair: IT Companies','career fair','job fair'],kk:['Мансап жәрмеңкесі: IT компаниялар','мансап жәрмеңкесі','бос жұмыс орындары'],ru:['Ярмарка вакансий: IT-компании','ярмарка вакансий','ярмарка']},
+  {en:'Meet IT companies that offer internships and junior positions. Bring your CV.',
+   kk:'Тағылымдама және бастапқы лауазымдар ұсынатын IT компаниялармен танысыңыз. Түйіндемеңізді ала келіңіз.',
+   ru:'Познакомьтесь с IT-компаниями, которые предлагают стажировки и позиции junior. Возьмите резюме.'}],
+ ['ev-movie',{wd:5,a:'19:00',b:'21:30',place:'B1'},
+  {en:['Friday Movie Night','movie night','movie'],kk:['Жұма кинокеші','кинокеш','фильм'],ru:['Пятничный киновечер','киновечер','кино']},
+  {en:'A relaxed evening with a film chosen by student vote on the big screen. Free entry.',
+   kk:'Студенттер дауыс беріп таңдаған фильмді үлкен экранда көретін жайлы кеш. Кіру тегін.',
+   ru:'Спокойный вечер с фильмом, выбранным голосованием студентов, на большом экране. Вход свободный.'}],
+ ['ev-chess',{rel:8,a:'15:00',b:'18:00',place:'I111'},
+  {en:['Open Chess Tournament','chess tournament'],kk:['Ашық шахмат турнирі','шахмат турнирі'],ru:['Открытый шахматный турнир','шахматный турнир']},
+  {en:'A rapid chess tournament for all levels, organised by the Chess Club. Boards and clocks are provided.',
+   kk:'Шахмат үйірмесі ұйымдастыратын барлық деңгейге арналған жылдам шахмат турнирі. Тақталар мен сағаттар беріледі.',
+   ru:'Турнир по быстрым шахматам для всех уровней, организует Шахматный клуб. Доски и часы предоставляются.'}],
+ ['ev-volunteer',{rel:9,a:'10:00',b:'13:00',place:'C1'},
+  {en:['Volunteer Day: Campus Clean-up','volunteer day','cleanup'],kk:['Еріктілер күні: кампусты тазалау','еріктілер күні','сенбілік'],ru:['День волонтёра: уборка кампуса','день волонтёра','субботник']},
+  {en:'Meet at barrel C1 and help tidy up the campus grounds. Gloves and bags are provided; volunteer hours are counted.',
+   kk:'C1 бөшкесінің жанында жиналып, кампус аумағын тазалауға көмектесіңіз. Қолғап пен қаптар беріледі; еріктілік сағаттары есептеледі.',
+   ru:'Сбор у бочки C1, помогаем навести порядок на территории кампуса. Перчатки и мешки выдаём; волонтёрские часы засчитываются.'}],
+ ['ev-pitch',{rel:20,a:'18:00',b:'20:00',place:'I310'},
+  {en:['Startup Pitch Evening','startup pitch','pitch night'],kk:['Стартап питч кеші','стартап питч'],ru:['Вечер стартап-питчей','питч стартапов','стартап']},
+  {en:'Student teams present startup ideas in 5 minutes each; a jury of staff gives feedback. Come to pitch or to listen.',
+   kk:'Студент командалары стартап идеяларын 5 минуттан таныстырады; қызметкерлерден құралған қазылар алқасы пікір айтады. Таныстыруға немесе тыңдауға келіңіз.',
+   ru:'Студенческие команды за 5 минут представляют идеи стартапов; жюри из сотрудников даёт обратную связь. Приходите выступить или послушать.'}],
+ /* two events that already took place: never shown as upcoming */
+ ['ev-quiz',{rel:-3,a:'18:00',b:'20:00',place:'A2'},
+  {en:['Freshers Quiz Night','quiz night','quiz'],kk:['Бірінші курстарға арналған квиз','квиз'],ru:['Квиз для первокурсников','квиз']},
+  {en:'A team quiz about the university and general knowledge for first-year students.',
+   kk:'Бірінші курс студенттеріне арналған университет және жалпы білім туралы командалық квиз.',
+   ru:'Командный квиз об университете и на общую эрудицию для первокурсников.'}],
+ ['ev-cyber',{rel:-10,a:'14:00',b:'16:00',place:'I211'},
+  {en:['Cybersecurity Workshop','cybersecurity workshop','cybersecurity'],kk:['Киберқауіпсіздік шеберханасы','киберқауіпсіздік'],ru:['Воркшоп по кибербезопасности','кибербезопасность']},
+  {en:'A practical session on strong passwords, phishing and safe use of public Wi-Fi.',
+   kk:'Мықты құпиясөз, фишинг және қоғамдық Wi-Fi-ды қауіпсіз пайдалану туралы практикалық сабақ.',
+   ru:'Практическое занятие о надёжных паролях, фишинге и безопасном использовании общественного Wi-Fi.'}]];
+const CLUB_SEED=[
+ ['cl-prog',{wd:3,a:'18:00',b:'20:00',place:'I209',who:'Alem Bytova',mail:'a.bytova@university.demo'},
+  {en:['Programming Club','programming','coding club','coding'],kk:['Бағдарламалау үйірмесі','бағдарламалау','программалау'],ru:['Клуб программирования','программирование','кружок программирования','кодинг']},
+  {en:'Weekly coding practice, preparation for programming contests and small team projects. Beginners are welcome; bring a laptop.',
+   kk:'Апта сайынғы бағдарламалау жаттығулары, олимпиадаларға дайындық және шағын командалық жобалар. Бастаушыларды да күтеміз; ноутбук ала келіңіз.',
+   ru:'Еженедельная практика программирования, подготовка к олимпиадам и небольшие командные проекты. Новичкам рады; возьмите ноутбук.'}],
+ ['cl-chess',{wd:2,a:'17:00',b:'19:00',place:'I309',who:'Dias Gambitov',mail:'d.gambitov@university.demo'},
+  {en:['Chess Club','chess'],kk:['Шахмат үйірмесі','шахмат'],ru:['Шахматный клуб','шахматы','шахмат']},
+  {en:'Casual games, chess puzzles and training for tournaments. All levels; boards are provided.',
+   kk:'Еркін ойындар, шахмат есептері және турнирлерге дайындық. Барлық деңгейге; тақталар беріледі.',
+   ru:'Свободные партии, шахматные задачи и подготовка к турнирам. Любой уровень; доски предоставляются.'}],
+ ['cl-debate',{wd:4,a:'18:00',b:'20:00',place:'H03',who:'Madina Rhetorikova',mail:'m.rhetorikova@university.demo'},
+  {en:['Debate Club','debate','debates','public speaking'],kk:['Дебат клубы','дебат','шешендік'],ru:['Дебатный клуб','дебаты','ораторское искусство']},
+  {en:'Parliamentary-style debates in English, Kazakh and Russian, and public speaking practice.',
+   kk:'Ағылшын, қазақ және орыс тілдерінде парламенттік үлгідегі дебаттар және шешендік өнер жаттығулары.',
+   ru:'Дебаты в парламентском формате на английском, казахском и русском и практика публичных выступлений.'}],
+ ['cl-music',{wd:5,a:'17:00',b:'19:00',place:'B2',who:'Arsen Melodiyev',mail:'a.melodiyev@university.demo'},
+  {en:['Music Club','music','band','choir'],kk:['Музыка үйірмесі','музыка','хор'],ru:['Музыкальный клуб','музыка','хор']},
+  {en:'Jam sessions, a student band and a choir; we perform at campus concerts. Any instrument or voice is welcome.',
+   kk:'Джем-сессиялар, студенттік топ және хор; кампустағы концерттерде өнер көрсетеміз. Кез келген аспап пен дауысқа қуаныштымыз.',
+   ru:'Джем-сейшены, студенческая группа и хор; выступаем на концертах кампуса. Рады любому инструменту и голосу.'}],
+ ['cl-robot',{wd:1,a:'16:00',b:'18:00',place:'E104',who:'Aruzhan Circuitova',mail:'a.circuitova@university.demo'},
+  {en:['Robotics Club','robotics','robots','arduino'],kk:['Робототехника үйірмесі','робототехника'],ru:['Клуб робототехники','робототехника','роботы']},
+  {en:'Build and program robots with Arduino and sensors; we prepare for student robotics competitions.',
+   kk:'Arduino мен датчиктер арқылы роботтар құрастырып, бағдарламалаймыз; студенттік робототехника жарыстарына дайындаламыз.',
+   ru:'Собираем и программируем роботов на Arduino с датчиками; готовимся к студенческим соревнованиям по робототехнике.'}],
+ ['cl-volunteer',{wd:6,a:'11:00',b:'13:00',place:'C2',who:'Yerlan Helperov',mail:'y.helperov@university.demo'},
+  {en:['Volunteer Club','volunteering','volunteer'],kk:['Еріктілер клубы','еріктілік','волонтер'],ru:['Волонтёрский клуб','волонтёрство','волонтер']},
+  {en:'Charity events, help at campus events and city projects. Volunteer hours are recorded for your activity certificate.',
+   kk:'Қайырымдылық шаралары, кампус іс-шаралары мен қалалық жобаларға көмек. Еріктілік сағаттары белсенділік анықтамасына жазылады.',
+   ru:'Благотворительные акции, помощь на мероприятиях кампуса и городские проекты. Волонтёрские часы записываются в справку об активности.'}]];
+const KB_X=['event','club'];
 function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
-  const mk=(id,kind,intent,cat,src,q,a)=>({id,kind,intent:intent||null,status:'published',vn:1,vers:[{n:1,act:'create',by,at,cat,src,q,a}],log:[]});
+  const mk=(id,kind,intent,cat,src,q,a,x)=>({id,kind,intent:intent||null,status:'published',vn:1,vers:[Object.assign({n:1,act:'create',by,at,cat,src,q,a},x?{x}:{})],log:[]});
   const per=f=>Object.fromEntries(LANGS.map(l=>[l,f(l)])),lines=v=>Array.isArray(v)?v.join('\n'):v;
   return FAQ.map(f=>mk(f.id,'faq',KB_INTENT[f.id],f.cat,f.src,per(l=>[f.q(l)]),per(l=>lines(f.a(l)))))
-    .concat(KB_OFFICES.map(([id,q,a])=>mk(id,'office',null,'off','ssc',q,a)))}
+    .concat(KB_OFFICES.map(([id,q,a])=>mk(id,'office',null,'off','ssc',q,a)))
+    .concat(EV_SEED.map(([id,x,q,a])=>mk(id,'event',null,'life','ev',q,a,x)))
+    .concat(CLUB_SEED.map(([id,x,q,a])=>mk(id,'club',null,'life','clubs',q,a,x)))}
 /* housing requests (US20), so the staff list is not empty on first launch. status: submitted -> progress -> done; upd = last update */
 const seedHousing=()=>{const n=Date.now();return[
   {n:101,uid:'249900003',who:'Kenan',dorm:2,room:'105',type:'repair',desc:'The shower drain in my room is blocked.',status:'progress',at:n-30*HR,upd:n-20*HR},
   {n:102,uid:'249900004',who:'Zhanibek',dorm:2,room:'418',type:'move',desc:'I would like to move to a quieter room on another floor.',status:'submitted',at:n-6*HR,upd:n-6*HR}]};
-const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt(),housing:seedHousing()});
-const loadSt=s=>{s.prefs=s.prefs||{};s.att=s.att||seedAtt();s.housing=s.housing||seedHousing();
-  if(s.kb&&!s.kb.some(e=>e.id==='housing'))s.kb.push(seedKb().find(e=>e.id==='housing'));   /* data saved before US20 gets the Housing Office entry */s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
+const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt(),housing:seedHousing(),evreg:{}});
+const loadSt=s=>{s.prefs=s.prefs||{};s.att=s.att||seedAtt();s.housing=s.housing||seedHousing();s.evreg=s.evreg||{};
+  /* data saved before US20–US21 gets the new built-in entries (Housing Office, events, clubs) */
+  if(s.kb)seedKb().forEach(e=>{if((e.id==='housing'||KB_X.includes(e.kind))&&!s.kb.some(x=>x.id===e.id))s.kb.push(e)});
+  s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
   if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
 let st=fresh();
 try{const s=JSON.parse(localStorage.getItem('hd-state')||'null');if(s&&s.v===5&&s.tickets)st=loadSt(s)}catch(e){}
@@ -361,6 +457,8 @@ function route(t){
   if(amb.length>1&&!(best&&best.s>=.9))return{k:'dym',list:amb.slice(0,3)};    /* a near-exact question variant still wins */
   /* a ticket number asks about that ticket, not for a new one */
   if(T==='ticket'&&/\b\d{4,6}\b/.test(t))return stu?{k:'h',i:'tkstatus'}:{k:'guest',i:'tkstatus'};
+  /* campus events and clubs (US21): open to everyone */
+  const kr=kindRoute(t,q,T);if(kr)return{k:'h',i:kr};
   /* high confidence in a knowledge base entry: answer it (a student still gets the personal answer for registration or billing).
      A question with only a weak word ("office") needs a near-exact variant, otherwise its topic decides */
   if(best&&best.s>=(q.tags.size?NLU_HIGH:q.weak.size?.9:NLU_HIGH))return forEntry(best.e);
@@ -395,7 +493,10 @@ const PERSONAL=['reg','bill','adv','ticket','human','tkstatus','remoff','remon',
 /* personal intents that also work for a staff account with the staff member's own data (library loans) */
 const STAFF_SELF=['loans'];
 const kbData=e=>e.vers.find(v=>v.n===e.vn);
-const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published');
+/* FAQ and office entries: the bot's general answers, chat suggestions and the FAQ page */
+const kbLive=()=>(st.kb||[]).filter(e=>e.status==='published'&&!KB_X.includes(e.kind));
+/* published events or clubs (US21) */
+const kbKind=k=>(st.kb||[]).filter(e=>e.status==='published'&&e.kind===k);
 /* languages that still lack a question variant or an answer; publishing is blocked while any is missing */
 const kbMissing=d=>LANGS.filter(l=>!(d.q[l]||[]).some(s=>s.trim())||!(d.a[l]||'').trim());
 const IT_K=['pw','wifi','portal'];
@@ -472,6 +573,23 @@ const H={
    if(!mine.length)return U.dorm?bot({text:trL('h.none',L),src,acts:[[trL('h.new',L),()=>newHousing(L)]]},L):noDorm(L);
    const h=mine[0];
    bot({text:trL('h.stat',L,{n:'H-'+h.n,t:trL('h.t.'+h.type,L),s:trL('h.st.'+h.status,L),u:dtL(h.upd,L)}),after:mine.length>1?trL('h.older',L):'',list:mine.slice(1,3).map(x=>hLine(x,L)),src,fb:true},L)},
+ /* US21: upcoming events for a period (next 7 days, a day, the weekend, next week, all) or one event by its name; past events are never listed as upcoming */
+ events:L=>{const src=trL('ev.src',L),now=clock(),hit=bestHits('event',curQ);
+   if(hit.length){const e=hit[0],x=kbData(e).x;
+     if(evEnd(x)<=now)return bot({text:trL('ev.past',L,{t:kbData(e).q[L][0],d:evDate(x,L)}),src,fb:true},L);
+     return evCard(e,L,{fb:true})}
+   const up=evUpcoming(),r=evRange(curQ),sel=up.filter(e=>{const x=kbData(e).x;return evStart(x)<r.to&&evEnd(x)>r.from});
+   if(!sel.length){
+     if(!up.length)return bot({text:trL('ev.noneall',L),src,fb:true},L);
+     bot({text:trL('ev.none',L,{r:evRangeText(r,L)}),after:trL('ev.next',L),src,fb:true},L);return evCard(up[0],L)}
+   bot({title:evRangeText(r,L,true),text:trL('ev.count',L,{n:sel.length}),src,fb:true},L);
+   sel.forEach(e=>evCard(e,L))},
+ /* US21: a club by name or topic ("Is there a programming club?"), or the list of clubs */
+ clubs:L=>{const src=trL('cl.src',L),all=kbKind('club'),hit=bestHits('club',curQ);
+   if(hit.length)return hit.forEach((e,i)=>clubCard(e,L,{fb:!i}));
+   const ask=clubAsked(curQ),list=all.map(e=>{const d=kbData(e);return d.q[L][0]+' — '+clubWhen(d.x,L)});
+   bot({title:trL('cl.title',L),text:ask?trL('cl.nf',L,{q:ask}):trL('cl.list',L,{n:all.length}),list,src,fb:true,
+     acts:all.map(e=>[kbData(e).q[L][0],()=>clubCard(e,L)])},L)},
  ticket:L=>startTicket(L),
  human:L=>human(L),
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
@@ -526,6 +644,87 @@ function makeHousing(d,L){const D=U.dorm,n=Math.max(100,...st.housing.map(h=>h.n
 /* staff changes the status (submitted, progress, done): the last update time is saved and the student is notified */
 function setHStatus(n,s){const h=st.housing.find(x=>x.n===n);if(!h||h.status===s)return false;
   h.status=s;h.upd=Date.now();note(h.uid,'hreq',{n:h.n,s});save();return true}
+/* ---------- campus events and clubs (US21) ---------- */
+const pad2=n=>String(n).padStart(2,'0');
+const isoDay=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+const today0=()=>{const n=clock();return new Date(n.getFullYear(),n.getMonth(),n.getDate())};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+/* the day of an event: a fixed date, the next such weekday (today included) or days from today */
+function evDay(x){const d=today0();
+  if(x.date)return new Date(x.date+'T00:00');
+  if(x.wd!=null)return addDays(d,(x.wd-d.getDay()+7)%7);
+  return addDays(d,x.rel||0)}
+const atTime=(d,t)=>{const [h,m]=t.split(':'),x=new Date(d);x.setHours(+h,+m,0,0);return x};
+const evStart=x=>atTime(evDay(x),x.a),evEnd=x=>atTime(evDay(x),x.b);
+/* weekday names from the browser: 15.11.2026 is a Sunday, so 15 + d is weekday d */
+const wdName=(d,L,long)=>new Date(2026,10,15+d).toLocaleDateString(T[L].loc,{weekday:long?'long':'short'});
+/* dates are written dd.mm.yyyy in every language (the browser's Kazakh format differs between browsers) */
+const dmText=d=>pad2(d.getDate())+'.'+pad2(d.getMonth()+1);
+const dayText=(d,L)=>wdName(d.getDay(),L)+', '+dmText(d)+'.'+d.getFullYear();
+const evDate=(x,L)=>dayText(evDay(x),L);
+/* upcoming = not finished yet (an event that is on right now is still upcoming); earliest first */
+const evUpcoming=()=>{const now=clock();return kbKind('event').filter(e=>evEnd(kbData(e).x)>now).sort((a,b)=>evStart(kbData(a).x)-evStart(kbData(b).x))};
+/* period named in the question; "this week" is today and the next 6 days */
+const DAYRE=[[1,/monday|понедельник|дүйсенбі|дуйсенби|ponedelnik|duisenbi/i],[2,/tuesday|вторник|сейсенбі|сейсенби|vtornik|seisenbi/i],
+  [3,/wednesday|(^|[^а-яё])сред[уаы]([^а-яё]|$)|сәрсенбі|сарсенби|sredu|sreda|sarsenbi/i],[4,/thursday|четверг|бейсенбі|бейсенби|chetverg|beisenbi/i],
+  [5,/friday|пятниц|жұма|жума|pyatnic|zhuma/i],[6,/saturday|суббот|(^|[^а-яәіңғүұқөһ])сенб[іи]|subbot|(^|[^a-z])senbi/i],[0,/sunday|воскресень|жексенбі|жексенби|voskresen|zheksenbi/i]];
+const TODAYRE=/today|tonight|сегодня|бүгін|бугин|segodnya|bugin/i,TMRWRE=/tomorrow|завтра|ертең|ертен|zavtra|erten/i,WKNDRE=/weekend|выходн|демалыс|vyhodn/i,
+  NEXTWRE=/next week|следующ[а-яё]* недел|келесі апта|келеси апта|kelesi apta|sleduyushch/i,THISWRE=/week|недел|апта|apta|nedel/i;
+const DAYANY=t=>[TODAYRE,TMRWRE,WKNDRE,NEXTWRE,THISWRE].some(r=>r.test(t))||DAYRE.some(([,r])=>r.test(t));
+function evRange(t){const d=today0();
+  if(NEXTWRE.test(t)){const f=addDays(d,((8-d.getDay())%7)||7);return{k:'next',from:f,to:addDays(f,7)}}
+  if(WKNDRE.test(t)){const w=d.getDay(),f=w===0||w===6?d:addDays(d,6-w);return{k:'wknd',from:f,to:addDays(f,f.getDay()===6?2:1)}}
+  if(TODAYRE.test(t))return{k:'day',from:d,to:addDays(d,1)};
+  if(TMRWRE.test(t))return{k:'day',from:addDays(d,1),to:addDays(d,2)};
+  const wd=DAYRE.find(([,re])=>re.test(t));if(wd){const f=addDays(d,(wd[0]-d.getDay()+7)%7);return{k:'day',from:f,to:addDays(f,1)}}
+  if(THISWRE.test(t))return{k:'week',from:d,to:addDays(d,7)};
+  return{k:'all',from:d,to:new Date(8.64e15)}}
+/* heading of the list, or the period alone for "no events in …" */
+function evRangeText(r,L,head){const a=dmText(r.from),b=dmText(addDays(r.to,-1));
+  if(r.k==='day')return head?trL('ev.h.day',L,{d:dayText(r.from,L)}):dayText(r.from,L);
+  if(r.k==='all')return head?trL('ev.h.all',L):'';
+  return head?trL('ev.h.'+r.k,L,{a,b}):a+'–'+b}
+/* a place of the campus map with its type and building */
+function placeText(id,L){const r=CAMPUS.get(id);if(!r)return id;const t=trL('cm.t.'+r.t,L).toLowerCase();
+  return r.barrel?trL('pl.br',L,{r:id,t}):r.f?trL('pl.f',L,{r:id,t,b:r.b,f:r.f}):trL('pl.b',L,{r:id,t,b:r.b})}
+/* registrations stay inside the site: per account in the demo data, for a visitor only until the page is closed */
+let guestReg=[];
+const evRegs=()=>U.role==='guest'?guestReg:((st.evreg=st.evreg||{})[U.login]=st.evreg[U.login]||[]);
+function evCard(e,L,o){o=o||{};const d=kbData(e),x=d.x,reg=evRegs().includes(e.id);
+  bot({title:d.q[L][0],text:d.a[L],list:[trL('ev.date',L)+': '+evDate(x,L),trL('ev.time',L)+': '+x.a+'–'+x.b,trL('ev.place',L)+': '+placeText(x.place,L)]
+      .concat(reg?[{t:trL('ev.youreg',L),cls:'yes'}]:[]),
+    src:trL('ev.src',L),fb:!!o.fb,acts:[[trL(reg?'ev.regd':'ev.reg',L),()=>evRegister(e,L)],[trL('cm.map',L),()=>openMap(x.place)]]},L)}
+function evRegister(e,L){const d=kbData(e),x=d.x,t=d.q[L][0],src=trL('ev.src',L),acts=[[trL('cm.map',L),()=>openMap(x.place)]];
+  if(evEnd(x)<=clock())return bot({text:trL('ev.closed',L,{t}),src},L);
+  const r=evRegs();if(r.includes(e.id))return bot({text:trL('ev.already',L,{t}),acts,src},L);
+  r.push(e.id);if(U.role!=='guest')save();
+  bot({text:trL('ev.ok',L,{t,d:evDate(x,L),h:x.a+'–'+x.b,p:placeText(x.place,L)}),after:U.role==='guest'?trL('ev.guest',L):'',acts,src},L)}
+const clubWhen=(x,L)=>wdName(x.wd,L,true)+', '+x.a+'–'+x.b+' · '+x.place;
+function clubCard(e,L,o){const d=kbData(e),x=d.x;
+  bot({title:d.q[L][0],text:d.a[L],list:[trL('cl.meets',L)+': '+wdName(x.wd,L,true)+', '+x.a+'–'+x.b,trL('ev.place',L)+': '+placeText(x.place,L),trL('cl.contact',L)+': '+x.who+', '+x.mail],
+    src:trL('cl.src',L),fb:!!(o&&o.fb),acts:[[trL('cm.map',L),()=>openMap(x.place)]]},L)}
+/* how well a question names an entry: the longest title or keyword line whose words all appear in the question.
+   Word endings and 1–2 typos are allowed ("хакатоне", "программирования"). */
+const lineWords=s=>nluToks(s).filter(w=>w.length>=3&&!NSTOP.has(w));
+const nearW=(t,w)=>t===w||(w.length>=4&&t.startsWith(w)&&t.length-w.length<=5)||(w.length>=5&&Math.abs(t.length-w.length)<=2&&lev(t,w,w.length>=7?2:1)<=(w.length>=7?2:1));
+function hitScore(e,toks){const d=kbData(e);let best=0;
+  LANGS.forEach(l=>(d.q[l]||[]).forEach(s=>{const w=lineWords(s);if(!w.length)return;
+    if(w.every(x=>toks.some(t=>nearW(t,x))))best=Math.max(best,w.length)}));
+  return best}
+function bestHits(kind,t){const toks=nluToks(t),sc=kbKind(kind).map(e=>[e,hitScore(e,toks)]).filter(x=>x[1]>0),max=Math.max(0,...sc.map(x=>x[1]));
+  return sc.filter(x=>x[1]===max).map(x=>x[0])}
+const topHit=(kind,t)=>{const toks=nluToks(t);return Math.max(0,...kbKind(kind).map(e=>hitScore(e,toks)))};
+/* which handler, if any, a question about events or clubs goes to */
+const WHATON=/what'?s on|what is on|what is happening|what'?s happening|что (будет|проходит|интересного)|чем заняться|не болады|не өтеді|chto budet|ne bolady/i;
+function kindRoute(t,q,T){const strong=q.tags.size>0;
+  if(T==='events'||T==='clubs')return T;
+  if((!strong||T==='reg')&&!bookTitleIn(t)){const e=topHit('event',t),c=topHit('club',t);if(e||c)return e>=c?'events':'clubs'}   /* "register for the hackathon" */
+  if(!strong&&WHATON.test(t)&&(DAYANY(t)||/campus|кампус|kampus/i.test(t)))return 'events';                                      /* "что будет в пятницу" */
+  return null}
+/* subject of a club question that matched no club ("Is there a dance club?" -> "dance") */
+const CLUB_GEN=new Set('student students university campus join any there студенческий студенческие студентов студент университет кампус вступить студенттік университет кампус'.split(' ').map(nluFold));
+function clubAsked(t){const w=nluAnalyze(t).words.filter(x=>!CLUB_GEN.has(x)&&!KK_LAT.has(x));if(!w.length)return null;
+  const ws=t.match(/\p{L}[\p{L}'’-]*/gu)||[];return ws.filter(x=>w.includes(nluToks(x)[0])).join(' ')||w.join(' ')}
 /* attendance card: course, absences, limit, absences left */
 function attCard(list,L){
   return '<div class="tw"><table class="bt"><thead><tr><th>'+esc(trL('gr.course',L))+'</th><th>'+esc(trL('att.abs',L))+'</th><th>'+esc(trL('att.lim',L))+'</th><th>'+esc(trL('att.left',L))+'</th></tr></thead><tbody>'+

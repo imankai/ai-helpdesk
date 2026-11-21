@@ -395,7 +395,7 @@ const D={
 
  'nav.kb':["Knowledge base","Білім қоры","База знаний"],
  'kb.title':["Knowledge base","Білім қоры","База знаний"],
- 'kb.hint':["FAQ and office entries that the chat bot and the FAQ page use. Changes apply right away; archived entries are not used.","Чат-бот пен FAQ беті қолданатын FAQ және бөлім жазбалары. Өзгерістер бірден күшіне енеді; архивтегі жазбалар қолданылмайды.","Записи FAQ и отделов, которые использует чат-бот и страница FAQ. Изменения действуют сразу; архивные записи не используются."],
+ 'kb.hint':["FAQ, office, event, club and teacher entries that the chat bot and the FAQ page use. Changes apply right away; archived entries are not used.","Чат-бот пен FAQ беті қолданатын FAQ, бөлім, іс-шара, үйірме және оқытушы жазбалары. Өзгерістер бірден күшіне енеді; архивтегі жазбалар қолданылмайды.","Записи FAQ, отделов, событий, клубов и преподавателей, которые использует чат-бот и страница FAQ. Изменения действуют сразу; архивные записи не используются."],
  'kb.ph':["Search entries…","Жазбалардан іздеу…","Поиск по записям…"],
  'kb.add':["Add entry","Жазба қосу","Добавить запись"],
  'kb.edit':["Edit","Өңдеу","Изменить"],
@@ -529,7 +529,75 @@ const D={
  'hr.title':["Housing requests","Жатақхана өтінімдері","Заявки общежития"],
  'hr.hint':["Dormitory repair, room change and other requests from students. Changing the status notifies the student.","Студенттердің жатақханадағы жөндеу, бөлме ауыстыру және басқа өтінімдері. Мәртебені өзгерту студентке хабарлама жібереді.","Заявки студентов на ремонт, смену комнаты и другое. При смене статуса студент получает уведомление."],
  'hr.none':["No housing requests yet.","Әзірге жатақхана өтінімі жоқ.","Заявок пока нет."],
- 'hr.upd':["Updated","Жаңартылды","Обновлена"]
+ 'hr.upd':["Updated","Жаңартылды","Обновлена"],
+
+ /* US21 campus events and clubs */
+ 'i.events':["Campus events","Кампус іс-шаралары","События кампуса"],
+ 'i.clubs':["Student clubs","Студенттік үйірмелер","Студенческие клубы"],
+ 'ev.src':["Student Affairs · Events calendar","Student Affairs · Іс-шаралар күнтізбесі","Student Affairs · Календарь событий"],
+ 'ev.h.week':["Campus events in the next 7 days ({a}–{b})","Алдағы 7 күндегі кампус іс-шаралары ({a}–{b})","События кампуса на ближайшие 7 дней ({a}–{b})"],
+ 'ev.h.next':["Campus events next week ({a}–{b})","Келесі аптадағы кампус іс-шаралары ({a}–{b})","События кампуса на следующей неделе ({a}–{b})"],
+ 'ev.h.wknd':["Campus events this weekend ({a}–{b})","Осы демалыс күндердегі кампус іс-шаралары ({a}–{b})","События кампуса в эти выходные ({a}–{b})"],
+ 'ev.h.day':["Campus events on {d}","{d} күнгі кампус іс-шаралары","События кампуса: {d}"],
+ 'ev.h.all':["Upcoming campus events","Алдағы кампус іс-шаралары","Предстоящие события кампуса"],
+ 'ev.count':["Events: {n}. Each card has a Register button and the place on the campus map.","Іс-шаралар саны: {n}. Әр карточкада тіркелу батырмасы және кампус картасындағы орны бар.","Событий: {n}. В каждой карточке есть кнопка регистрации и место на карте кампуса."],
+ 'ev.none':["No campus events are planned for this time ({r}).","Бұл уақытқа ({r}) кампус іс-шаралары жоспарланбаған.","На это время ({r}) событий на кампусе не запланировано."],
+ 'ev.noneall':["There are no upcoming campus events right now.","Қазір алдағы кампус іс-шаралары жоқ.","Сейчас предстоящих событий на кампусе нет."],
+ 'ev.next':["The next upcoming event:","Ең жақын іс-шара:","Ближайшее событие:"],
+ 'ev.past':["“{t}” already took place on {d}, so it is not among the upcoming events.","«{t}» {d} күні өтіп кетті, сондықтан ол алдағы іс-шаралар қатарында жоқ.","«{t}» уже прошло ({d}), поэтому его нет среди предстоящих событий."],
+ 'ev.date':["Date","Күні","Дата"],
+ 'ev.time':["Time","Уақыты","Время"],
+ 'ev.place':["Place","Орны","Место"],
+ 'ev.reg':["Register","Тіркелу","Зарегистрироваться"],
+ 'ev.regd':["Registered ✓","Тіркелдіңіз ✓","Вы записаны ✓"],
+ 'ev.youreg':["You are registered for this event","Сіз бұл іс-шараға тіркелгенсіз","Вы зарегистрированы на это событие"],
+ 'ev.ok':["You are registered for “{t}”: {d}, {h}, {p}. See you there!","Сіз «{t}» іс-шарасына тіркелдіңіз: {d}, {h}, {p}. Күтеміз!","Вы зарегистрированы на «{t}»: {d}, {h}, {p}. Ждём вас!"],
+ 'ev.already':["You are already registered for “{t}”.","Сіз «{t}» іс-шарасына бұрын тіркелгенсіз.","Вы уже зарегистрированы на «{t}»."],
+ 'ev.closed':["Registration for “{t}” is closed: the event has already taken place.","«{t}» іс-шарасына тіркелу жабық: ол өтіп кетті.","Регистрация на «{t}» закрыта: событие уже прошло."],
+ 'ev.guest':["As a visitor, your registration is kept until you close the page. Sign in to keep it.","Қонақ ретінде тіркелуіңіз бет жабылғанша сақталады. Сақтап қалу үшін кіріңіз.","Как гость вы записаны до закрытия страницы. Войдите, чтобы регистрация сохранилась."],
+ 'pl.f':["{r} ({t}, building {b}, floor {f})","{r} ({t}, {b} корпусы, {f}-қабат)","{r} ({t}, корпус {b}, этаж {f})"],
+ 'pl.b':["{r} ({t}, building {b})","{r} ({t}, {b} корпусы)","{r} ({t}, корпус {b})"],
+ 'pl.br':["{r} ({t}, barrel)","{r} ({t}, бөшке)","{r} ({t}, бочка)"],
+ 'cl.src':["Student Affairs · Student clubs","Student Affairs · Студенттік үйірмелер","Student Affairs · Студенческие клубы"],
+ 'cl.title':["Student clubs","Студенттік үйірмелер","Студенческие клубы"],
+ 'cl.list':["There are {n} student clubs. Choose one to see the description, meeting place and contact person:","{n} студенттік үйірме бар. Сипаттамасын, кездесу орнын және байланыс адамын көру үшін біреуін таңдаңыз:","Есть {n} студенческих клубов. Выберите клуб, чтобы увидеть описание, место встреч и контактное лицо:"],
+ 'cl.nf':["I couldn't find a “{q}” club. These are the student clubs:","«{q}» үйірмесі табылмады. Студенттік үйірмелер тізімі:","Клуб «{q}» не найден. Вот студенческие клубы:"],
+ 'cl.meets':["Meets","Кездесу уақыты","Встречи"],
+ 'cl.contact':["Contact person","Байланыс адамы","Контактное лицо"],
+
+ /* knowledge base: events, clubs and teachers */
+ 'kb.event':["Event","Іс-шара","Событие"],
+ 'kb.club':["Club","Үйірме","Клуб"],
+ 'kb.teacher':["Teacher","Оқытушы","Преподаватель"],
+ 'cat.life':["Campus life","Кампус өмірі","Жизнь кампуса"],
+ 'cat.acad':["Teachers","Оқытушылар","Преподаватели"],
+ 'kb.qv.event':["Event title (first line) and other names, one per line","Іс-шара атауы (бірінші жол) және басқа атаулары, әр жолға біреу","Название события (первая строка) и другие названия, по одному в строке"],
+ 'kb.qv.club':["Club name (first line) and keywords, one per line","Үйірме атауы (бірінші жол) және кілт сөздер, әр жолға біреу","Название клуба (первая строка) и ключевые слова, по одному в строке"],
+ 'kb.qv.teacher':["Teacher name (first line) and other spellings, one per line","Оқытушының аты-жөні (бірінші жол) және басқа жазылуы, әр жолға біреу","Имя преподавателя (первая строка) и другие написания, по одному в строке"],
+ 'kb.ans.event':["Description","Сипаттама","Описание"],
+ 'kb.ans.club':["Description","Сипаттама","Описание"],
+ 'kb.ans.teacher':["Note for students","Студенттерге ескертпе","Примечание для студентов"],
+ 'kb.f.date':["Date","Күні","Дата"],
+ 'kb.f.from':["From","Басталуы","Начало"],
+ 'kb.f.to':["To","Аяқталуы","Конец"],
+ 'kb.f.place':["Place (room on the campus map)","Орны (кампус картасындағы бөлме)","Место (помещение на карте кампуса)"],
+ 'kb.f.wd':["Meeting day","Кездесу күні","День встреч"],
+ 'kb.f.who':["Contact person","Байланыс адамы","Контактное лицо"],
+ 'kb.f.mail':["Email (name@university.demo)","Email (name@university.demo)","Email (name@university.demo)"],
+ 'kb.f.courses':["Courses (codes, comma-separated)","Курстар (кодтары, үтір арқылы)","Курсы (коды через запятую)"],
+ 'kb.f.room':["Office (teacher's office on the campus map)","Кабинет (кампус картасындағы оқытушы кабинеті)","Кабинет (кабинет преподавателя на карте кампуса)"],
+ 'kb.f.oh':["Office hours, e.g. Mon 14:00-16:00, Wed 10:00-11:00","Консультация уақыты, мысалы Mon 14:00-16:00, Wed 10:00-11:00","Часы консультаций, например Mon 14:00-16:00, Wed 10:00-11:00"],
+ 'kb.e.place':["Cannot publish: the place must be a room of the campus map (for example H01, I210, A1).","Жариялау мүмкін емес: орны кампус картасындағы бөлме болуы керек (мысалы H01, I210, A1).","Нельзя опубликовать: место должно быть помещением с карты кампуса (например H01, I210, A1)."],
+ 'kb.e.room':["Cannot publish: the office must be a teacher's office of the campus map (for example E206).","Жариялау мүмкін емес: кабинет кампус картасындағы оқытушы кабинеті болуы керек (мысалы E206).","Нельзя опубликовать: кабинет должен быть кабинетом преподавателя на карте кампуса (например E206)."],
+ 'kb.e.date':["Cannot publish: enter a date, and a start time earlier than the end time.","Жариялау мүмкін емес: күнін және аяқталуынан ерте басталу уақытын енгізіңіз.","Нельзя опубликовать: укажите дату и время начала раньше времени окончания."],
+ 'kb.e.time':["Cannot publish: the start time must be earlier than the end time.","Жариялау мүмкін емес: басталу уақыты аяқталуынан ерте болуы керек.","Нельзя опубликовать: время начала должно быть раньше времени окончания."],
+ 'kb.e.mail':["Cannot publish: the email must look like name@university.demo.","Жариялау мүмкін емес: email name@university.demo түрінде болуы керек.","Нельзя опубликовать: email должен иметь вид name@university.demo."],
+ 'kb.e.who':["Cannot publish: enter the contact person.","Жариялау мүмкін емес: байланыс адамын енгізіңіз.","Нельзя опубликовать: укажите контактное лицо."],
+ 'kb.e.courses':["Cannot publish: enter at least one course code, for example INF451.","Жариялау мүмкін емес: кемінде бір курс кодын енгізіңіз, мысалы INF451.","Нельзя опубликовать: укажите хотя бы один код курса, например INF451."],
+ 'kb.e.oh':["Cannot publish: write office hours like “Mon 14:00-16:00, Wed 10:00-11:00”.","Жариялау мүмкін емес: консультация уақытын «Mon 14:00-16:00, Wed 10:00-11:00» түрінде жазыңыз.","Нельзя опубликовать: укажите часы консультаций в виде «Mon 14:00-16:00, Wed 10:00-11:00»."],
+ 'kb.e.phone':["Cannot publish: phone numbers are not allowed in events, clubs and teacher entries.","Жариялау мүмкін емес: іс-шара, үйірме және оқытушы жазбаларында телефон нөміріне болмайды.","Нельзя опубликовать: в событиях, клубах и записях преподавателей не должно быть телефонов."],
+ 'kb.past':["took place","өтіп кетті","прошло"],
+ 'sb.s6':["Sprint 6 — Campus life and accessibility","Sprint 6 — Кампус өмірі және қолжетімділік","Спринт 6 — Жизнь кампуса и доступность"]
 };
 let ui='en';
 try{const s=localStorage.getItem('hd-ui');if(LANGS.includes(s))ui=s}catch(e){}
@@ -640,6 +708,10 @@ const FAQ=[
 ];
 
 /* small labels used by the chat engine */
+/* knowledge base sources of events, clubs and teachers (US21, US22) */
+Object.assign(T.en.S,{ev:"Student Affairs · Events calendar",clubs:"Student Affairs · Student clubs",fac:"Faculty directory"});
+Object.assign(T.kk.S,{ev:"Student Affairs · Іс-шаралар күнтізбесі",clubs:"Student Affairs · Студенттік үйірмелер",fac:"Оқытушылар анықтамалығы"});
+Object.assign(T.ru.S,{ev:"Student Affairs · Календарь событий",clubs:"Student Affairs · Студенческие клубы",fac:"Справочник преподавателей"});
 T.en.srcL='Source';T.kk.srcL='Дереккөз';T.ru.srcL='Источник';
 T.en.joined='Staff member joined';T.kk.joined='Қызметкер қосылды';T.ru.joined='Сотрудник подключился';
 

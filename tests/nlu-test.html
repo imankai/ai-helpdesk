@@ -193,15 +193,50 @@ const CASES=[
  ['Where is the dormitory?','campus'],
  ['статус моей заявки','tkstatus'],
  ['The light in my room does not work','housing','visitor'],
- ['What is the status of my repair request?','guest','visitor']
+ ['What is the status of my repair request?','guest','visitor'],
+ /* US21 campus events and clubs: EN / RU / KK, slang, transliteration; visitor and staff too */
+ ['What events are on campus this week?','events'],
+ ['upcoming events','events'],
+ ['what is happening on campus this weekend','events'],
+ ['When is the hackathon?','events'],
+ ['register for the hackathon','events'],
+ ['Where is the career fair?','events'],
+ ['when is the chess tournament','events'],
+ ['события на этой неделе','events'],
+ ['что будет в пятницу','events'],
+ ['какие мероприятия завтра','events'],
+ ['когда хакатон','events'],
+ ['регистрация на хакатон','events'],
+ ['ивенты на выходных','events'],
+ ['sobytiya na etoi nedele','events'],
+ ['осы аптадағы іс-шаралар','events'],
+ ['ертең қандай іс-шаралар бар','events'],
+ ['жұмада не болады','events'],
+ ['осы аптадагы іс шаралар','events'],
+ ['osy aptadagy is sharalar','events'],
+ ['Is there a programming club?','clubs'],
+ ['what student clubs are there','clubs'],
+ ['is there a chess club','clubs'],
+ ['In which room does the robotics club meet?','clubs'],
+ ['есть ли клуб программирования','clubs'],
+ ['какие есть кружки','clubs'],
+ ['klub programmirovaniya est?','clubs'],
+ ['бағдарламалау үйірмесі бар ма','clubs'],
+ ['багдарламалау уйирмеси бар ма','clubs'],
+ ['qandai uiirmeler bar','clubs'],
+ ['What events are on campus this week?','events','visitor'],
+ ['Is there a programming club?','clubs','visitor'],
+ ['события на этой неделе','events','staff'],
+ ['какая погода в пятницу','fb']
 ];
 const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
 /* interface functions from ui.js that replies may reference */
-window.toLogin=window.show=window.openMap=window.sync=window.fillMenu=()=>{};
-let said=[],lastO=null;
-window.bot=o=>{lastO=o;said.push(plainAnswer(o)||'')};  /* capture replies instead of animating them */
+window.toLogin=window.show=window.sync=window.fillMenu=()=>{};
+let said=[],lastO=null,outs=[],mapped=null;
+window.bot=o=>{lastO=o;outs.push(o);said.push(plainAnswer(o)||'')};  /* capture replies instead of animating them */
+window.openMap=id=>{mapped=id};
 window.botNow=window.bot;
-function run(t,who){said=[];mode=null;U=who==='visitor'?GUEST:ACCOUNTS[who||'249900002'];curQ=t;
+function run(t,who){said=[];outs=[];mode=null;U=who==='visitor'?GUEST:ACCOUNTS[who||'249900002'];curQ=t;
   const r=route(t);respond(r,detect(t),t);return{r,said:said.join(' | ')}}
 /* a new entry, published the way the Knowledge base editor does it */
 st.kb.push({id:'summer',kind:'faq',intent:null,status:'published',vn:1,log:[],vers:[{n:1,act:'create',by:'Test',at:Date.now(),cat:'reg',src:'cal',
@@ -222,7 +257,8 @@ const OLD={human:['human','staff','person','operator','agent','live','опера
  greet:['hi','hello','hey','привет','здравствуйте','сәлем','салем']};
 /* a strong topic must beat a weak word */
 const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
-const LANGT=[['жатақханада кран сынды','kk'],['в общаге не работает свет','ru'],['zhatakhanada kran syndy kerek','kk'],['kitap bar ma','kk'],['кітап бар ма','kk'],['есть ли книга Clean Code','ru'],['my books','en'],['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en']];
+const LANGT=[['жатақханада кран сынды','kk'],['в общаге не работает свет','ru'],['zhatakhanada kran syndy kerek','kk'],['kitap bar ma','kk'],['кітап бар ма','kk'],['есть ли книга Clean Code','ru'],['my books','en'],['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en'],
+ ['осы аптадағы іс-шаралар','kk'],['osy aptadagy is sharalar','kk'],['что будет в пятницу','ru'],['Is there a programming club?','en']];
 /* checks of the QA scenarios in docs/SPRINTS.md */
 const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
 const has=(s,x)=>s.includes(x);
@@ -310,6 +346,54 @@ const QA=[
  check('US20 visitor: the Housing Office entry, no personal request; status asks to sign in',()=>{const a=run('The light in my room does not work','visitor').said,b=run('What is the status of my repair request?','visitor').said;
    return has(a,'Housing Office')&&!has(a,'Confirm')&&has(b,'sign in')||a+' / '+b}),
  check('US20 three students live in a dormitory, one does not',()=>Object.values(ACCOUNTS).filter(a=>a.role==='student'&&a.dorm).length===3&&Object.values(ACCOUNTS).filter(a=>a.role==='student'&&!a.dorm).length===1),
+ /* US21: dates are relative to the test clock, Saturday 21.11.2026 10:00 unless set otherwise */
+ check('US21 S1 "What events are on campus this week?" → this week\'s events, each with date, time, place, Register and Show on map',()=>{at(2026,11,21,10);const a=run('What events are on campus this week?'),cards=outs.slice(1);
+   const t=cards.map(o=>o.title).join(', ');
+   return /^Campus events in the next 7 days \(21.11–27.11\)$/.test(outs[0].title)&&cards.length===5&&has(t,'Guest Lecture')&&has(t,'Python Workshop')&&has(t,'Campus Hackathon')&&has(t,'Career Fair')&&has(t,'Friday Movie Night')&&!has(t,'Chess')&&
+     cards.every(o=>o.list.some(x=>/^Date: /.test(x))&&o.list.some(x=>/^Time: \d\d:\d\d–\d\d:\d\d$/.test(x))&&o.list.some(x=>/^Place: /.test(x))&&o.acts[0][0]==='Register'&&o.acts[1][0]==='Show on map')||outs[0].title+' / '+t}),
+ check('US21 S1 the card shows the date, time and place of the Hackathon (in 2 days, 10:00–18:00, I210)',()=>{at(2026,11,21,10);run('What events are on campus this week?');const o=outs.find(x=>x.title==='Campus Hackathon');
+   return /^Date: Mon, 23.11.2026$/.test(o.list[0])&&o.list[1]==='Time: 10:00–18:00'&&o.list[2]==='Place: I210 (lecture hall, building I, floor 2)'||o.list.join(' | ')}),
+ check('US21 S1 Russian "события на этой неделе" and Kazakh "осы аптадағы іс-шаралар" answer in their language',()=>{at(2026,11,21,10);const a=run('события на этой неделе').said,b=run('осы аптадағы іс-шаралар').said;
+   return has(a,'События кампуса на ближайшие 7 дней')&&has(a,'Хакатон на кампусе')&&has(a,'Место: I210')&&has(b,'Алдағы 7 күндегі')&&has(b,'Кампус хакатоны')||a.slice(0,200)+' / '+b.slice(0,200)}),
+ check('US21 "что будет в пятницу" → the events of the coming Friday (27.11) only',()=>{at(2026,11,21,10);const a=run('что будет в пятницу').said,cards=outs.slice(1);
+   return cards.length===1&&cards[0].title==='Пятничный киновечер'&&has(a,'27.11.2026')||a}),
+ check('US21 Register marks the registration inside the site and shows a confirmation; a second click says already registered',()=>{at(2026,11,21,10);st.evreg={};run('When is the hackathon?');const card=lastO;said=[];outs=[];
+   card.acts[0][1]();const a=said.join();said=[];card.acts[0][1]();const b=said.join();
+   return /You are registered for “Campus Hackathon”: Mon, 23.11.2026, 10:00–18:00, I210/.test(a)&&st.evreg['249900002'].includes('ev-hack')&&has(b,'already registered')||a+' / '+b}),
+ check('US21 a registered event is marked on its card',()=>{at(2026,11,21,10);run('When is the hackathon?');return lastO.acts[0][0]==='Registered ✓'&&lastO.list.some(x=>(x.t||'')==='You are registered for this event')}),
+ check('US21 a visitor can register (kept only for the visit, nothing saved to the demo data)',()=>{at(2026,11,21,10);st.evreg={};guestReg=[];run('When is the career fair?','visitor');const c=lastO;said=[];c.acts[0][1]();const a=said.join();
+   return has(a,'You are registered')&&has(a,'Sign in to keep it')&&guestReg.includes('ev-career')&&!Object.keys(st.evreg).length||a}),
+ check('US21 Show on map opens the campus map with the event place',()=>{at(2026,11,21,10);mapped=null;run('When is the hackathon?');lastO.acts[1][1]();return mapped==='I210'||mapped}),
+ check('US21 S2 a past event is never listed as upcoming (every day, 4 times a day, for two weeks)',()=>{const past=['Freshers Quiz Night','Cybersecurity Workshop'];
+   for(let d=0;d<14;d++)for(const h of [8,12,19,23]){at(2026,11,21+d,h);const now=clock();
+     for(const q of ['upcoming events','What events are on campus this week?','events today','events next week']){run(q);
+       const bad=outs.filter(o=>o.title&&o.acts&&o.acts.length===2).find(o=>{const e=kbKind('event').find(x=>kbData(x).q.en[0]===o.title);return !e||evEnd(kbData(e).x)<=now||past.includes(o.title)});
+       if(bad)return q+' '+now.toString().slice(0,21)+': '+bad.title}}
+   return true}),
+ check('US21 S2 an event that ended today (17:00–18:30, asked at 20:00) is not upcoming',()=>{at(2026,11,21,20);const a=run('events today').said;return !has(a,'Guest Lecture: AI')&&has(a,'No campus events')||a}),
+ check('US21 S2 asking about a past event says it already took place, without a Register button',()=>{at(2026,11,21,10);const a=run('When is the quiz night?').said;return has(a,'already took place')&&!lastO.acts||a}),
+ check('US21 S3 the place of every event and club is a room of the campus map',()=>kbKind('event').concat(kbKind('club')).every(e=>CAMPUS.has(kbData(e).x.place))),
+ check('US21 8–10 events: some this week, some later, 1–2 already past',()=>{at(2026,11,21,10);const now=clock(),xs=kbKind('event').map(e=>kbData(e).x),wk=addDays(today0(),7);
+   const past=xs.filter(x=>evEnd(x)<=now).length,week=xs.filter(x=>evEnd(x)>now&&evStart(x)<wk).length,later=xs.filter(x=>evStart(x)>=wk).length;
+   return xs.length>=8&&xs.length<=10&&past>=1&&past<=2&&week>=3&&later>=2||[xs.length,past,week,later].join()}),
+ check('US21 S4 "Is there a programming club?" → description, meeting place and contact person',()=>{const a=run('Is there a programming club?').said;
+   return has(a,'Programming Club')&&has(a,'coding practice')&&has(a,'Meets: Wednesday, 18:00–20:00')&&has(a,'Place: I209')&&has(a,'Contact person: Alem Bytova, a.bytova@university.demo')||a}),
+ check('US21 S4 Russian and Kazakh club questions answer in their language',()=>{const a=run('есть ли клуб программирования').said,b=run('бағдарламалау үйірмесі бар ма').said;
+   return has(a,'Клуб программирования')&&has(a,'Контактное лицо: Alem Bytova')&&has(b,'Бағдарламалау үйірмесі')&&has(b,'Байланыс адамы')||a+' / '+b}),
+ check('US21 a club that does not exist → not found and the list of clubs',()=>{const a=run('Is there a dance club?').said;return has(a,'couldn\'t find a “dance” club')&&has(a,'Chess Club')||a}),
+ check('US21 "what student clubs are there" lists 5–6 clubs incl. programming, each contact name@university.demo',()=>{const a=run('what student clubs are there').said,cl=kbKind('club').map(e=>kbData(e).x);
+   return cl.length>=5&&cl.length<=6&&has(a,'Programming Club')&&cl.every(x=>/^[a-z.]+@university\.demo$/.test(x.mail)&&x.who)||a}),
+ check('US21 works for a visitor and for staff',()=>{at(2026,11,21,10);const a=run('What events are on campus this week?','visitor').said,b=run('Is there a programming club?','staff').said;return has(a,'Campus Hackathon')&&has(b,'Alem Bytova')||a+' / '+b}),
+ check('US21 an event added by staff in the knowledge base is answered; an archived one is not',()=>{at(2026,11,21,10);
+   st.kb.push({id:'kbtest',kind:'event',intent:null,status:'published',vn:1,log:[],vers:[{n:1,act:'create',by:'Test',at:Date.now(),cat:'life',src:'ev',
+     q:{en:['Board Game Evening'],kk:['Үстел ойындары кеші'],ru:['Вечер настольных игр']},a:{en:'Games.',kk:'Ойындар.',ru:'Игры.'},x:{date:'2026-11-24',a:'18:00',b:'20:00',place:'I309'}}]});
+   const a=run('What events are on campus this week?').said;st.kb.find(e=>e.id==='kbtest').status='archived';const b=run('What events are on campus this week?').said;st.kb=st.kb.filter(e=>e.id!=='kbtest');
+   return has(a,'Board Game Evening')&&has(a,'I309')&&!has(b,'Board Game Evening')||a.slice(0,300)}),
+
+ check('QA 7: no phone number in any events or clubs answer (all roles)',()=>{at(2026,11,23,11);const qs=['What events are on campus this week?','upcoming events','When is the hackathon?','Is there a programming club?','what student clubs are there',
+     'осы аптадағы іс-шаралар'];
+   for(const who of ['249900002','249900001','visitor','staff'])for(const q of qs){const a=run(q,who).said;if(/\+?\d[\d ()-]{6,}\d/.test(a)||/phone|телефон/i.test(a))return who+': '+q+' → '+a.slice(0,200)}
+   return kbKind('event').concat(kbKind('club')).every(e=>{const d=kbData(e);return !/\+?\d[\d ()-]{6,}\d/.test(JSON.stringify([d.q,d.a,d.x]))})}),
  check('US17 every student has different GPA and credits; INF451 not posted for all',()=>{const v=Object.values(ACAD);return new Set(v.map(a=>a.gpa)).size===v.length&&new Set(v.map(a=>a.cr)).size===v.length&&v.every(a=>a.courses.some(c=>c.c==='INF451'&&c.g===null))}),
 ];
 window.clock=()=>new Date();

@@ -545,6 +545,13 @@ body.role-guest .only-student,body.role-guest .only-staff,body.role-guest .no-gu
 .kbl.bad .miss{display:inline-block}
 .kbl textarea{min-height:0}
 .kberr{margin:0;color:var(--alert);font-weight:600}
+.kbxf{border:1px dashed var(--line);border-radius:6px;padding:10px 12px;margin:0}
+.kbxf .fld.inline input{padding:6px 8px;min-width:0}
+.kbxf input[name=x-place],.kbxf input[name=x-cplace],.kbxf input[name=x-room]{width:7em}
+.kbxf input[name=x-who],.kbxf input[name=x-mail],.kbxf input[name=x-tmail],.kbxf input[name=x-courses]{width:15em}
+.kbxf input[name=x-oh]{width:22em}
+.kbi p.kbxs,.kbvers .kbxs{margin:0 0 6px;font-size:14px;color:var(--ink);font-weight:600}
+@media (max-width:560px){.kbxf .fld.inline{flex-direction:column;align-items:stretch}.kbxf input[name]{width:100%}}
 .kbvers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .kbvers li{border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:14.5px}
 .kbvers li.act{border-color:var(--ok)}

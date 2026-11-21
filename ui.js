@@ -277,47 +277,109 @@ function renderKb(){
   $('kb-list').innerHTML=list.length?list.map(e=>{const d=kbData(e),l=kbLast(e),arch=e.status==='archived';
     return '<article class="kbi'+(arch?' arch':'')+'"><div class="kbh"><span class="chip">'+tr('kb.'+e.kind)+'</span><span class="tag">'+tr('cat.'+d.cat)+'</span>'+
       '<span class="chip'+(arch?'':' done')+'">'+tr(arch?'kb.arch':'kb.pub')+'</span><small>v'+e.vn+' · '+esc(l.by)+' · '+dt(l.at)+'</small></div>'+
-      '<h3>'+esc(d.q[ui][0]||d.q.en[0]||'')+'</h3><p>'+esc(d.a[ui].replace(/\n/g,' · ').slice(0,170))+(d.a[ui].length>170?'…':'')+'</p>'+
+      '<h3>'+esc(d.q[ui][0]||d.q.en[0]||'')+'</h3>'+(d.x?'<p class="kbxs">'+esc(kbXText(e.kind,d.x))+'</p>':'')+'<p>'+esc(d.a[ui].replace(/\n/g,' · ').slice(0,170))+(d.a[ui].length>170?'…':'')+'</p>'+
       '<div class="btns"><button type="button" class="ghost2" data-kbe="'+e.id+'">'+tr('kb.edit')+'</button><button type="button" class="ghost2" data-kbh="'+e.id+'">'+tr('kb.hist')+'</button>'+
       '<button type="button" class="ghost2" data-kba="'+e.id+'">'+tr(arch?'kb.restore':'kb.archive')+'</button></div></article>'}).join('')
     :'<div class="empty">'+tr('kb.none')+'</div>';
 }
 const LANG_NAME={en:'English',kk:'Қазақша',ru:'Русский'};
+/* events, clubs and teachers (US21, US22) have extra fields (x); office hours and weekdays are typed with English day names */
+const KB_KINDS=['faq','office','event','club'];
+const WD_EN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],WD_ORDER=[1,2,3,4,5,6,0];
+const KB_KDEF={event:['life','ev'],club:['life','clubs'],teacher:['acad','fac']};    /* category and source suggested for a new entry of this type */
+const MAIL_RE=/^[a-z0-9._-]+@university\.demo$/i,TIME_RE=/^\d{2}:\d{2}$/,PHONE_RE=/\+?\d[\d ()-]{6,}\d/;
+const ohLine=oh=>oh.map(h=>WD_EN[h.d]+' '+h.a+'-'+h.b).join(', ');
+/* short summary of the extra fields for the entry list and the version history */
+function kbXText(kind,x){
+  if(kind==='event'){const s=dayText(evDay(x),ui)+' · '+x.a+'–'+x.b+' · '+x.place;return evEnd(x)<=clock()?s+' · '+tr('kb.past'):s}
+  if(kind==='club')return wdName(x.wd,ui,true)+' · '+x.a+'–'+x.b+' · '+x.place+' · '+x.who+', '+x.mail;
+  if(kind==='teacher')return x.courses.join(', ')+' · '+x.room+' · '+x.mail+' · '+ohLine(x.oh);
+  return ''}
+function kbXFields(kind,x){const f=(lab,html)=>'<label class="fld inline">'+tr(lab)+html+'</label>',v=s=>' value="'+esc(s||'')+'"';
+  const rooms=t=>[...CAMPUS.values()].filter(r=>!t||r.t===t).map(r=>'<option value="'+r.id+'">').join('');
+  const g=(k,html)=>'<fieldset class="kbxf" data-k="'+k+'"'+(k===kind?'':' hidden')+'><div class="selrow">'+html+'</div></fieldset>';
+  const ex=k=>kind===k?x||{}:{};
+  return '<datalist id="kb-rooms">'+rooms()+'</datalist><datalist id="kb-offices">'+rooms('office')+'</datalist>'+
+    g('event',f('kb.f.date','<input type="date" name="x-date"'+v(ex('event').a?isoDay(evDay(ex('event'))):isoDay(today0()))+'>')+
+      f('kb.f.from','<input type="time" name="x-a"'+v(ex('event').a)+'>')+f('kb.f.to','<input type="time" name="x-b"'+v(ex('event').b)+'>')+
+      f('kb.f.place','<input name="x-place" list="kb-rooms" autocomplete="off"'+v(ex('event').place)+'>'))+
+    g('club',f('kb.f.wd','<select name="x-wd">'+WD_ORDER.map(d=>'<option value="'+d+'"'+(ex('club').wd===d?' selected':'')+'>'+esc(wdName(d,ui,true))+'</option>').join('')+'</select>')+
+      f('kb.f.from','<input type="time" name="x-ca"'+v(ex('club').a)+'>')+f('kb.f.to','<input type="time" name="x-cb"'+v(ex('club').b)+'>')+
+      f('kb.f.place','<input name="x-cplace" list="kb-rooms" autocomplete="off"'+v(ex('club').place)+'>')+
+      f('kb.f.who','<input name="x-who" autocomplete="off"'+v(ex('club').who)+'>')+f('kb.f.mail','<input name="x-mail" autocomplete="off"'+v(ex('club').mail)+'>'))+
+    g('teacher',f('kb.f.courses','<input name="x-courses" autocomplete="off"'+v((ex('teacher').courses||[]).join(', '))+'>')+
+      f('kb.f.mail','<input name="x-tmail" autocomplete="off"'+v(ex('teacher').mail)+'>')+
+      f('kb.f.room','<input name="x-room" list="kb-offices" autocomplete="off"'+v(ex('teacher').room)+'>')+
+      f('kb.f.oh','<input name="x-oh" autocomplete="off"'+v(ex('teacher').oh?ohLine(ex('teacher').oh):'')+'>'))}
+/* the labels of the language fields and the visible extra fields follow the entry type */
+function kbKindUI(f,fresh){const k=f.kind.value,X=KB_X.includes(k);
+  f.querySelectorAll('.kbxf').forEach(x=>x.hidden=x.dataset.k!==k);
+  f.querySelectorAll('.lq').forEach(x=>x.textContent=tr(X?'kb.qv.'+k:'kb.qv'));
+  f.querySelectorAll('.la').forEach(x=>x.textContent=tr(X?'kb.ans.'+k:'kb.ans'));
+  if(fresh&&KB_KDEF[k]){f.cat.value=KB_KDEF[k][0];f.src.value=KB_KDEF[k][1]}}
 /* editor: question variants and answer in EN / KK / RU, category, source; prefill is a question from Analytics */
 function kbOpen(id,prefill){
-  const e=id&&st.kb.find(x=>x.id===id),d=e?kbData(e):{kind:'faq',cat:'reg',src:'ssc',q:{en:[],kk:[],ru:[]},a:{en:'',kk:'',ru:''}};
+  const e=id&&st.kb.find(x=>x.id===id),d=e?kbData(e):{kind:'faq',cat:'reg',src:'ssc',q:{en:[],kk:[],ru:[]},a:{en:'',kk:'',ru:''}},kind=e?e.kind:'faq';
   if(prefill)d.q[detect(prefill)]=[prefill];
   const opt=(arr,cur,lab)=>arr.map(x=>'<option value="'+x+'"'+(x===cur?' selected':'')+'>'+esc(lab(x))+'</option>').join('');
   kbDr={mode:'edit',id:e?e.id:null};
   $('kb-detail').innerHTML='<div class="panel"><div class="ph"><h3>'+tr(e?'kb.editT':'kb.new')+'</h3><button type="button" class="ghost x" data-kbx aria-label="'+tr('d.close')+'">×</button></div>'+
     '<form id="kb-form" novalidate><div class="selrow">'+
-      '<label class="fld inline">'+tr('kb.kind')+'<select name="kind">'+opt(['faq','office'],e?e.kind:'faq',k=>tr('kb.'+k))+'</select></label>'+
+      '<label class="fld inline">'+tr('kb.kind')+'<select name="kind">'+opt(KB_KINDS,kind,k=>tr('kb.'+k))+'</select></label>'+
       '<label class="fld inline">'+tr('kb.cat')+'<select name="cat">'+opt(KB_CATS,d.cat,c=>tr('cat.'+c))+'</select></label>'+
       '<label class="fld inline">'+tr('kb.src')+'<select name="src">'+opt(KB_SRCS,d.src,s=>T[ui].S[s])+'</select></label></div>'+
+    kbXFields(kind,d.x)+
     LANGS.map(l=>'<fieldset class="kbl" data-l="'+l+'"><legend>'+l.toUpperCase()+' · '+LANG_NAME[l]+' <span class="chip warn miss">'+tr('kb.miss')+'</span></legend>'+
-      '<label class="fld">'+tr('kb.qv')+'<textarea name="q-'+l+'" rows="2">'+esc(d.q[l].join('\n'))+'</textarea></label>'+
-      '<label class="fld">'+tr('kb.ans')+'<textarea name="a-'+l+'" rows="3">'+esc(d.a[l])+'</textarea></label></fieldset>').join('')+
+      '<label class="fld"><span class="lq"></span><textarea name="q-'+l+'" rows="2">'+esc(d.q[l].join('\n'))+'</textarea></label>'+
+      '<label class="fld"><span class="la"></span><textarea name="a-'+l+'" rows="3">'+esc(d.a[l])+'</textarea></label></fieldset>').join('')+
     '<p class="kberr" role="alert" hidden></p>'+
     '<div class="btns"><button type="submit" class="primary">'+tr('kb.publish')+'</button><button type="button" class="ghost2" data-kbx>'+tr('kb.cancel')+'</button></div></form></div>';
+  const f=$('kb-form');kbKindUI(f,false);f.kind.onchange=()=>kbKindUI(f,!e);
   kbShow();
 }
 function kbForm(f){const d={kind:f.kind.value,cat:f.cat.value,src:f.src.value,q:{},a:{}};
   LANGS.forEach(l=>{d.q[l]=f['q-'+l].value.split('\n').map(s=>s.trim()).filter(Boolean);d.a[l]=f['a-'+l].value.trim()});return d}
+/* extra fields of an event, club or teacher -> {x} or {err: message key}. Places come from the campus map only; no phone numbers anywhere */
+function kbX(f,d,cur){const k=d.kind,val=n=>f[n].value.trim(),up=n=>val(n).toUpperCase();
+  if(LANGS.some(l=>PHONE_RE.test(d.q[l].join(' ')+' '+d.a[l]))||(k==='club'&&PHONE_RE.test(val('x-who'))))return{err:'kb.e.phone'};
+  if(k==='event'){const date=val('x-date'),a=val('x-a'),b=val('x-b'),place=up('x-place');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!TIME_RE.test(a)||!TIME_RE.test(b)||a>=b)return{err:'kb.e.date'};
+    if(!CAMPUS.has(place))return{err:'kb.e.place'};
+    /* a date that was not changed keeps its "relative to today" rule */
+    const keep=cur&&cur.x&&!cur.x.date&&isoDay(evDay(cur.x))===date;
+    return{x:Object.assign(keep?(cur.x.wd!=null?{wd:cur.x.wd}:{rel:cur.x.rel||0}):{date},{a,b,place})}}
+  if(k==='club'){const a=val('x-ca'),b=val('x-cb'),place=up('x-cplace'),who=val('x-who'),mail=val('x-mail').toLowerCase();
+    if(!TIME_RE.test(a)||!TIME_RE.test(b)||a>=b)return{err:'kb.e.time'};
+    if(!CAMPUS.has(place))return{err:'kb.e.place'};
+    if(!who)return{err:'kb.e.who'};
+    if(!MAIL_RE.test(mail))return{err:'kb.e.mail'};
+    return{x:{wd:+f['x-wd'].value,a,b,place,who,mail}}}
+  if(k==='teacher'){const courses=[...new Set(val('x-courses').toUpperCase().split(/[\s,;]+/).filter(Boolean))],mail=val('x-tmail').toLowerCase(),room=up('x-room');
+    if(!courses.length||!courses.every(c=>/^[A-Z]{2,4}\d{3}$/.test(c)))return{err:'kb.e.courses'};
+    if(!MAIL_RE.test(mail))return{err:'kb.e.mail'};
+    const r=CAMPUS.get(room);if(!r||r.t!=='office')return{err:'kb.e.room'};
+    const oh=[],re=/(sun|mon|tue|wed|thu|fri|sat)[a-z]*\.?\s+(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/gi;let m;
+    while((m=re.exec(val('x-oh')))){const p=t=>t.padStart(5,'0');oh.push({d:WD_EN.findIndex(w=>w.toLowerCase()===m[1].toLowerCase()),a:p(m[2]),b:p(m[3])})}
+    if(!oh.length||oh.some(h=>h.a>=h.b))return{err:'kb.e.oh'};
+    return{x:{courses,mail,room,oh}}}
+  return{}}
 function kbPublish(f){
-  const d=kbForm(f),miss=kbMissing(d),e=kbDr.id&&st.kb.find(x=>x.id===kbDr.id),by=U.full,at=Date.now();
+  const d=kbForm(f),miss=kbMissing(d),e=kbDr.id&&st.kb.find(x=>x.id===kbDr.id),by=U.full,at=Date.now(),er=f.querySelector('.kberr');
   f.querySelectorAll('.kbl').forEach(x=>x.classList.toggle('bad',miss.includes(x.dataset.l)));
-  if(miss.length){const er=f.querySelector('.kberr');   /* blocked: nothing is saved, the published version stays active */
+  if(miss.length){   /* blocked: nothing is saved, the published version stays active */
     er.textContent=tr('kb.err',{l:miss.map(x=>x.toUpperCase()).join(', ')})+(e?' '+tr('kb.keep'):'');er.hidden=false;return}
-  const {kind,...data}=d;
+  const xr=kbX(f,d,e&&e.kind===d.kind?kbData(e):null);
+  if(xr.err){er.textContent=tr(xr.err)+(e?' '+tr('kb.keep'):'');er.hidden=false;return}
+  const {kind,...data}=d;if(xr.x)data.x=xr.x;
   if(!e)st.kb.push({id:'kb'+at,kind,intent:null,status:'published',vn:1,vers:[{n:1,act:'create',by,at,...data}],log:[]});
-  else{const cur=kbData(e),same=JSON.stringify([cur.cat,cur.src,cur.q,cur.a])===JSON.stringify([data.cat,data.src,data.q,data.a]);
+  else{const cur=kbData(e),same=JSON.stringify([cur.cat,cur.src,cur.q,cur.a,cur.x||null])===JSON.stringify([data.cat,data.src,data.q,data.a,data.x||null]);
     if(!same||kind!==e.kind){const n=Math.max(...e.vers.map(v=>v.n))+1;e.vers.push({n,act:'edit',by,at,...data});e.vn=n;e.kind=kind}}
   save();kbClose();sync()}
 function kbHistory(id){
   const e=st.kb.find(x=>x.id===id);if(!e)return;kbDr={mode:'hist',id};
   const d=kbData(e),prev=e.vers.filter(v=>v.n<e.vn).sort((a,b)=>b.n-a.n)[0];
   const items=e.vers.map(v=>({at:v.at,v})).concat(e.log.map(x=>({at:x.at,x}))).sort((a,b)=>b.at-a.at);
-  const body=v=>LANGS.map(l=>'<div class="kbvl"><b>'+l.toUpperCase()+'</b> '+esc(v.q[l].join(' / '))+'<p>'+esc(v.a[l])+'</p></div>').join('');
+  const body=v=>(v.x?'<p class="kbxs">'+esc(kbXText(e.kind,v.x))+'</p>':'')+LANGS.map(l=>'<div class="kbvl"><b>'+l.toUpperCase()+'</b> '+esc(v.q[l].join(' / '))+'<p>'+esc(v.a[l])+'</p></div>').join('');
   $('kb-detail').innerHTML='<div class="panel"><div class="ph"><h3>'+tr('kb.histT')+'</h3><button type="button" class="ghost x" data-kbx aria-label="'+tr('d.close')+'">×</button></div>'+
     '<p class="meta"><b>'+esc(d.q[ui][0]||d.q.en[0])+'</b></p>'+
     (prev?'<div class="btns"><button type="button" class="primary" data-kbr="'+e.id+'">'+tr('kb.rb',{n:prev.n})+'</button></div>':'<p class="hint">'+tr('kb.rbnone')+'</p>')+
@@ -484,7 +546,7 @@ $('den-back').onclick=()=>show(homeView());
 /* ---------- About: overview + sprint board ---------- */
 /* Edit these arrays to match the real backlog (docs/SPRINTS.md). st: Done = its QA scenarios work on the demo data, Partial = some do (what is missing: sn.<id> in i18n.js), Planned = not started.
    day = working day of Sprint 2 when the story was finished (for the burndown). */
-const SPRINTS=[{n:1,d:'25.09.2026'},{n:2,d:'09.10.2026',days:10},{n:3,d:'23.10.2026'},{n:4,d:'06.11.2026'},{n:5,d:'20.11.2026'}];
+const SPRINTS=[{n:1,d:'25.09.2026'},{n:2,d:'09.10.2026',days:10},{n:3,d:'23.10.2026'},{n:4,d:'06.11.2026'},{n:5,d:'20.11.2026'},{n:6,d:'04.12.2026'}];
 const STORIES=[
   {id:'US1',t:'FAQ Instant Answers',s:1,p:3,st:'Done'},
   {id:'US2',t:'IT Issue Self-Help',s:1,p:4,st:'Partial'},
@@ -505,7 +567,11 @@ const STORIES=[
   {id:'US17',t:'Grades & Transcript Lookup',s:5,p:5,st:'Done'},
   {id:'US18',t:'Attendance Tracking & Absence Warnings',s:5,p:4,st:'Done'},
   {id:'US19',t:'Library Services',s:5,p:5,st:'Done'},
-  {id:'US20',t:'Dormitory & Housing Requests',s:5,p:6,st:'Done'}];
+  {id:'US20',t:'Dormitory & Housing Requests',s:5,p:6,st:'Done'},
+  {id:'US21',t:'Campus Events & Club Announcements',s:6,p:4,st:'Done'},
+  {id:'US22',t:'Teacher Contact & Office Hours',s:6,p:4,st:'Planned'},
+  {id:'US23',t:'Conversation History',s:6,p:3,st:'Planned'},
+  {id:'US24',t:'Accessibility & Voice Input',s:6,p:5,st:'Planned'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];
 let aboutTab='overview';
 const inSprint=n=>STORIES.filter(s=>s.s===n);

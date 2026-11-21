@@ -29,6 +29,8 @@ Developed by a student team as part of INF451.
 - Library: search the catalog by title, author or course ("Is 'Clean Code' available?", "книги по INF451", "kitap bar ma") for available copies and the shelf, or "not available" with the nearest return date; "My books" lists the user's loans with due dates and marks overdue ones, and explains that an overdue book blocks registration (library hold); visitors can search the catalog, "My books" needs a sign-in
 - Dormitory requests: "The light in my room does not work", "в общаге не работает свет", "жатақханада кран сынды" → the bot suggests a type (repair, room change, other), fills in the student's dormitory and room, asks to confirm and gives a request number (H-…); "What is the status of my repair request?" shows the status (Submitted → In progress → Done) and the last update; a student who does not live in a dormitory is told why and gets the Housing Office contacts; "wifi в общаге" still answers about Wi-Fi
 - Office directory: room on the campus map, hours, phone and email for every office, with "Closed now, opens at…" outside working hours
+- Campus events ("What events are on campus this week?", "события на этой неделе", "осы аптадағы іс-шаралар", "что будет в пятницу", "When is the hackathon?"): event cards with date, time and place from the campus map, a **Register** button (registration inside the site with a confirmation; a visitor's registration lasts until the page is closed) and **Show on map**; demo dates are counted from today, so there are always events this week and later, and past events are never shown as upcoming
+- Student clubs ("Is there a programming club?", "есть ли клуб программирования", "бағдарламалау үйірмесі бар ма"): description, meeting day, time and place, contact person with a name@university.demo email; a club that does not exist gets "not found" and the list of clubs
 - Dashboard with deadlines, recent tickets and quick actions; announcement banners
 - First-login guided tour (can be replayed from the user menu)
 
@@ -38,7 +40,7 @@ Developed by a student team as part of INF451.
 - Ticket drawer with the conversation, status and priority controls, and reply field
 - Review queue: answers rated "Not helpful" with the question, answer, comment and time, and a "Mark reviewed" button
 - Analytics with a period filter (Today / Last 7 days / Last 30 days / All time): questions asked, share of unanswered questions, tickets, escalations to staff, average rating, top 5 questions and an "Unanswered & not helpful" list with a "Create FAQ entry" button; only aggregated data, no student names or IDs
-- Knowledge base: FAQ and office entries with search, Add / Edit / Archive; an entry is published only when the question and the answer are filled in English, Kazakh and Russian; every change is kept as a version with author and date, with "Roll back"; the bot and the FAQ page use the published entries right away
+- Knowledge base: FAQ, office, event, club and teacher entries with search, Add / Edit / Archive; events, clubs and teachers have their own fields (date and time, place from the campus map, contact person, courses, office, office hours), and a place outside the map, an email not of the form name@university.demo or a phone number blocks publishing; an entry is published only when the question and the answer are filled in English, Kazakh and Russian; every change is kept as a version with author and date, with "Roll back"; the bot and the FAQ page use the published entries right away
 - Staff sections open by address (for example `#analytics`); students and visitors see "Access denied" and no data
 - Housing requests: every dormitory request with number, student, dormitory, room, type, description and last update; changing the status notifies the student
 - Announcements: publish or unpublish a notice shown to students
@@ -75,10 +77,14 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 | 5 – More student self-service | US18 Attendance Tracking & Absence Warnings | Done | |
 | 5 – More student self-service | US19 Library Services | Done | |
 | 5 – More student self-service | US20 Dormitory & Housing Requests | Done | |
+| 6 – Campus life and accessibility | US21 Campus Events & Club Announcements | Done | |
+| 6 – Campus life and accessibility | US22 Teacher Contact & Office Hours | Planned | |
+| 6 – Campus life and accessibility | US23 Conversation History | Planned | |
+| 6 – Campus life and accessibility | US24 Accessibility & Voice Input | Planned | |
 
 ## Sprint backlog
 
-The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The table above covers sprints 1–5 (US1–US20); sprints 6–7 are not in the prototype.
+The full product backlog (28 user stories in 7 two-week sprints, with estimates, priorities and QA test scenarios) is in [docs/SPRINTS.md](docs/SPRINTS.md). The table above covers sprints 1–6 (US1–US24); sprint 7 is not in the prototype yet.
 
 ## Demo accounts
 
@@ -108,7 +114,7 @@ Notes:
 
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 152 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 210 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
 
 ## Project structure
 
