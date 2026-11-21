@@ -411,7 +411,7 @@ const CAMPUS_BLDS=['D','E','F','G','H','I'];
 /* Services and separate buildings of the real campus layout (a simplified drawing, not to scale). The main building is one long
    corridor from south to north with blocks I, H, G, F, E, D along it and the Library north of D; across the corridor are the barrels
    B (opposite D) and C (opposite E), the Canteen and Market (opposite F), the Print center, Table tennis & chess and an exit to the street
-   (opposite G), and the lecture halls of blocks H and I (opposite their blocks); the Medical point is in the corridor between G and H.
+   (opposite G), and the lecture halls of blocks H and I (opposite their blocks); the Medical point stands between blocks G and H.
    The Main exit is at the north end of the corridor, the South exit at its south end.
    Between every two neighbouring blocks (D–E, E–F, F–G, G–H, H–I) there is a small entrance. Student House is west of the main
    building, SDU Life south of it, barrels A1, A2 at the north end. Names and "where" texts: sv.<id> and sv.<id>.w in i18n.js; descriptions are

@@ -57,7 +57,7 @@ function sync(){
 /* ---------- campus map page: our own simplified drawing of the real layout (north at the top, not to scale).
    The main corridor runs south to north with blocks I → D and the Library on its east side; small entrances lead out between
    neighbouring blocks. Across the corridor (west) are the barrels B, C, the services opposite F and G with the Exit to the street,
-   and the lecture halls of H and I opposite their blocks; the Medical point is in the corridor between G and H; Student House and
+   and the lecture halls of H and I opposite their blocks; the Medical point stands between blocks G and H; Student House and
    SDU Life are separate buildings, barrels A1, A2 are at the north end. A click on a block, room, barrel or place opens its card. ---------- */
 let campus={b:null,room:null,f:null,nf:null,svc:null};
 function campusSelect(id){
@@ -128,11 +128,11 @@ function campusSvg(){
   /* small entrances between neighbouring blocks: from the corridor out to the east side */
   [['D','E'],['E','F'],['F','G'],['G','H'],['H','I']].forEach(([a,b])=>{const y=b==='H'?g.by.H-6:(g.by[a]+g.bh+g.by[b])/2,lab=tr('cm.mini',{a,b});
     s+='<g class="mini"><title>'+esc(lab)+'</title><path class="mia" d="M'+(g.cx+g.cw)+' '+y+' H'+(g.bx+g.bw+2)+'"/><path class="mih" d="M'+(g.bx+g.bw+3)+' '+(y-6)+' l10 6 l-10 6 z"/></g>'});
-  /* Medical point: in the corridor between G and H */
-  const my=g.by.G+g.bh+6;
+  /* Medical point: between blocks G and H (on the blocks' side of the corridor, above the small entrance G–H) */
+  const my=g.by.G+g.bh+4,mx=g.bx+4;
   s+='<g class="plc med'+(campus.svc==='medical'?' sel':'')+'" data-s="medical" tabindex="0" role="button" aria-label="'+esc(tr('sv.medical'))+'">'+
-    '<rect class="pf" x="'+(g.cx+3)+'" y="'+my+'" width="'+(g.cw-6)+'" height="28" rx="4"/><path class="cross" d="M'+(g.cx+g.cw/2-3)+' '+(my+6)+'h6v5h5v6h-5v5h-6v-5h-5v-6h5z"/>'+
-    '<text class="mt" x="'+(g.bx+6)+'" y="'+(my+19)+'">'+esc(tr('sv.medical'))+'</text></g>';
+    '<rect class="pf" x="'+mx+'" y="'+my+'" width="'+(g.bw-8)+'" height="24" rx="4"/><path class="cross" d="M'+(mx+14)+' '+(my+4)+'h6v5h5v6h-5v5h-6v-5h-5v-6h5z"/>'+
+    '<text class="mt" x="'+(mx+34)+'" y="'+(my+17)+'">'+esc(tr('sv.medical'))+'</text></g>';
   /* west of the main building: Student House, and SDU Life to the south */
   s+=place('studenthouse',g.ox,g.by.H-10,g.ow,130,'oth',16);
   s+=place('sdulife',g.ox,g.by.I+30,g.ow,80,'oth',16);
