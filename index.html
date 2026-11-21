@@ -85,6 +85,7 @@
       <button id="nav-ann" class="only-staff" data-view="ann" data-i18n="nav.ann">Announcements</button>
       <button id="nav-att" class="only-staff" data-view="att" data-i18n="nav.att">Attendance (demo)</button>
       <button id="nav-housing" class="only-staff" data-view="housing"><span data-i18n="nav.housing">Housing requests</span> <span class="count" id="c-h">0</span></button>
+      <button id="nav-history" data-view="history" data-i18n="nav.history">History</button>
       <button id="nav-campus" data-view="campus" data-i18n="nav.campus">Campus map</button>
       <button id="nav-faq" data-view="faq" data-i18n="nav.faq">FAQ</button>
       <button id="nav-about" data-view="about" data-i18n="nav.about">About</button>
@@ -178,6 +179,7 @@
     <section class="view chatview" id="v-chat" hidden>
       <div class="chatwrap">
         <div class="banners" id="ban-chat"></div>
+        <div class="chatbar"><h2 class="sr-only" data-i18n="nav.chat">Chat</h2><button type="button" class="ghost2 sm" id="new-chat" data-i18n="chat.new">New chat</button></div>
         <div class="log" id="log" aria-live="polite"></div>
         <div class="compose">
           <div class="quick" id="quick"></div>
@@ -187,6 +189,15 @@
           </form>
           <div class="sugg" id="sugg" hidden aria-live="polite"></div>
         </div>
+      </div>
+    </section>
+
+    <section class="view page" id="v-history" hidden>
+      <div class="wrap">
+        <h2 data-i18n="hi.title">Conversation history</h2>
+        <p class="hint" data-i18n="hi.hint">Your earlier conversations with the assistant. Only you can see them.</p>
+        <input id="hi-q" class="faqsearch" type="search" autocomplete="off" data-i18n-ph="hi.ph" placeholder="Search in all messages…" data-i18n-aria="hi.ph" aria-label="Search in all messages">
+        <div id="hi"></div>
       </div>
     </section>
 

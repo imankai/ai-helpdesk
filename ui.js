@@ -7,10 +7,10 @@ const noteText=n=>n.type==='reply'?tr('n.reply',{n:n.n}):n.type==='status'?tr('n
   n.type==='att'?tr(n.left?'n.att':'n.att0',{c:n.c+' '+n.t,a:n.abs,l:n.lim,n:n.left}):n.type==='attover'?tr('n.attover',{c:n.c+' '+n.t,a:n.abs,l:n.lim}):n.type==='hreq'?tr('n.hreq',{n:'H-'+n.n,s:tr('h.st.'+n.s)}):n.type==='appt'?tr('n.appt',{w:fmt(n.at,ui)}):tr('n.appt2',{w:fmt(n.at,ui)});
 
 /* ---------- views ---------- */
-const VIEWS=['home','chat','tickets','appts','campus','faq','staff','review','analytics','kb','ann','att','housing','about','denied'];
+const VIEWS=['home','chat','history','tickets','appts','campus','faq','staff','review','analytics','kb','ann','att','housing','about','denied'];
 /* each view is linked to #name in the address; staff-only views show "Access denied" to anyone else and render no data for them */
 const STAFF_VIEWS=['staff','review','analytics','kb','ann','att','housing'];
-const ROLE_VIEWS={student:['home','chat','tickets','appts','campus','faq','about'],guest:['chat','campus','faq','about'],staff:STAFF_VIEWS.concat('chat','campus','faq','about')};
+const ROLE_VIEWS={student:['home','chat','history','tickets','appts','campus','faq','about'],guest:['chat','history','campus','faq','about'],staff:STAFF_VIEWS.concat('chat','history','campus','faq','about')};
 const isStaff=()=>U&&U.role==='staff';
 const stars=n=>'★'.repeat(n)+'☆'.repeat(5-n);
 /* priority and SLA: first reply is due 24 h after creation; tickets that are resolved or already answered have no SLA */
@@ -51,7 +51,7 @@ function sync(){
     ap.map(a=>'<tr id="ap-'+a.at+'"><td>'+fmt(a.at,ui)+'</td><td>'+esc(a.with)+'</td><td>'+tr(remOn()?'ap.before':'rem.offs')+'</td><td><button class="link" data-cancel="'+st.appts.indexOf(a)+'">'+tr('ap.cancel')+'</button></td></tr>').join('')+'</tbody></table></div>'
     :'<div class="empty">'+tr('ap.none')+'</div>';
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{st.appts.splice(+b.dataset.cancel,1);save();sync()});
-  renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderAtt();renderHousing();renderBanners();renderCampus();
+  renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderAtt();renderHousing();renderBanners();renderCampus();renderHistory();
 }
 
 /* ---------- campus map page: our own simplified drawing of the real layout (north at the top, not to scale).
@@ -170,6 +170,53 @@ $('cm-form').onsubmit=e=>{e.preventDefault();
   if(!v){campus={b:null,room:null,f:null,nf:null,svc:null};renderCampus();return}
   const t=roomTokens(v,true),pl=PLACES.find(id=>LANGS.some(l=>trL('sv.'+id,l).toLowerCase()===v.toLowerCase()))||placeOf(v);
   campusSelect(t[0]||pl||v.toUpperCase());renderCampus()};
+
+/* ---------- conversation history (US23): the user's own conversations, newest first, keyword search with highlighting,
+   a read-only view of one conversation with "Continue this chat" and "Delete" (confirmed inside the page) ---------- */
+let hiQ='',hiSel=null,hiDel=false;
+function openHistory(id,q){hiQ=q||'';hiSel=id||null;hiDel=false;$('hi-q').value=hiQ;show('history');renderHistory()}
+const hiWhen=ts=>dayText(new Date(ts),ui)+' '+new Date(ts).toLocaleTimeString(T[ui].loc,{hour:'2-digit',minute:'2-digit'});
+/* escaped text with <mark> around every match of the search */
+function hiMark(text,q){const t=String(text),b=q.trim().toLowerCase();if(!b)return esc(t);let out='',i=0,lo=t.toLowerCase(),j;
+  while((j=lo.indexOf(b,i))>=0){out+=esc(t.slice(i,j))+'<mark>'+esc(t.slice(j,j+b.length))+'</mark>';i=j+b.length}return out+esc(t.slice(i))}
+/* the same inside rendered messages: only text nodes are changed */
+function hiMarkIn(el,q){const b=q.trim().toLowerCase();if(!b)return;const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),nodes=[];while(w.nextNode())nodes.push(w.currentNode);
+  nodes.forEach(n=>{if(!n.nodeValue.toLowerCase().includes(b))return;const sp=document.createElement('span');sp.innerHTML=hiMark(n.nodeValue,q);n.replaceWith(...sp.childNodes)})}
+function hiSnippet(c,q){const m=c.msgs.find(x=>x.t.toLowerCase().includes(q.trim().toLowerCase()))||c.msgs.find(x=>histHit(x.t,q));if(!m)return'';
+  const i=Math.max(0,m.t.toLowerCase().indexOf(q.trim().toLowerCase())-50);return(i?'…':'')+m.t.slice(i,i+150)+(m.t.length>i+150?'…':'')}
+function renderHistory(){const box=$('hi');if(!box)return;
+  if(!U){box.innerHTML='';return}
+  $('hi-q').hidden=!histOn();
+  if(!histOn()){box.innerHTML='<div class="cmcard nf higuest"><p>'+esc(tr('hi.guest'))+'</p><button type="button" class="primary" data-hi="signin">'+esc(tr('guest.exit'))+'</button></div>';return}
+  const c=hiSel&&convGet(U.login,hiSel);
+  if(hiSel&&!c)hiSel=null;
+  if(c){
+    box.innerHTML='<div class="hidet"><div class="hibar"><button type="button" class="ghost2" data-hi="back">'+esc(tr('hi.back'))+'</button>'+
+      '<span class="hiwhen">'+esc(hiWhen(c.at))+' · '+esc(tr('hi.n',{n:c.msgs.length}))+'</span><span class="btns"><button type="button" class="primary" data-hi="cont">'+esc(tr('hi.cont'))+'</button>'+
+      '<button type="button" class="ghost2 danger" data-hi="del" aria-expanded="'+hiDel+'">'+esc(tr('hi.del'))+'</button></span></div>'+
+      (hiDel?'<div class="hiconfirm" role="alertdialog" aria-labelledby="hi-delq"><p id="hi-delq">'+esc(tr('hi.delq'))+'</p><button type="button" class="primary danger" data-hi="yes">'+esc(tr('hi.delyes'))+'</button><button type="button" class="ghost2" data-hi="no">'+esc(tr('hi.delno'))+'</button></div>':'')+
+      '<h3 class="hih">'+hiMark(convTitle(c),hiQ)+'</h3><p class="hint">'+esc(tr('hi.ro'))+'</p><div class="log hilog" role="log" aria-label="'+esc(tr('hi.title'))+'"></div></div>';
+    const log=box.querySelector('.hilog');
+    c.msgs.forEach(m=>{const d=document.createElement('div');d.className=m.c;d.innerHTML=m.h;log.appendChild(d)});
+    hiMarkIn(log,hiQ);
+    if(hiDel)box.querySelector('[data-hi="yes"]').focus();
+    return}
+  const q=hiQ.trim(),list=q?convSearch(U.login,q):convList(U.login);
+  box.innerHTML=(q?'<p class="hicount" role="status">'+esc(list.length?tr('hi.found',{q,n:list.length}):tr('hi.nomatch',{q}))+'</p>':'')+
+    (list.length?'<ul class="hilist">'+list.map(c=>'<li><button type="button" class="hiitem" data-conv="'+esc(c.id)+'"><span class="hiwhen">'+esc(hiWhen(c.at))+' · '+esc(tr('hi.n',{n:c.msgs.length}))+'</span>'+
+      '<b>'+hiMark(convTitle(c),q)+'</b>'+(q?'<span class="hisnip">'+hiMark(hiSnippet(c,q),q)+'</span>':'')+'</button></li>').join('')+'</ul>'
+    :q?'':'<div class="empty">'+esc(tr('hi.none'))+'</div>')}
+$('hi-q').oninput=e=>{hiQ=e.target.value;hiSel=null;hiDel=false;renderHistory()};
+$('hi').onclick=e=>{const it=e.target.closest('[data-conv]');if(it){hiSel=it.dataset.conv;hiDel=false;renderHistory();const b=$('hi').querySelector('[data-hi="back"]');if(b)b.focus();return}
+  const b=e.target.closest('[data-hi]');if(!b)return;const k=b.dataset.hi;
+  if(k==='signin')return toLogin();
+  if(k==='back'){hiSel=null;hiDel=false;renderHistory();const f=$('hi').querySelector('.hiitem');if(f)f.focus();return}
+  if(k==='cont'){continueConv(hiSel);return show('chat')}
+  if(k==='del'){hiDel=!hiDel;return renderHistory()}
+  if(k==='no'){hiDel=false;renderHistory();const d=$('hi').querySelector('[data-hi="del"]');if(d)d.focus();return}
+  if(k==='yes'){convDelete(U.login,hiSel);hiSel=null;hiDel=false;renderHistory();
+    const p=document.createElement('p');p.className='hicount';p.setAttribute('role','status');p.textContent=tr('hi.deleted');$('hi').prepend(p)}};
+$('new-chat').onclick=()=>{newChat();$('q').focus()};
 
 /* ---------- rating of resolved tickets ---------- */
 function rateBlock(t){
@@ -627,7 +674,7 @@ const STORIES=[
   {id:'US20',t:'Dormitory & Housing Requests',s:5,p:6,st:'Done'},
   {id:'US21',t:'Campus Events & Club Announcements',s:6,p:4,st:'Done'},
   {id:'US22',t:'Teacher Contact & Office Hours',s:6,p:4,st:'Done'},
-  {id:'US23',t:'Conversation History',s:6,p:3,st:'Planned'},
+  {id:'US23',t:'Conversation History',s:6,p:3,st:'Done'},
   {id:'US24',t:'Accessibility & Voice Input',s:6,p:5,st:'Planned'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];
 let aboutTab='overview';
@@ -692,7 +739,7 @@ function applyUI(){
   buildQuick();renderAbout();fillMenu();sync();fitNav();
 }
 /* staff menu: the main sections stay in the bar, the rest goes into "More ▾"; students and visitors keep their own order */
-const MORE_IDS=['nav-kb','nav-ann','nav-att','nav-chat','nav-campus','nav-faq','nav-about'];
+const MORE_IDS=['nav-kb','nav-ann','nav-att','nav-chat','nav-history','nav-campus','nav-faq','nav-about'];
 const NAV_ORDER=[...$('tabs').children].map(e=>e.id);
 function placeNav(){const t=$('tabs'),pop=$('more-pop');
   if(U&&U.role==='staff')MORE_IDS.forEach(id=>pop.appendChild($(id)));
@@ -717,6 +764,9 @@ function applyAuth(){
   document.body.className='auth-in role-'+U.role;
   $('who-av').textContent=U.ini;$('who-av').style.background=U.color;$('who-name').textContent=U.name;
   $('mn-name').textContent=U.full;$('logout').textContent=tr('menu.logout');fillMenu();placeNav();
+  /* a new conversation starts after signing in; a page reload keeps the current one (US23) */
+  let kc=null;try{kc=JSON.parse(sessionStorage.getItem('hd-conv')||'null')}catch(_){}
+  curConv=histOn()&&kc&&kc.login===U.login?kc.id:null;hiSel=null;hiQ='';$('hi-q').value='';
   chatEpoch++;mode=null;loadChat();
   const h=location.hash.slice(1);    /* opening a #view link: staff-only views show "Access denied" to students and visitors */
   sync();show(VIEWS.includes(h)&&h!=='denied'?h:homeView());fitNav();
@@ -726,7 +776,7 @@ const loginErr=m=>{$('login-err').textContent=m;$('login-err').hidden=!m};
 $('login-form').onsubmit=e=>{e.preventDefault();
   const f=e.target,k=f.login.value.trim().toLowerCase();
   if(!ACCOUNTS[k]||f.password.value!==PASS)return loginErr(tr('login.err'));
-  loginErr('');sess={login:k};
+  loginErr('');sess={login:k};try{sessionStorage.removeItem('hd-conv')}catch(_){}
   try{sessionStorage.setItem('hd-session',JSON.stringify(sess))}catch(_){}
   f.password.value='';applyAuth()};
 $('login-form').oninput=()=>loginErr('');
@@ -735,10 +785,10 @@ $('accounts').onclick=e=>{const b=e.target.closest('[data-login]');if(!b)return;
   $('l-name').value=b.dataset.login;loginErr('');$('l-pass').focus()};
 /* log out; for a visitor this is "Sign in" and returns to the login screen */
 function toLogin(){closeUserMenu();closeBell();if(tourI>=0)tourEnd();chatEpoch++;sess=null;
-  try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}try{sessionStorage.removeItem('hd-session')}catch(_){}applyAuth()}
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}try{sessionStorage.removeItem('hd-session');sessionStorage.removeItem('hd-conv')}catch(_){}applyAuth()}
 $('logout').onclick=toLogin;
 $('rem-toggle').onclick=()=>{setRem(!remOn());fillMenu();sync()};
-$('guest-btn').onclick=()=>{loginErr('');sess={login:'guest'};try{sessionStorage.setItem('hd-session',JSON.stringify(sess))}catch(_){}applyAuth()};
+$('guest-btn').onclick=()=>{loginErr('');sess={login:'guest'};try{sessionStorage.removeItem('hd-conv')}catch(_){}try{sessionStorage.setItem('hd-session',JSON.stringify(sess))}catch(_){}applyAuth()};
 
 /* ---------- wiring ---------- */
 $('form').onsubmit=e=>{e.preventDefault();const t=$('q').value.trim();if(!t)return;$('q').value='';renderSugg();userMsg(t);answer(t)};
@@ -764,7 +814,7 @@ document.querySelectorAll('[data-qk]').forEach(b=>b.onclick=()=>ask(tr(b.dataset
 $('brand').onclick=()=>{if(U)show(homeView())};
 $('ask-form').onsubmit=e=>{e.preventDefault();const t=$('ask-q').value.trim();if(!t)return;$('ask-q').value='';ask(t)};
 $('menu-btn').onclick=()=>{const o=document.querySelector('.bar').classList.toggle('open');$('menu-btn').setAttribute('aria-expanded',String(o))};
-$('nav-reset').onclick=()=>{closeUserMenu();st=fresh();sel=null;save();chatEpoch++;mode=null;$('log').innerHTML='';boot();sync()};
+$('nav-reset').onclick=()=>{closeUserMenu();st=fresh();sel=null;hiSel=null;save();curConv=null;try{sessionStorage.removeItem('hd-conv')}catch(_){}chatEpoch++;mode=null;$('log').innerHTML='';boot();sync()};
 function boot(){botNow({text:U&&U.role==='guest'?tr('g.greet'):U&&U.role==='staff'?tr('test.greet'):T[ui].greet},ui)}
 /* another browser tab changed the data */
 window.addEventListener('storage',e=>{if(e.key!=='hd-state')return;

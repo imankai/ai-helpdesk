@@ -23,6 +23,7 @@ Developed by a student team as part of INF451.
 - Similar-question suggestions while typing in the chat, and a "Help Desk is typing…" indicator
 - Help tickets with status tracking, staff replies and a 1–5 star rating of resolved tickets
 - Advisor appointment booking with reminders
+- Conversation history: every chat session of a signed-in student (and of staff in Test assistant) is saved as a conversation; a new one starts after signing in or with **New chat**. The **History** page lists the user's own conversations with date and first question, newest first, searches all messages for a keyword and highlights it, opens a conversation with all its messages, cards and sources (read-only) and offers **Continue this chat** and **Delete** (confirmed on the page). Each demo student has 2–3 earlier conversations, including an add/drop question a week ago. The bot answers "show my history", "мои прошлые вопросы", "история переписки", "менің сұрақтарым", "what did I ask about add/drop". Visitors' chats are not saved; History asks them to sign in
 - Notification bell (staff reply, status change, appointment reminder, tuition reminder 7 days before the deadline, absence warnings, housing request status); reminders can be turned off in the user menu or by asking in the chat
 - Ticket status in the chat ("where is my ticket"): number, office and status of the student's own latest tickets
 - Grades and transcript in the chat ("What is my GPA?", "мои оценки", "менің бағаларым", "оценка по INF451"): a card with course, grade and credits, the GPA and the total credits earned, for all courses or for one; a final grade that is not posted yet comes with the official posting deadline (28.12.2026)
@@ -82,7 +83,7 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 | 5 – More student self-service | US20 Dormitory & Housing Requests | Done | |
 | 6 – Campus life and accessibility | US21 Campus Events & Club Announcements | Done | |
 | 6 – Campus life and accessibility | US22 Teacher Contact & Office Hours | Done | |
-| 6 – Campus life and accessibility | US23 Conversation History | Planned | |
+| 6 – Campus life and accessibility | US23 Conversation History | Done | |
 | 6 – Campus life and accessibility | US24 Accessibility & Voice Input | Planned | |
 
 ## Sprint backlog
@@ -117,7 +118,7 @@ Notes:
 
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 225 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 242 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
 
 ## Project structure
 

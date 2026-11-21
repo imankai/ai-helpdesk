@@ -1,4 +1,5 @@
 /* ---------- demo data ---------- */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* Demo accounts. Password for all: demo123. Everything here is fictional. */
 const ACCOUNTS={
   '249900001':{role:'student',full:'Kamshat',name:'Kamshat',ini:'K',color:'#a63a82',major:'Information Systems',year:3,advisor:'Advisor Daniyar T.',
@@ -82,6 +83,40 @@ const seedTickets=()=>{const n=Date.now();return[
   {n:10224,uid:'249900005',who:'Dana',office:'Registrar',desc:'I need a copy of my transcript.',status:'Resolved',at:n-120*HR,priority:'low',replies:[{text:'The transcript was sent to your university email.',at:n-118*HR}],rating:{stars:5,comment:'Fast and clear, thank you!',at:n-117*HR}},
   {n:10225,uid:'249900006',who:'Timur',office:'IT Support',desc:'My portal account was locked.',status:'Resolved',at:n-96*HR,priority:'medium',replies:[{text:'The account is unlocked. Please log in again.',at:n-90*HR}],rating:{stars:4,comment:'Solved, but I waited a day.',at:n-88*HR}}
 ]};
+/* ---------- conversation history (US23): a conversation is one chat session of a signed-in student or staff member.
+   Messages are kept as the rendered rows (text, cards and sources; buttons are not kept, so an old conversation is read-only)
+   plus their plain text for search. Visitors' chats are never stored. ---------- */
+const CONV_MAX=30,CONV_MSGS=150;
+const convsOf=(uid,s0)=>{const s=s0||st;return((s.convs=s.convs||{})[uid]=s.convs[uid]||[])};
+/* plain text of a stored row, without the avatar */
+function rowText(h){const d=document.createElement('div');d.innerHTML=h;d.querySelectorAll('.av').forEach(x=>x.remove());return d.textContent.replace(/\s+/g,' ').trim()}
+/* the bubble of a bot message; botNow and the demo conversations use the same markup */
+function bubbleHtml(o,L){let h='';
+  if(o.title)h+='<b class="t">'+esc(o.title)+'</b>';
+  if(o.text)h+=esc(o.text);
+  if(o.html)h+=o.html;
+  if(o.list)h+='<ul>'+o.list.map(x=>'<li'+(x.cls?' class="'+x.cls+'"':'')+'>'+esc(x.t??x)+'</li>').join('')+'</ul>';
+  if(o.ol)h+='<ol>'+o.ol.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>';
+  if(o.after)h+='<div style="margin-top:6px">'+esc(o.after)+'</div>';
+  if(o.src)h+='<span class="src" data-l="'+(T[L].srcL||'Source')+'">'+esc(o.src)+'</span>';
+  return h}
+const userRowHtml=(a,t)=>'<div class="av" style="background:'+a.color+';color:#fff">'+esc(a.ini)+'</div><div class="bub">'+esc(t)+'</div>';
+/* 2–3 earlier conversations per demo student, dated from today; each has the add/drop question a week ago */
+function seedConvs(){const D=864e5,n=Date.now(),out={};
+  const bot=(o,L)=>({c:'row',h:'<div class="av">HD</div><div class="bub">'+bubbleHtml(o,L)+'</div>'});
+  const conv=(uid,id,ago,pairs)=>{const a=ACCOUNTS[uid],at=n-ago,msgs=[];
+    pairs.forEach(([q,o,L],i)=>{msgs.push({c:'row me',h:userRowHtml(a,q),at:at+i*120e3});const b=bot(o,L);msgs.push(Object.assign(b,{at:at+i*120e3+5e3}))});
+    msgs.forEach(m=>{m.t=rowText(m.h)});return{id,at,upd:msgs[msgs.length-1].at,msgs}};
+  const S=L=>T[L].S,reg=FAQ.find(f=>f.id==='reg'),add=L=>['When is the add/drop deadline?','Add/drop мерзімі қашан?','Когда заканчивается add/drop?'][LANGS.indexOf(L)];
+  const addDrop=(uid,L,ago)=>conv(uid,'d-'+uid+'-add',ago,[[add(L),{text:T[L].adddrop,src:S(L).cal},L],[reg.q(L),{text:reg.a(L),src:S(L).reg},L]]);
+  const place=(id,L)=>({title:trL('sv.'+id,L),text:trL('sv.'+id+'.a',L),src:trL('cm.src',L)});
+  out['249900001']=[addDrop('249900001','en',7*D+2*HR),conv('249900001','d-1-lib',2*D+5*HR,[['Где библиотека?',place('library','ru'),'ru']]),
+    conv('249900001','d-1-hours',12*D,[['What are the Student Service Center hours?',{text:T.en.hours,src:S('en').ssc},'en']])];
+  out['249900002']=[addDrop('249900002','en',7*D+HR),conv('249900002','d-2-wifi',3*D+4*HR,[['Wi-Fi қосылмайды',{ol:T.kk.wifi,src:S('kk').it},'kk']])];
+  out['249900003']=[addDrop('249900003','ru',7*D+3*HR),conv('249900003','d-3-pw',D+6*HR,[['I forgot my password',{ol:T.en.pw,src:S('en').it},'en']]),
+    conv('249900003','d-3-hours',10*D,[['Когда работает Центр обслуживания студентов?',{text:T.ru.hours,src:S('ru').ssc},'ru']])];
+  out['249900004']=[addDrop('249900004','kk',7*D+5*HR),conv('249900004','d-4-food',2*D+2*HR,[['Где столовая?',place('canteen','ru'),'ru']])];
+  return out}
 const seedAnn=()=>[{id:1,text:'Registration for Spring 2027 opens on 16.11.2026. Clear all holds before that date.',level:'info',active:true,at:Date.now()-6*HR}];
 /* demo history for Analytics: questions asked and Helpful / Not helpful ratings. Real activity is added on top. */
 const seedEvents=()=>{const n=Date.now(),ev=[];let k=0;
@@ -257,12 +292,15 @@ function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
 const seedHousing=()=>{const n=Date.now();return[
   {n:101,uid:'249900003',who:'Kenan',dorm:2,room:'105',type:'repair',desc:'The shower drain in my room is blocked.',status:'progress',at:n-30*HR,upd:n-20*HR},
   {n:102,uid:'249900004',who:'Zhanibek',dorm:2,room:'418',type:'move',desc:'I would like to move to a quieter room on another floor.',status:'submitted',at:n-6*HR,upd:n-6*HR}]};
-const fresh=()=>({v:5,tickets:seedTickets(),appts:[],chats:{},events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt(),housing:seedHousing(),evreg:{}});
+const fresh=()=>({v:5,tickets:seedTickets(),appts:[],convs:seedConvs(),events:seedEvents(),notes:[],ann:seedAnn(),dismiss:{},kb:seedKb(),prefs:{},att:seedAtt(),housing:seedHousing(),evreg:{}});
 const loadSt=s=>{s.prefs=s.prefs||{};s.att=s.att||seedAtt();s.housing=s.housing||seedHousing();s.evreg=s.evreg||{};
   /* data saved before US20–US22 gets the new built-in entries (Housing Office, Dean's Office, events, clubs, teachers) */
   if(s.kb)s.kb=s.kb.filter(e=>e.id!=='p-journalism'&&e.id!=='p-exit');   /* replaced by the main, south and block G exits */
   if(s.kb)seedKb().forEach(e=>{if((e.id==='housing'||e.id==='deans'||KB_X.includes(e.kind))&&!s.kb.some(x=>x.id===e.id))s.kb.push(e)});
-  s.chats=s.chats||{};s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
+  /* US23: data saved before conversation history keeps each student's old chat as one earlier conversation */
+  if(!s.convs){s.convs=seedConvs();Object.entries(s.chats||{}).forEach(([uid,rows])=>{if(!rows||!rows.length)return;const at=Date.now()-HR;
+    convsOf(uid,s).push({id:'old-'+uid,at,upd:at,msgs:rows.map(m=>({c:m.c,h:m.h,t:rowText(m.h),at}))})})}
+  delete s.chats;s.notes=s.notes||[];s.events=s.events||seedEvents();s.ann=s.ann||seedAnn();s.dismiss=s.dismiss||{};s.kb=s.kb||seedKb();
   if(!s.events.some(e=>e.q))s.events=s.events.concat(seedReview());return s};
 let st=fresh();
 try{const s=JSON.parse(localStorage.getItem('hd-state')||'null');if(s&&s.v===5&&s.tickets)st=loadSt(s)}catch(e){}
@@ -303,12 +341,30 @@ function fbEvent(f,up){const e=fbFind(f);
   save();if(U.role==='staff')sync()}        /* staff see their own rating in the Review queue right away */
 function fbComment(f,c){const e=fbFind(f);if(e){e.c=c;save();if(U.role==='staff')sync()}}
 const isMine=t=>t.uid===U.login;
-/* chat history is kept per student ID (rendered rows only, without buttons) */
-function rec(c,h){if(!U||U.role!=='student')return;
-  const a=(st.chats=st.chats||{});(a[U.login]=a[U.login]||[]).push({c,h});if(a[U.login].length>60)a[U.login].shift();save()}
-function loadChat(){const log=$('log'),h=(st.chats&&st.chats[U.login])||[];log.innerHTML='';
-  if(!h.length)return boot();
-  h.forEach(m=>{const d=document.createElement('div');d.className=m.c;d.innerHTML=m.h;log.appendChild(d)});scroll()}
+/* conversation history (US23): students and staff (Test assistant) only; a visitor's chat is never stored */
+const histOn=()=>!!U&&(U.role==='student'||U.role==='staff');
+let curConv=null;            /* the conversation the chat writes to; null = the next question starts a new one */
+const convList=uid=>convsOf(uid).slice().sort((a,b)=>b.upd-a.upd);
+const convGet=(uid,id)=>convsOf(uid).find(c=>c.id===id)||null;
+const convTitle=c=>{const m=c.msgs.find(x=>x.c==='row me')||c.msgs[0];return m?m.t:''};
+/* keyword search in every message of the user's own conversations ("add/drop" also finds "add drop") */
+const histHit=(t,q)=>{const a=t.toLowerCase(),b=q.trim().toLowerCase(),nb=nluNorm(q);return!!b&&(a.includes(b)||(!!nb&&nluNorm(t).includes(nb)))};
+const convSearch=(uid,q)=>convList(uid).filter(c=>c.msgs.some(m=>histHit(m.t,q)));
+function convDelete(uid,id){const l=convsOf(uid),i=l.findIndex(c=>c.id===id);if(i<0)return false;l.splice(i,1);if(curConv===id)curConv=null;save();return true}
+const convKeep=id=>{try{sessionStorage.setItem('hd-conv',JSON.stringify({login:U.login,id}))}catch(_){}};
+/* a conversation is created by its first question (the greeting alone is not a conversation) */
+function rec(c,h){if(!histOn())return;
+  let cv=curConv&&convGet(U.login,curConv);
+  if(!cv){if(c!=='row me')return;const at=Date.now();cv={id:'c'+at+Math.random().toString(36).slice(2,6),at,upd:at,msgs:[]};
+    const l=convsOf(U.login);l.push(cv);if(l.length>CONV_MAX)l.splice(l.indexOf(convList(U.login).pop()),1);curConv=cv.id;convKeep(cv.id)}
+  cv.msgs.push({c,h,t:rowText(h),at:Date.now()});if(cv.msgs.length>CONV_MSGS)cv.msgs.shift();cv.upd=Date.now();save()}
+/* the chat shows the current conversation, or a fresh greeting */
+function loadChat(){const log=$('log'),cv=histOn()&&curConv&&convGet(U.login,curConv);log.innerHTML='';
+  if(!cv)return boot();
+  cv.msgs.forEach(m=>{const d=document.createElement('div');d.className=m.c;d.innerHTML=m.h;log.appendChild(d)});scroll()}
+/* "New chat" and "Continue this chat" */
+function newChat(){curConv=null;try{sessionStorage.removeItem('hd-conv')}catch(_){}chatEpoch++;mode=null;loadChat()}
+function continueConv(id){if(!convGet(U.login,id))return;curConv=id;convKeep(id);chatEpoch++;mode=null;loadChat()}
 const myAppts=()=>st.appts.filter(a=>a.who===U.login);
 const money=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' ₸';
 const dmy=iso=>iso.split('-').reverse().join('.');
@@ -319,7 +375,6 @@ let mode=null, lastLang='en', pendingDesc='';
 
 /* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function detect(t){
   if(isKazakh(t)) return 'kk';
   if(/[а-яё]/i.test(t)) return 'ru';
@@ -336,7 +391,7 @@ const fmt=(d,L)=>new Date(d).toLocaleString(T[L].loc,{weekday:'short',day:'2-dig
 function scroll(){const l=$('log');l.scrollTop=l.scrollHeight}
 function userMsg(t){
   const r=document.createElement('div');r.className='row me';
-  r.innerHTML='<div class="av" style="background:'+U.color+';color:#fff">'+U.ini+'</div><div class="bub">'+esc(t)+'</div>';rec(r.className,r.innerHTML);put(r);
+  r.innerHTML=userRowHtml(U,t);rec(r.className,r.innerHTML);put(r);
 }
 function sys(t){const d=document.createElement('div');d.className='sys';d.textContent=t;rec('sys',esc(t));put(d)}
 /* append to the chat; an active "typing" row always stays last */
@@ -353,14 +408,7 @@ function bot(o,L){const e=chatEpoch;if(o.fb&&o.q==null)o.q=curQ;
 /* bot({title,text,list,ol,src,acts:[[label,fn]],fb:true,staff}) */
 function botNow(o,L){
   const r=document.createElement('div');r.className='row'+(o.staff?' staff':'');
-  let h='';
-  if(o.title)h+='<b class="t">'+esc(o.title)+'</b>';
-  if(o.text)h+=esc(o.text);
-  if(o.html)h+=o.html;
-  if(o.list)h+='<ul>'+o.list.map(x=>'<li'+(x.cls?' class="'+x.cls+'"':'')+'>'+esc(x.t??x)+'</li>').join('')+'</ul>';
-  if(o.ol)h+='<ol>'+o.ol.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>';
-  if(o.after)h+='<div style="margin-top:6px">'+esc(o.after)+'</div>';
-  if(o.src)h+='<span class="src" data-l="'+(T[L].srcL||'Source')+'">'+esc(o.src)+'</span>';
+  const h=bubbleHtml(o,L);
   r.innerHTML='<div class="av">'+(o.staff?'ST':'HD')+'</div><div class="bub">'+h+'</div>';
   rec(r.className,r.innerHTML);
   const bub=r.querySelector('.bub');
@@ -523,6 +571,8 @@ function route(t){
   if(T==='ticket'&&/\b\d{4,6}\b/.test(t))return stu?{k:'h',i:'tkstatus'}:{k:'guest',i:'tkstatus'};
   /* campus events, clubs and teachers (US21, US22): open to everyone */
   const kr=kindRoute(t,q,T);if(kr)return{k:'h',i:kr};
+  /* "show my history", "what did I ask about add/drop": a history phrase of two words or more wins over the topic it mentions */
+  if((q.tags.get('history')||0)>=2)return{k:'h',i:'history'};
   /* high confidence in a knowledge base entry: answer it (a student still gets the personal answer for registration or billing).
      A question with only a weak word ("office") needs a near-exact variant, otherwise its topic decides */
   if(best&&best.s>=(q.tags.size?NLU_HIGH:q.weak.size?.9:NLU_HIGH))return forEntry(best.e);
@@ -667,6 +717,13 @@ const H={
    const nm=teacherAsked(t);if(nm)return deanNf(trL('t.nf',L,{q:nm}),L);
    if(my.length){const tl=[...new Set(my.flatMap(teachersOf))];return many(trL('t.myall',L,{l:my.join(', ')}),tl)}
    bot({text:trL('t.ask',L),src,fb:true},L)},
+ /* US23: the user's own earlier conversations (never the one being written), or those that mention a keyword */
+ history:L=>{const src=trL('hi.src',L);
+   if(!histOn())return bot({text:trL('hi.guest',L),src,acts:[[trL('guest.exit',L),toLogin]]},L);
+   const q=histAsked(curQ),list=(q?convSearch(U.login,q):convList(U.login)).filter(c=>c.id!==curConv),all=[[trL('hi.open',L),()=>openHistory(null,q)]];
+   if(!list.length)return bot({text:q?trL('hi.bnf',L,{q}):trL('hi.bnone',L),src,acts:all,fb:true},L);
+   bot({title:q?trL('hi.bfound',L,{q,n:list.length}):trL('hi.blast',L),list:list.slice(0,5).map(c=>dayText(new Date(c.at),L)+' — '+convTitle(c)),src,fb:true,
+     acts:list.slice(0,3).map(c=>[convTitle(c).slice(0,48),()=>openHistory(c.id,q)]).concat(all)},L)},
  ticket:L=>startTicket(L),
  human:L=>human(L),
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
@@ -809,6 +866,8 @@ function kindRoute(t,q,T){const strong=q.tags.size>0;
 const CLUB_GEN=new Set('student students university campus join any there студенческий студенческие студентов студент университет кампус вступить студенттік университет кампус'.split(' ').map(nluFold));
 function clubAsked(t){const w=nluAnalyze(t).words.filter(x=>!CLUB_GEN.has(x)&&!KK_LAT.has(x));if(!w.length)return null;
   const ws=t.match(/\p{L}[\p{L}'’-]*/gu)||[];return ws.filter(x=>w.includes(nluToks(x)[0])).join(' ')||w.join(' ')}
+/* keyword of a history question: "what did I ask about add/drop" -> "add/drop", "add/drop туралы не сұрадым" -> "add/drop" */
+function histAsked(t){const m=/(?:^|\s)(?:about|regarding|про|насч[её]т|об?)\s+(.+?)[\s?.!]*$/i.exec(t)||/^(.+?)\s+(?:туралы|жайлы|бойынша)(?:\s|$)/i.exec(t);return m?m[1].trim():null}
 const teachersOf=code=>kbKind('teacher').filter(e=>kbData(e).x.courses.includes(code));
 /* the signed-in student's current schedule */
 const myCourses=()=>U&&U.role==='student'&&U.acad?U.acad.courses.filter(x=>x.term==='f26').map(x=>x.c):[];

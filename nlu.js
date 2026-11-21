@@ -116,6 +116,12 @@ const TOPICS={
  offices:{kb:'offices',syn:['which office','what office','who to contact','who should i contact','contact','department',
    'в какой отдел','какой отдел','к кому обратиться','куда обращаться','куда обратиться','отдел',
    'who can help','who should i ask','who can','who should','к кому','қай бөлім','кімге хабарласу','кімге хабарлас','кімге жүгіну','бөлім']},
+ /* US23 history: last in the list; app.js lets a phrase of two words or more win ("what did I ask about add/drop").
+   "history" and "история" are exact, so "History of Kazakhstan" and "оценка по истории" stay with their topics */
+ history:{intent:'history',syn:['=history','my history','show my history','chat history','conversation history','previous conversations','past conversations','my previous questions','what did i ask','what i asked','old chats',
+   'istoriya perepiski','moi proshlye voprosy','menin suraktarym',
+   '=история','история переписки','история чата','история разговоров','мои прошлые вопросы','прошлые вопросы','прошлые разговоры','что я спрашивал','что я спрашивала','мои вопросы','мои чаты',
+   'менің сұрақтарым','сұрақтарым','чат тарихы','сөйлесу тарихы','хат алмасу тарихы','бұрынғы сұрақтарым','мен не сұрадым','не сұрадым','бұрынғы сұрақтар']},
  greet:{intent:'greet',syn:['hi','hello','hey','good morning','привет','здравствуйте','здравствуй','здравств','добрый день','салам','сәлем','салем','сәлеметсіз','қайырлы күн']}
 };
 /* flat phrase index, built once */
