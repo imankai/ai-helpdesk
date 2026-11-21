@@ -445,6 +445,35 @@ button.primary.sm{padding:7px 14px;font-size:14px;align-self:flex-start}
 /* ---------- v6: campus map ---------- */
 :root{--c-class:#2f6fd0;--c-lect:#f26b21;--c-office:#1a8a4a;--c-study:#0e8a8a}
 :root[data-theme="dark"]{--c-class:#6aa5ff;--c-lect:#ff8a3d;--c-office:#5fd08a;--c-study:#4fd0d0}
+:root{--c-svc:#7448c4;--c-ent:#c79100;--c-oth:#e6ebf3}
+:root[data-theme="dark"]{--c-svc:#b392f0;--c-ent:#f2c14e;--c-oth:#26354d}
+.campus .corr{fill:var(--surface2);stroke:var(--line);stroke-width:1.5}
+.campus .ct{fill:var(--muted);font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.campus .plc{cursor:pointer}
+.campus .plc .pf{stroke:transparent;stroke-width:3}
+.campus .plc.svc .pf{fill:var(--c-svc)}
+.campus .plc.ent .pf{fill:var(--c-ent)}
+.campus .plc.ent .pt{fill:#0b1b33}
+.campus .plc.oth .pf{fill:var(--c-oth);stroke:var(--line);stroke-width:1.5}
+.campus .plc.med .pf{fill:var(--surface);stroke:var(--alert);stroke-width:2}
+.campus .cross{fill:var(--alert)}
+.campus .pt{font-size:13px;font-weight:700;fill:#fff}
+.campus .plc.oth .pt{fill:var(--ink)}
+[data-theme="dark"] .campus .plc.svc .pt,[data-theme="dark"] .campus .plc.ent .pt{fill:#0b1b33}
+.campus .mt{font-size:12px;font-weight:700;fill:var(--alert)}
+.campus .plc:hover .pf{stroke:var(--muted)}
+.campus .plc.sel .pf{stroke:var(--accent);stroke-width:4}
+.campus g.plc:focus-visible .pf{stroke:var(--focus);stroke-width:4}
+.campus .exa{stroke:var(--c-ent);stroke-width:3;stroke-dasharray:6 4;fill:none}
+.campus .exh{fill:var(--c-ent)}
+.campus .st,.campus .scale,.campus .na text{fill:var(--muted);font-size:12px;font-weight:700}
+.campus .scale{font-style:italic;font-weight:600}
+.campus .na path{fill:var(--muted)}
+.sw.blk{background:var(--surface);border:2px solid var(--line)}
+.sw.svc{background:var(--c-svc)}.sw.ent{background:var(--c-ent)}.sw.oth{background:var(--c-oth);border:1px solid var(--line)}
+.sw.round{border-radius:7px}
+.cmlegend + .cmlegend{border-top:1px solid var(--line);padding-top:10px}
+.cmcard.svc{border-top-color:var(--c-svc)}
 .cmwrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
 @media (max-width:980px){.cmwrap{grid-template-columns:1fr}}
 .cmmap{background:var(--surface);border:1px solid var(--line);padding:10px}

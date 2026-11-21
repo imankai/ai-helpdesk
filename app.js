@@ -41,7 +41,7 @@ const ATT_SEED={'249900001':{INF451:2,INF320:1},'249900002':{INF451:4,MAT301:1},
 const seedAtt=()=>JSON.parse(JSON.stringify(ATT_SEED));
 const ATT_WARN=2;             /* warn when this many absences or fewer are left before the limit */
 /* library (US19): demo catalog with fictional copy counts and shelves; "next" is the nearest return date when no copy is available.
-   The library's own location is not on the campus map, so the bot names shelves only. */
+   The library itself is on the campus map (north of block D). */
 const CATALOG=[
   {id:'cc',t:'Clean Code',a:'Robert C. Martin',c:'INF451',n:4,av:2,sh:'B-12'},
   {id:'pp',t:'The Pragmatic Programmer',a:'Andrew Hunt, David Thomas',c:'INF451',n:3,av:0,sh:'B-12',next:'2026-11-18'},
@@ -102,7 +102,7 @@ const seedReview=()=>{const n=Date.now();return[
    The bot, chat suggestions and the FAQ page read only the active version of published entries. ---------- */
 /* built-in FAQ entries linked to a chat intent; for a signed-in student the personal answer (registration check, balance) wins */
 const KB_INTENT={reg:'reg',adddrop:'adddrop',sched:'sched',pay:'bill',grant:'bill',pw:'pw',wifi:'wifi',portal:'portal',hours:'hours',offices:'offices'};
-const KB_CATS=['reg','pay','grant','it','off','life','acad'],KB_SRCS=['reg','bill','adv','it','cal','ssc','portal','ev','clubs','fac'];
+const KB_CATS=['reg','pay','grant','it','off','life','acad','campus'],KB_SRCS=['reg','bill','adv','it','cal','ssc','portal','ev','clubs','fac','map'];
 const KB_OFFICES=[
  ['registrar',{en:["What does the Registrar do?","Registrar office"],kk:["Registrar не істейді?","Registrar бөлімі"],ru:["Чем занимается Registrar?","Отдел Registrar"]},
   {en:"Registrar handles course registration, enrollment certificates and transcripts. Send a request with a Help Desk ticket (office: Registrar) or contact the Student Service Center: "+SSC+".",
@@ -144,12 +144,12 @@ const OFFICE_INFO={
    Event dates are relative to today (rel: days from today, wd: the next such weekday, 0 = Sunday), so the demo is always current;
    an event edited by staff gets a fixed date. Places are rooms of the campus map only. All people and emails are fictional. ---------- */
 const EV_SEED=[
- ['ev-ai',{rel:0,a:'17:00',b:'18:30',place:'H02'},
+ ['ev-ai',{rel:0,a:'17:00',b:'18:30',place:'A1'},
   {en:['Guest Lecture: AI in Everyday Life','guest lecture'],kk:['Қонақ дәрісі: Күнделікті өмірдегі жасанды интеллект','қонақ дәрісі'],ru:['Гостевая лекция: ИИ в повседневной жизни','гостевая лекция']},
   {en:'An open lecture about how AI tools help with study, work and daily life, followed by questions from the audience. Open to students, staff and visitors.',
    kk:'Жасанды интеллект құралдарының оқуға, жұмысқа және күнделікті өмірге қалай көмектесетіні туралы ашық дәріс, соңында сұрақ-жауап. Студенттерге, қызметкерлерге және қонақтарға ашық.',
    ru:'Открытая лекция о том, как инструменты ИИ помогают в учёбе, работе и повседневной жизни, после неё — вопросы из зала. Открыта для студентов, сотрудников и гостей.'}],
- ['ev-python',{rel:1,a:'16:00',b:'18:00',place:'I211'},
+ ['ev-python',{rel:1,a:'16:00',b:'18:00',place:'library'},
   {en:['Python Workshop for Beginners','Python workshop','python'],kk:['Бастаушыларға арналған Python шеберханасы','Python шеберханасы'],ru:['Воркшоп по Python для начинающих','воркшоп по Python','питон']},
   {en:'A hands-on introduction to Python: variables, loops and a small project. Bring a laptop; no experience needed.',
    kk:'Python тіліне практикалық кіріспе: айнымалылар, циклдер және шағын жоба. Ноутбук ала келіңіз; тәжірибе қажет емес.',
@@ -159,7 +159,7 @@ const EV_SEED=[
   {en:'A one-day team hackathon: build a prototype that makes student life easier. Teams of 3–4 people; lunch is provided.',
    kk:'Бір күндік командалық хакатон: студенттік өмірді жеңілдететін прототип жасаңыз. Командада 3–4 адам; түскі ас беріледі.',
    ru:'Однодневный командный хакатон: создайте прототип, который упростит студенческую жизнь. Команды по 3–4 человека; обед предоставляется.'}],
- ['ev-career',{rel:4,a:'11:00',b:'15:00',place:'H01'},
+ ['ev-career',{rel:4,a:'11:00',b:'15:00',place:'sdulife'},
   {en:['Career Fair: IT Companies','career fair','job fair'],kk:['Мансап жәрмеңкесі: IT компаниялар','мансап жәрмеңкесі','бос жұмыс орындары'],ru:['Ярмарка вакансий: IT-компании','ярмарка вакансий','ярмарка']},
   {en:'Meet IT companies that offer internships and junior positions. Bring your CV.',
    kk:'Тағылымдама және бастапқы лауазымдар ұсынатын IT компаниялармен танысыңыз. Түйіндемеңізді ала келіңіз.',
@@ -169,7 +169,7 @@ const EV_SEED=[
   {en:'A relaxed evening with a film chosen by student vote on the big screen. Free entry.',
    kk:'Студенттер дауыс беріп таңдаған фильмді үлкен экранда көретін жайлы кеш. Кіру тегін.',
    ru:'Спокойный вечер с фильмом, выбранным голосованием студентов, на большом экране. Вход свободный.'}],
- ['ev-chess',{rel:8,a:'15:00',b:'18:00',place:'I111'},
+ ['ev-chess',{rel:8,a:'15:00',b:'18:00',place:'tennis'},
   {en:['Open Chess Tournament','chess tournament'],kk:['Ашық шахмат турнирі','шахмат турнирі'],ru:['Открытый шахматный турнир','шахматный турнир']},
   {en:'A rapid chess tournament for all levels, organised by the Chess Club. Boards and clocks are provided.',
    kk:'Шахмат үйірмесі ұйымдастыратын барлық деңгейге арналған жылдам шахмат турнирі. Тақталар мен сағаттар беріледі.',
@@ -179,7 +179,7 @@ const EV_SEED=[
   {en:'Meet at barrel C1 and help tidy up the campus grounds. Gloves and bags are provided; volunteer hours are counted.',
    kk:'C1 бөшкесінің жанында жиналып, кампус аумағын тазалауға көмектесіңіз. Қолғап пен қаптар беріледі; еріктілік сағаттары есептеледі.',
    ru:'Сбор у бочки C1, помогаем навести порядок на территории кампуса. Перчатки и мешки выдаём; волонтёрские часы засчитываются.'}],
- ['ev-pitch',{rel:20,a:'18:00',b:'20:00',place:'I310'},
+ ['ev-pitch',{rel:20,a:'18:00',b:'20:00',place:'sdulife'},
   {en:['Startup Pitch Evening','startup pitch','pitch night'],kk:['Стартап питч кеші','стартап питч'],ru:['Вечер стартап-питчей','питч стартапов','стартап']},
   {en:'Student teams present startup ideas in 5 minutes each; a jury of staff gives feedback. Come to pitch or to listen.',
    kk:'Студент командалары стартап идеяларын 5 минуттан таныстырады; қызметкерлерден құралған қазылар алқасы пікір айтады. Таныстыруға немесе тыңдауға келіңіз.',
@@ -201,7 +201,7 @@ const CLUB_SEED=[
   {en:'Weekly coding practice, preparation for programming contests and small team projects. Beginners are welcome; bring a laptop.',
    kk:'Апта сайынғы бағдарламалау жаттығулары, олимпиадаларға дайындық және шағын командалық жобалар. Бастаушыларды да күтеміз; ноутбук ала келіңіз.',
    ru:'Еженедельная практика программирования, подготовка к олимпиадам и небольшие командные проекты. Новичкам рады; возьмите ноутбук.'}],
- ['cl-chess',{wd:2,a:'17:00',b:'19:00',place:'I309',who:'Dias Gambitov',mail:'d.gambitov@university.demo'},
+ ['cl-chess',{wd:2,a:'17:00',b:'19:00',place:'tennis',who:'Dias Gambitov',mail:'d.gambitov@university.demo'},
   {en:['Chess Club','chess'],kk:['Шахмат үйірмесі','шахмат'],ru:['Шахматный клуб','шахматы','шахмат']},
   {en:'Casual games, chess puzzles and training for tournaments. All levels; boards are provided.',
    kk:'Еркін ойындар, шахмат есептері және турнирлерге дайындық. Барлық деңгейге; тақталар беріледі.',
@@ -240,7 +240,9 @@ const TEACH_SEED=[
  ['t-sampleuly','Prof. Ernar Sampleuly','Ернар Сэмплұлы',['MGT210','MGT301'],'e.sampleuly','G208',[[4,'14:00','16:00']],1],
  ['t-imaginova','Dr. Asel Imaginova','Әсел Имагинова',['ENG210','HIS101'],'a.imaginova','H305',[[1,'15:00','17:00']],0],
  ['t-nightingale','Dr. Leo Nightingale','Лео Найтингейл',['INF415'],'l.nightingale','I305',[[3,'11:00','12:30']],1]];
-const KB_X=['event','club','teacher'];
+const KB_X=['event','club','teacher','place'];
+/* services and separate buildings of the campus map (see the campus map section below) */
+const PLACES=['library','canteen','market','print','tennis','medical','exit','studenthouse','sdulife','journalism'];
 function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
   const mk=(id,kind,intent,cat,src,q,a,x)=>({id,kind,intent:intent||null,status:'published',vn:1,vers:[Object.assign({n:1,act:'create',by,at,cat,src,q,a},x?{x}:{})],log:[]});
   const per=f=>Object.fromEntries(LANGS.map(l=>[l,f(l)])),lines=v=>Array.isArray(v)?v.join('\n'):v;
@@ -248,6 +250,7 @@ function seedKb(){const at=Date.now()-30*24*HR,by='Help Desk team';
     .concat(KB_OFFICES.map(([id,q,a])=>mk(id,'office',null,'off','ssc',q,a)))
     .concat(EV_SEED.map(([id,x,q,a])=>mk(id,'event',null,'life','ev',q,a,x)))
     .concat(CLUB_SEED.map(([id,x,q,a])=>mk(id,'club',null,'life','clubs',q,a,x)))
+    .concat(PLACES.map(id=>mk('p-'+id,'place',null,'campus','map',per(l=>[trL('sv.'+id,l)].concat(trL('sv.'+id+'.q',l).split('|'))),per(l=>trL('sv.'+id+'.a',l)))))
     .concat(TEACH_SEED.map(([id,en,cy,courses,m,room,oh,nt])=>mk(id,'teacher',null,'acad','fac',{en:[en],kk:[cy],ru:[cy.replace('ұ','у').replace('Ә','А')]},T_NOTE[nt],
       {courses,mail:m+'@university.demo',room,oh:oh.map(([d,a,b])=>({d,a,b}))})))}
 /* housing requests (US20), so the staff list is not empty on first launch. status: submitted -> progress -> done; upd = last update */
@@ -402,6 +405,30 @@ const CAMPUS=(()=>{
   ['A1','A2','B1','B2','C1','C2'].forEach(id=>add(id,null,null,'lecture',true));   /* "barrels": separate lecture halls */
   return m})();
 const CAMPUS_BLDS=['D','E','F','G','H','I'];
+/* Services and separate buildings of the real campus layout (a simplified drawing, not to scale). The main building is one long
+   corridor from south to north with blocks I, H, G, F, E, D along it and the Library north of D; across the corridor are the barrels
+   B (opposite D) and C (opposite E), the Canteen and Market (opposite F), the Print center, Table tennis & chess and the Main exit
+   (opposite G); the Medical point is in the corridor between G and H. Student House is west of the main building, SDU Life south of it,
+   the Journalism school and barrels A1, A2 at the north end. Names and "where" texts: sv.<id> and sv.<id>.w in i18n.js; descriptions are
+   knowledge base entries p-<id>. No opening hours are shown: the map has none. */
+/* what a question asks for; the first match wins (exit before entrance words, tennis before the chess club is decided in route) */
+const PLACE_RE=[
+  ['exit',/main exit|main entrance|way out|\bexit\b|get out(side)?|go outside|выйти на улицу|выход на улицу|главный выход|выход|выйти|көшеге шығ|сыртқа шығ|басты шығу|шығатын есік/i],
+  ['medical',/medical|clinic|nurse|first aid|медпункт|медицинск|медсестр|врач|дәрігер|медбике|алғашқы көмек|medpunkt/i],
+  ['library',/librar|библиотек|кітапхана|китапхана|kitaphana|kitapkhana|biblioteka/i],
+  ['canteen',/canteen|cafeteria|dining|\beat\b|food|lunch|столов|буфет|поесть|покушать|пообедать|перекусить|(^|[^а-яё])ед[аыу]([^а-яё]|$)|асхана|тамақ|тамак|asxana|ashana|stolov/i],
+  ['market',/market|\bshop\b|\bstore\b|grocer|магазин|маркет|дүкен|дукен/i],
+  ['print',/print|xerox|photocop|\bcopy\b|распечат|печат|ксерокс|принтер|басып шығар|raspechat/i],
+  ['tennis',/tennis|ping ?pong|chess|теннис|пинг-?понг|шахмат/i],
+  ['studenthouse',/student house|\bdorm|dormitor|hostel|общежити|общаг|жатақхана|жатакхана|zhatakhana|obshag/i],
+  ['sdulife',/sdu ?life/i],
+  ['journalism',/journalis|журналист/i]];
+const placeOf=t=>{const m=PLACE_RE.find(([,re])=>re.test(t||''));return m?m[0]:null};
+/* what is next to each block (for room cards and the block panel); "br:B" = barrels B1, B2 */
+const NEAR={D:['library','br:B'],E:['br:C'],F:['canteen','market'],G:['print','tennis','exit','medical'],H:['medical'],I:['sdulife']};
+const nearText=(b,L)=>(NEAR[b]||[]).map(k=>k.startsWith('br:')?trL('cm.brs',L,{a:k[3]+'1',b:k[3]+'2',w:trL('cm.br.'+k[3],L)}):trL('sv.'+k,L)+' ('+trL('sv.'+k+'.w',L)+')').join('; ');
+/* description of a place: its knowledge base entry (staff can edit it), else the "where" text */
+function placeDesc(id,L){const e=(st.kb||[]).find(x=>x.id==='p-'+id&&x.status==='published');return e?kbData(e).a[L]:trL('sv.'+id,L)+': '+trL('sv.'+id+'.w',L)}
 const CAMPUS_TYPES=['classroom','lecture','office','study'];
 const roomNum=id=>parseInt(id.replace(/^[A-Z]/,''),10);
 /* compress sorted ids into runs: D101,D102,D103 -> "D101–D103" */
@@ -434,7 +461,9 @@ function typeSummary(type,L){
   return lines}
 /* recognise room numbers: F305, f305, F 305, F-305, H01, A1 (letters A–I; Cyrillic look-alikes accepted) */
 const HOMO={'А':'A','В':'B','С':'C','Е':'E','Н':'H','І':'I'};
-const LOC=/where|find|locat|room|hall|office|barrel|how (do i )?(get|find|reach)|где|кабинет|аудитори|зал|бочк|как (пройти|найти|добраться)|қайда|бөшке|бөлме|қалай/i;
+const LOC=/where|find|locat|room|hall|office|barrel|how (do i )?(get|find|reach)|где|кабинет|аудитори|зал|бочк|как (пройти|найти|добраться)|қайда|бөшке|бөлме|қалай|kaida|qaida|gde/i;
+/* "как выйти на улицу", "how do I get out": the main exit, even without a where-word */
+const EXITQ=/как выйти|выйти на улицу|выход на улицу|how (do|can) i (get|go) out|way out|көшеге қалай шығ|сыртқа қалай шығ|көшеге шығу|сыртқа шығу/i;
 function roomTokens(text,force){
   const s=text.toUpperCase().replace(/[АВСЕНІ]/g,c=>HOMO[c]),out=[],re=/(^|[^A-Z0-9А-ЯЁӘІҢҒҮҰҚӨҺ])([A-I])([\s-]?)(\d{1,3})(?!\d)/g;
   let m;while((m=re.exec(s))){if(m[3]===' '&&!force)continue;out.push(m[2]+m[4])}
@@ -443,7 +472,8 @@ function roomTokens(text,force){
 const TYPEQ=[['study',/study room|кабинет[а-яё]* для уч[её]б|уч[её]бн[а-яё]* кабинет|оқу кабинет|оқуға арналған/i],
   ['office',/teacher'?s?'? offices?|кабинет[а-яё]* преподавател|преподавательск|оқытушы|мұғалім/i],
   ['lecture',/lecture|лекци|дәріс/i],['classroom',/classroom|аудитори/i],['barrel',/barrel|бочк|бөшке/i]];
-const SVC=/library|canteen|cafeteria|dining|gym\b|sport|registrar|dorm|clinic|медпункт|библиотек|столов|буфет|спортзал|общежити|регистратор|кітапхана|асхана|жатақхана|спорт/i;
+/* places that are not on the map (the gym, the registrar's desk): "not on the map" instead of a guess */
+const SVC=/gym\b|sport|registrar|pool|parking|спортзал|регистратор|бассейн|парковк|спорт/i;
 /* a 2-3 digit number with no building letter next to a room word, e.g. "room 305", "кабинет 305", "305 бөлме";
    the room word is required so that sums like "pay 450 000" are not read as rooms */
 const RW='(?:rooms?|lecture halls?|halls?|offices?|кабинет[а-яё]*|комнат[а-яё]*|аудитори[а-яё]*|ауд\\.?|бөлме[а-яәіңғүұқөһ]*|№)';
@@ -456,13 +486,15 @@ function similarRooms(id){const b=id[0],n=id.slice(1),same=[...CAMPUS.keys()].fi
 function campusIntent(t){
   const loc=LOC.test(t),ids=roomTokens(t,loc);
   if(ids.length)return{k:'rooms',ids:[...new Set(ids)].slice(0,3)};
+  if(EXITQ.test(t))return{k:'svc',id:'exit'};
   if(!loc)return null;
   const n=bareNum(t);if(n)return{k:'bare',n};
+  const pl=placeOf(t);if(pl&&(WHERE.test(t)||/где|қайда|kaida|qaida|gde/i.test(t)))return{k:'svc',id:pl};
   const ty=TYPEQ.find(([,re])=>re.test(t));
   if(ty)return{k:'type',type:ty[0]};
   return SVC.test(t)&&WHERE.test(t)?{k:'svc'}:null}
 /* "not on the map" is the answer only to where-questions; "Registrar office" alone goes to the knowledge base */
-const WHERE=/where|find|locat|how (do i )?(get|reach)|где|найти|как (пройти|добраться)|қайда|қалай бар/i;
+const WHERE=/where|find|locat|how (do i )?(get|reach)|где|найти|как (пройти|добраться)|қайда|қалай бар|kaida|qaida|gde/i;
 
 /* ---------- understanding the question (nlu.js) ---------- */
 /* route(t) decides how to answer; answer(t) shows it. Kept apart so the test page can check routing directly.
@@ -473,7 +505,8 @@ function route(t){
   const c=campusIntent(t),q=nluAnalyze(t),dormQ=q.tags.has('housing')&&!WHERE.test(t);
   /* "где кабинет преподавателя" asks about one teacher (US22); "Where are the teachers' offices?" stays a campus question */
   const teachQ=q.tags.has('teacher')&&c&&c.k==='type'&&!/offices|кабинеты|кабинетов|кабинеттер/i.test(t);
-  if(c&&!teachQ&&!(c.k==='svc'&&bookSearch(t).length)&&!(dormQ&&c.k!=='rooms'))return{k:'campus',c};
+  const lifeQ=c&&c.k==='svc'&&(q.tags.has('clubs')||q.tags.has('events')||topHit('event',t)>1);
+  if(c&&!teachQ&&!lifeQ&&!(c.k==='svc'&&bookSearch(t).length)&&!(dormQ&&c.k!=='rooms'))return{k:'campus',c};
   let T=nluTopic(q);if(T==='ticket'&&q.tags.has('housing'))T='housing';    /* "подать заявку на ремонт в общаге" */
   const rank=kbRank(q,kbLive()),best=rank[0],stu=U.role==='student'||(U.role==='staff'&&STAFF_SELF.includes(T&&TOPICS[T].intent));
   /* two equally strong topics with their own entries ("password and wifi"): ask instead of guessing */
@@ -633,7 +666,7 @@ const H={
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),
  campus:(L,c)=>{
    const src=trL('cm.src',L),cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-   if(c.k==='svc')return bot({text:trL('cm.svc',L),src,fb:true},L);
+   if(c.k==='svc')return c.id?placeCard(c.id,L):bot({text:trL('cm.svc',L),src,fb:true},L);
    if(c.k==='type'){const t=c.type;
      return bot({title:trL('cm.listh',L,{t:cap(trL('cm.p.'+t,L))}),list:typeSummary(t,L),after:t==='barrel'?'':trL('cm.numnote',L),src,
        acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L)}
@@ -723,7 +756,7 @@ function evRangeText(r,L,head){const a=dmText(r.from),b=dmText(addDays(r.to,-1))
   if(r.k==='all')return head?trL('ev.h.all',L):'';
   return head?trL('ev.h.'+r.k,L,{a,b}):a+'–'+b}
 /* a place of the campus map with its type and building */
-function placeText(id,L){const r=CAMPUS.get(id);if(!r)return id;const t=trL('cm.t.'+r.t,L).toLowerCase();
+function placeText(id,L){if(PLACES.includes(id))return trL('sv.'+id,L)+' ('+trL('sv.'+id+'.w',L)+')';const r=CAMPUS.get(id);if(!r)return id;const t=trL('cm.t.'+r.t,L).toLowerCase();
   return r.barrel?trL('pl.br',L,{r:id,t}):r.f?trL('pl.f',L,{r:id,t,b:r.b,f:r.f}):trL('pl.b',L,{r:id,t,b:r.b})}
 /* registrations stay inside the site: per account in the demo data, for a visitor only until the page is closed */
 let guestReg=[];
@@ -813,12 +846,15 @@ const libQuery=t=>nluAnalyze(t).words.filter(w=>!KK_LAT.has(w)).join(' ');
 function bookRows(b,L){return[trL('lib.author',L)+': '+b.a,trL('gr.course',L)+': '+b.c,
   b.av?{t:trL('lib.av',L,{n:b.av,m:b.n}),cls:'yes'}:{t:trL('lib.nav',L,{m:b.n,d:dmy(b.next)}),cls:'no'},trL('lib.shelf',L,{s:b.sh})]}
 const bookLine=(b,L)=>b.t+' — '+b.a+' ('+b.c+'): '+(b.av?trL('lib.av',L,{n:b.av,m:b.n}):trL('lib.nav',L,{m:b.n,d:dmy(b.next)}))+' · '+trL('lib.shelf',L,{s:b.sh});
+/* a service or separate building: description and Show on map */
+function placeCard(id,L){bot({title:trL('sv.'+id,L),text:placeDesc(id,L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap(id)]],fb:true},L)}
 function roomCard(id,L){const r=CAMPUS.get(id),rows=[];
   if(r.b)rows.push(trL('cm.building',L)+': '+r.b);
   if(r.f)rows.push(trL('cm.floor',L)+': '+r.f);
   rows.push(trL('cm.type',L)+': '+trL('cm.t.'+r.t,L)+(r.barrel?' ('+trL('cm.t.barrel',L)+')':''));
   if(r.b)rows.push(trL('cm.ent',L)+': '+trL('cm.ent.'+r.b,L));
-  const hint=r.barrel?trL('cm.hint.barrel',L,{id}):r.f?trL('cm.hint.floor',L,{b:r.b,f:r.f,r:floorSummary(r.b,r.f,L)}):trL('cm.hint.nofloor',L,{id,b:r.b});
+  if(r.b&&NEAR[r.b])rows.push(trL('cm.near',L,{l:nearText(r.b,L)}));
+  const hint=r.barrel?trL('cm.hint.barrel',L,{id,w:trL('cm.br.'+id[0],L)}):r.f?trL('cm.hint.floor',L,{b:r.b,f:r.f,r:floorSummary(r.b,r.f,L)}):trL('cm.hint.nofloor',L,{id,b:r.b});
   bot({title:id,list:rows,after:hint,src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap(id)]],fb:true},L)}
 let presetOffice=null;
 /* personal features: a visitor is asked to sign in; staff in Test assistant are told it needs a student account */

@@ -198,6 +198,22 @@ const CASES=[
  ['What events are on campus this week?','events'],
  ['upcoming events','events'],
  ['what is happening on campus this weekend','events'],
+ /* campus map: services and separate buildings (real SDU layout) */
+ ['Where is the library?','campus'],
+ ['где столовая','campus'],
+ ['где поесть','campus'],
+ ['Where can I eat?','campus'],
+ ['где распечатать','campus'],
+ ['где медпункт','campus'],
+ ['где поиграть в теннис','campus'],
+ ['как выйти на улицу','campus'],
+ ['асхана қайда','campus'],
+ ['кітапхана қайда','campus'],
+ ['медпункт қайда','campus'],
+ ['kitaphana kaida','campus'],
+ ['asxana qaida','campus'],
+ ['where does the chess club meet','clubs'],
+ ['where is the chess tournament','events'],
  ['When is the hackathon?','events'],
  ['register for the hackathon','events'],
  ['Where is the career fair?','events'],
@@ -284,7 +300,7 @@ const OLD={human:['human','staff','person','operator','agent','live','опера
 /* a strong topic must beat a weak word */
 const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
 const LANGT=[['жатақханада кран сынды','kk'],['в общаге не работает свет','ru'],['zhatakhanada kran syndy kerek','kk'],['kitap bar ma','kk'],['кітап бар ма','kk'],['есть ли книга Clean Code','ru'],['my books','en'],['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en'],
- ['осы аптадағы іс-шаралар','kk'],['osy aptadagy is sharalar','kk'],['что будет в пятницу','ru'],['Is there a programming club?','en'],['консультация кашан','kk'],['INF451 оқытушым','kk'],['oqytushy poshtasy','kk'],['почта преподавателя','ru']];
+ ['осы аптадағы іс-шаралар','kk'],['osy aptadagy is sharalar','kk'],['что будет в пятницу','ru'],['Is there a programming club?','en'],['консультация кашан','kk'],['INF451 оқытушым','kk'],['oqytushy poshtasy','kk'],['почта преподавателя','ru'],['асхана қайда','kk'],['kitaphana kaida','kk'],['где поесть','ru'],['Where can I print?','en']];
 /* checks of the QA scenarios in docs/SPRINTS.md */
 const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
 const has=(s,x)=>s.includes(x);
@@ -310,6 +326,28 @@ const QA=[
  check('US11 "Stop sending me reminders" turns them off and none arrive',()=>{st.notes=[];const a=run('Stop sending me reminders');U=ACCOUNTS['249900002'];const off=!remOn();U=ACCOUNTS['249900004'];setRem(false);at(2026,11,6,9);payReminder();const none=st.notes.length===0;setRem(true);U=ACCOUNTS['249900002'];setRem(true);return off&&none&&has(a.said,'turned off')||a.said}),
  check('US11 "включи напоминания" turns them on',()=>{U=ACCOUNTS['249900002'];setRem(false);run('включи напоминания');U=ACCOUNTS['249900002'];return remOn()}),
  check('US13 room card shows the nearest entrance and a map button',()=>{const a=run('Where is room F305?').said;return has(a,'Nearest entrance: south entrance')&&lastO.acts.length===1||a}),
+ check('Map: "where" questions about services and buildings reach the right place (EN / RU / KK, slang, transliteration)',()=>{
+   const W=[['Where is the library?','library'],['где библиотека','library'],['кітапхана қайда','library'],['kitaphana kaida','library'],
+     ['где столовая','canteen'],['где поесть','canteen'],['Where can I eat?','canteen'],['асхана қайда','canteen'],['asxana qaida','canteen'],
+     ['где магазин','market'],['where is the market','market'],['где распечатать','print'],['Where can I print?','print'],['қайда басып шығаруға болады','print'],
+     ['где медпункт','medical'],['медпункт қайда','medical'],['where is the medical point','medical'],['где поиграть в теннис','tennis'],['where can I play chess','tennis'],
+     ['как выйти на улицу','exit'],['How do I get out to the street?','exit'],['көшеге қалай шығамын','exit'],['где главный выход','exit'],
+     ['где общежитие','studenthouse'],['Where is Student House?','studenthouse'],['жатақхана қайда','studenthouse'],['Where is SDU Life?','sdulife'],['где школа журналистики','journalism']];
+   for(const [q,id] of W){mapped=null;const a=run(q);if(a.r.k!=='campus'||a.r.c.id!==id)return q+' → '+JSON.stringify(a.r.c||a.r.k);
+     lastO.acts[0][1]();if(mapped!==id||!has(a.said,trL('sv.'+id+'.w',detect(q)).split(',')[0]))return q+' → '+a.said}
+   return true}),
+ check('Map: answers in the language of the question with where the place is',()=>{const a=run('асхана қайда').said,b=run('где медпункт').said,c=run('Where can I print?').said;
+   return has(a,'F корпусына қарама-қарсы')&&has(b,'между корпусами G и H')&&has(c,'opposite block G')||a+' / '+b+' / '+c}),
+ check('Map: "где кабинет F305" → room card as before plus what is nearby (canteen opposite F)',()=>{const a=run('где кабинет F305').said;return has(a,'Корпус: F')&&has(a,'Этаж: 3')&&has(a,'Рядом: Столовая (напротив корпуса F')&&has(a,'Магазин')||a}),
+ check('Map: nearest entrance of blocks G and H is the main exit; D104 card names the Library and barrels B1, B2 nearby',()=>{const g=run('Where is G205?').said,h=run('Where is H203?').said,d=run('Where is D104?').said;
+   return has(g,'Nearest entrance: main exit, across the corridor from block G')&&has(h,'Nearest entrance: main exit opposite block G')&&has(d,'Library (north of block D')&&has(d,'barrels B1, B2 (opposite block D')||g+' / '+h+' / '+d}),
+ check('Map: barrels are placed as in reality: A at the Journalism school, B opposite D, C opposite E',()=>{const a=run('Where is A1?').said,b=run('где B2').said,c=run('C1 қайда').said;
+   return has(a,'next to the Journalism school')&&has(b,'напротив корпуса D')&&has(c,'E корпусына қарама-қарсы')||a+' / '+b+' / '+c}),
+ check('Map: a place that is not on the map (gym) is not invented',()=>{const a=run('Where is the gym?').said;return has(a,'not on the campus map')||a}),
+ check('Map: 10 places are knowledge base entries in three languages, with no opening hours and no phone',()=>{const e=PLACES.map(id=>st.kb.find(x=>x.id==='p-'+id));
+   return e.length===10&&e.every(x=>x&&x.kind==='place'&&LANGS.every(l=>kbData(x).q[l].length&&kbData(x).a[l])&&!/\d{1,2}:\d\d|\+?\d[\d ()-]{6,}\d/.test(JSON.stringify([kbData(x).q,kbData(x).a])))}),
+ check('Map: a description edited by staff in the knowledge base is what the bot answers',()=>{const e=st.kb.find(x=>x.id==='p-market'),v=kbData(e),old=v.a.en;v.a.en='Opposite block F. Test text.';
+   const a=run('where is the market').said;v.a.en=old;return has(a,'Test text')||a}),
  check('US13 every building has an entrance in three languages',()=>CAMPUS_BLDS.every(b=>LANGS.every(l=>!trL('cm.ent.'+b,l).startsWith('cm.')))),
  check('Language "мен грантпын ба" gets a Kazakh answer',()=>{const a=run('мен грантпын ба').said;return has(a,'Оқуыңыз')||a}),
  check('Test assistant: staff questions stay out of Analytics',()=>{const n=st.events.length;U=ACCOUNTS.staff;respond(route('I forgot my password'),'en','I forgot my password');return st.events.length===n}),
@@ -345,7 +383,8 @@ const QA=[
  check('US19 search by course: INF451 → its three books',()=>{const a=run('books for INF451').said;return has(a,'Clean Code')&&has(a,'The Pragmatic Programmer')&&has(a,'Refactoring')&&!has(a,'Statistics')||a}),
  check('US19 search by author and with a typo',()=>{const a=run('books by Sommerville').said,b=run('is clen code available').said;return has(a,'Software Engineering')&&has(b,'Clean Code')||a+' / '+b}),
  check('US19 a book not in the catalog',()=>{const a=run('is Harry Potter available in the library').said;return has(a,'couldn’t find “harry potter”')||has(a,"couldn't find “harry potter”")||a}),
- check('US19 "Where is the library?" still says it is not on the map (no invented location)',()=>{const r=run('Where is the library?').r;return r.k==='campus'&&r.c.k==='svc'}),
+ check('US19 "Where is the library?" → the library on the campus map (north of block D) with Show on map',()=>{mapped=null;const a=run('Where is the library?');lastO.acts[0][1]();
+   return a.r.k==='campus'&&a.r.c.id==='library'&&has(a.said,'north of block D')&&lastO.acts[0][0]==='Show on map'&&mapped==='library'||a.said}),
  check('US19 S2 "When do I need to return my books?" (249900001) → both books with due dates, overdue marked, hold explained',()=>{at(2026,11,13,10);const a=run('When do I need to return my books?','249900001').said;
    return has(a,'Clean Code — return by 25.11.2026')&&has(a,'Operating System Concepts — was due 30.10.2026 · Overdue by 14 days')&&has(a,'blocks your course registration')||a}),
  check('US19 S2 Kazakh: overdue marked "мерзімі өтіп кетті"',()=>{at(2026,11,13,10);const a=run('кітапты қашан қайтару керек','249900001').said;return has(a,'өтіп кетті')&&has(a,'25.11.2026')||a}),
@@ -354,11 +393,11 @@ const QA=[
  check('US19 visitor can search the catalog but "my books" asks to sign in',()=>{const a=run('Is Clean Code available?','visitor').said,b=run('my books','visitor').said;return has(a,'2 of 4')&&has(b,'sign in')&&!has(b,'return by')||a+' / '+b}),
  check('US19 staff in Test assistant: catalog and own loans',()=>{at(2026,11,13,10);const a=run('my books','staff').said,b=run('Is Clean Code available?','staff').said;return has(a,'Software Engineering — return by 27.11.2026')&&!has(a,'Clean Code')&&has(b,'2 of 4')||a+' / '+b}),
  check('US19 catalog has 12–15 books incl. Clean Code; available never above total',()=>CATALOG.length>=12&&CATALOG.length<=15&&CATALOG.some(b=>b.t==='Clean Code')&&CATALOG.every(b=>b.av<=b.n&&(b.av||b.next))),
- check('US20 S1 "The light in my room does not work" (249900001) → repair, Dormitory 1, room 312, then a request number',()=>{st.housing=seedHousing();st.notes=[];
-   const a=run('The light in my room does not work','249900001').said;if(!(has(a,'Type: Repair')&&has(a,'Dormitory: Dormitory 1')&&has(a,'Room: 312')&&lastO.acts[0][0]==='Confirm'))return a;
-   said=[];lastO.acts[0][1]();const b=said.join(),h=st.housing[st.housing.length-1];return has(b,'Request H-103 created: Repair · Dormitory 1, room 312')&&h.uid==='249900001'&&h.status==='submitted'||b}),
- check('US20 Russian: "в общаге не работает свет" → Ремонт, Общежитие №1, комната 312',()=>{const a=run('в общаге не работает свет','249900001').said;return has(a,'Тип: Ремонт')&&has(a,'Общежитие №1')&&has(a,'Комната: 312')||a}),
- check('US20 Kazakh: "жатақханада кран сынды" → Жөндеу, 1-жатақхана',()=>{const a=run('жатақханада кран сынды','249900001').said;return has(a,'Түрі: Жөндеу')&&has(a,'1-жатақхана')||a}),
+ check('US20 S1 "The light in my room does not work" (249900001) → repair, Student House Block 1, room 312, then a request number',()=>{st.housing=seedHousing();st.notes=[];
+   const a=run('The light in my room does not work','249900001').said;if(!(has(a,'Type: Repair')&&has(a,'Dormitory: Student House, Block 1')&&has(a,'Room: 312')&&lastO.acts[0][0]==='Confirm'))return a;
+   said=[];lastO.acts[0][1]();const b=said.join(),h=st.housing[st.housing.length-1];return has(b,'Request H-103 created: Repair · Student House, Block 1, room 312')&&h.uid==='249900001'&&h.status==='submitted'||b}),
+ check('US20 Russian: "в общаге не работает свет" → Ремонт, Student House, блок 1, комната 312',()=>{const a=run('в общаге не работает свет','249900001').said;return has(a,'Тип: Ремонт')&&has(a,'Student House, блок 1')&&has(a,'Комната: 312')||a}),
+ check('US20 Kazakh: "жатақханада кран сынды" → Жөндеу, Student House, 1-блок',()=>{const a=run('жатақханада кран сынды','249900001').said;return has(a,'Түрі: Жөндеу')&&has(a,'Student House, 1-блок')||a}),
  check('US20 the type is suggested and can be changed (room change)',()=>{const a=run('I want to change my room','249900001').said;return has(a,'Type: Room change')&&lastO.acts.some(x=>x[0]==='Change type: Repair')||a}),
  check('US20 S2 staff sets "in progress" → status and last update; the student is notified',()=>{st.housing=seedHousing();st.notes=[];run('The light in my room does not work','249900001');lastO.acts[0][1]();
    const ok=setHStatus(103,'progress'),nt=st.notes.find(x=>x.uid==='249900001'&&x.type==='hreq'&&x.s==='progress'),a=run('What is the status of my repair request?','249900001').said;
@@ -398,7 +437,9 @@ const QA=[
    return true}),
  check('US21 S2 an event that ended today (17:00–18:30, asked at 20:00) is not upcoming',()=>{at(2026,11,21,20);const a=run('events today').said;return !has(a,'Guest Lecture: AI')&&has(a,'No campus events')||a}),
  check('US21 S2 asking about a past event says it already took place, without a Register button',()=>{at(2026,11,21,10);const a=run('When is the quiz night?').said;return has(a,'already took place')&&!lastO.acts||a}),
- check('US21 S3 the place of every event and club is a room of the campus map',()=>kbKind('event').concat(kbKind('club')).every(e=>CAMPUS.has(kbData(e).x.place))),
+ check('US21 S3 the place of every event and club is on the campus map (a room, barrel, service or separate building)',()=>kbKind('event').concat(kbKind('club')).every(e=>{const p=kbData(e).x.place;return CAMPUS.has(p)||PLACES.includes(p)})),
+ check('US21 some events take place in real places: the Library, SDU Life and the barrels',()=>{const ps=kbKind('event').map(e=>kbData(e).x.place);return ps.includes('library')&&ps.includes('sdulife')&&ps.some(p=>/^[ABC][12]$/.test(p))}),
+ check('US21 an event in a place shows its name and where it is, and Show on map opens it',()=>{at(2026,11,21,10);mapped=null;run('When is the career fair?');lastO.acts[1][1]();return lastO.list.includes('Place: SDU Life (south of Student House)')&&mapped==='sdulife'||lastO.list.join(' | ')}),
  check('US21 8–10 events: some this week, some later, 1–2 already past',()=>{at(2026,11,21,10);const now=clock(),xs=kbKind('event').map(e=>kbData(e).x),wk=addDays(today0(),7);
    const past=xs.filter(x=>evEnd(x)<=now).length,week=xs.filter(x=>evEnd(x)>now&&evStart(x)<wk).length,later=xs.filter(x=>evStart(x)>=wk).length;
    return xs.length>=8&&xs.length<=10&&past>=1&&past<=2&&week>=3&&later>=2||[xs.length,past,week,later].join()}),

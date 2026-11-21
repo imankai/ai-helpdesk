@@ -218,12 +218,12 @@
     <section class="view page" id="v-campus" hidden>
       <div class="wrap">
         <h2 data-i18n="cm.title">Campus map</h2>
-        <p class="hint" data-i18n="cm.hint">A schematic layout: the positions of the buildings are illustrative, not an exact map.</p>
+        <p class="hint" data-i18n="cm.hint">Schematic layout, not to scale: the order of the blocks and services follows the real campus. Click a block, barrel or place for details.</p>
         <div class="cmwrap">
           <div class="cmmap" id="cm-svg"></div>
           <div class="cmside">
             <form class="cmform" id="cm-form">
-              <input id="cm-q" autocomplete="off" data-i18n-ph="cm.ph" placeholder="Room number, e.g. F305" aria-label="Room number">
+              <input id="cm-q" autocomplete="off" data-i18n-ph="cm.ph" placeholder="Room or place, e.g. F305, Library" aria-label="Room or place">
               <button type="submit" class="primary sm" data-i18n="cm.find">Find</button>
             </form>
             <ul class="cmlegend" data-i18n-aria="cm.legend" aria-label="Room types">
@@ -231,6 +231,13 @@
               <li><i class="sw lecture"></i><span data-i18n="cm.t.lecture">Lecture hall</span></li>
               <li><i class="sw office"></i><span data-i18n="cm.t.office">Teacher's office</span></li>
               <li><i class="sw study"></i><span data-i18n="cm.t.study">Study room</span></li>
+            </ul>
+            <ul class="cmlegend" data-i18n-aria="cm.lg" aria-label="Map legend">
+              <li><i class="sw blk"></i><span data-i18n="cm.lg.block">Block of the main building</span></li>
+              <li><i class="sw lecture round"></i><span data-i18n="cm.lg.lecture">Lecture hall (barrel)</span></li>
+              <li><i class="sw svc"></i><span data-i18n="cm.lg.svc">Service</span></li>
+              <li><i class="sw ent"></i><span data-i18n="cm.lg.ent">Entrance / exit</span></li>
+              <li><i class="sw oth"></i><span data-i18n="cm.lg.oth">Separate building</span></li>
             </ul>
             <div id="cm-panel" aria-live="polite"></div>
           </div>

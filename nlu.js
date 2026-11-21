@@ -175,7 +175,7 @@ const KK_STEMS=['тиркел','купиясоз','кенесши','отиним
 const RU_WORDS=new Set('я мне меня как где что когда хочу это на не почему какой какая можно нужно надо у в и'.split(' '));
 /* Kazakh typed in Latin letters ("kitap bar ma"): at least one clearly Kazakh word and two Kazakh words in all; "bar", "ma", "me" alone are English too */
 const KK_LAT=new Set(('kitap kitaptarym kitapty kitaptar kerek kaida qaida kashan qashan kansha qansha menin sabak bagalarym bagalar kandai qandai zhatakhana zhataqhana zhatakhanada zhataqhanada syndy bolme bolmemde rakhmet salem bar ma me ba be '+
-  'osy aptadagy aptada sharalar oqytushy okytushy oqytushym okytushym oqytushynyn okytushynyn poshtasy uiirme uiirmesi uyirme uyirmesi bagdarlamalau zhumada').split(' '));
+  'kitaphana asxana ashana osy aptadagy aptada sharalar oqytushy okytushy oqytushym okytushym oqytushynyn okytushynyn poshtasy uiirme uiirmesi uyirme uyirmesi bagdarlamalau zhumada').split(' '));
 const KK_LAT_WEAK=new Set(['bar','ma','me','ba','be']);
 function isKazakh(t){
   if(/[әғқңөұүһі]/i.test(t))return true;

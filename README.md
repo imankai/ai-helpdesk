@@ -17,7 +17,9 @@ Developed by a student team as part of INF451.
 - Visitor mode ("Continue as visitor"): general questions, FAQ and the campus map without an account; visitor ratings are stored anonymously, personal features ask the visitor to sign in
 - Personal answers from the signed-in student's data: course registration check (holds and prerequisites), tuition balance and state grant status, advisor appointments
 - FAQ page with search; the chat bot uses the same answers
-- Campus map and room finder: ask "Where is room F305?" (also in Kazakh and Russian) and get building, floor, room type, nearest entrance and a hint; for a number without a building ("room 305") the bot asks which building, and for a near miss ("H1") it suggests the existing room; a Campus map page shows the buildings D–I and barrels A1–C2 and highlights the chosen place
+- Campus map and room finder: ask "Where is room F305?" (also in Kazakh and Russian) and get building, floor, room type, nearest entrance and a hint; for a number without a building ("room 305") the bot asks which building, and for a near miss ("H1") it suggests the existing room; the room card also says what is nearby ("Canteen, opposite block F")
+- Campus map page: our own simplified drawing of the real campus layout (schematic, not to scale): the main corridor from south to north with blocks I, H, G, F, E, D and the Library north of D; barrels B1, B2 opposite D and C1, C2 opposite E; the Canteen and Market opposite F; the Print center, Table tennis & chess and the Main exit opposite G; the Medical point in the corridor between G and H; Student House west of the main building, SDU Life south of it, the Journalism school with barrels A1, A2 at the north end. Labels in three languages, a legend (block, lecture hall, service, entrance, separate building); a click on a block, barrel or place opens its card, and the search field takes a room number or a place name
+- Campus places in the chat: "Where is the library?", "где столовая", "где поесть", "где распечатать", "где медпункт", "асхана қайда", "кітапхана қайда", "где поиграть в теннис", "как выйти на улицу" → where the place is and **Show on map**; the descriptions are knowledge base entries; no opening hours are shown because the map has none; a place that is not on the map (gym) is not invented
 - Similar-question suggestions while typing in the chat, and a "Help Desk is typing…" indicator
 - Help tickets with status tracking, staff replies and a 1–5 star rating of resolved tickets
 - Advisor appointment booking with reminders
@@ -27,7 +29,7 @@ Developed by a student team as part of INF451.
 - Attendance in the chat ("How many classes have I missed?", "пропуски", "сабақ босаттым", "сколько я пропустил по INF451"): absences, limit and absences left for every current course or for one
 - Absence warnings in the notification bell: when 2 or fewer absences are left before the limit (with the course and the limit), and a separate warning when the limit is exceeded
 - Library: search the catalog by title, author or course ("Is 'Clean Code' available?", "книги по INF451", "kitap bar ma") for available copies and the shelf, or "not available" with the nearest return date; "My books" lists the user's loans with due dates and marks overdue ones, and explains that an overdue book blocks registration (library hold); visitors can search the catalog, "My books" needs a sign-in
-- Dormitory requests: "The light in my room does not work", "в общаге не работает свет", "жатақханада кран сынды" → the bot suggests a type (repair, room change, other), fills in the student's dormitory and room, asks to confirm and gives a request number (H-…); "What is the status of my repair request?" shows the status (Submitted → In progress → Done) and the last update; a student who does not live in a dormitory is told why and gets the Housing Office contacts; "wifi в общаге" still answers about Wi-Fi
+- Dormitory requests: "The light in my room does not work", "в общаге не работает свет", "жатақханада кран сынды" → the bot suggests a type (repair, room change, other), fills in the student's Student House block and room, asks to confirm and gives a request number (H-…); "What is the status of my repair request?" shows the status (Submitted → In progress → Done) and the last update; a student who does not live in a dormitory is told why and gets the Housing Office contacts; "wifi в общаге" still answers about Wi-Fi
 - Office directory: room on the campus map, hours, phone and email for every office, with "Closed now, opens at…" outside working hours
 - Campus events ("What events are on campus this week?", "события на этой неделе", "осы аптадағы іс-шаралар", "что будет в пятницу", "When is the hackathon?"): event cards with date, time and place from the campus map, a **Register** button (registration inside the site with a confirmation; a visitor's registration lasts until the page is closed) and **Show on map**; demo dates are counted from today, so there are always events this week and later, and past events are never shown as upcoming
 - Student clubs ("Is there a programming club?", "есть ли клуб программирования", "бағдарламалау үйірмесі бар ма"): description, meeting day, time and place, contact person with a name@university.demo email; a club that does not exist gets "not found" and the list of clubs
@@ -41,7 +43,7 @@ Developed by a student team as part of INF451.
 - Ticket drawer with the conversation, status and priority controls, and reply field
 - Review queue: answers rated "Not helpful" with the question, answer, comment and time, and a "Mark reviewed" button
 - Analytics with a period filter (Today / Last 7 days / Last 30 days / All time): questions asked, share of unanswered questions, tickets, escalations to staff, average rating, top 5 questions and an "Unanswered & not helpful" list with a "Create FAQ entry" button; only aggregated data, no student names or IDs
-- Knowledge base: FAQ, office, event, club and teacher entries with search, Add / Edit / Archive; events, clubs and teachers have their own fields (date and time, place from the campus map, contact person, courses, office, office hours), and a place outside the map, an email not of the form name@university.demo or a phone number blocks publishing; an entry is published only when the question and the answer are filled in English, Kazakh and Russian; every change is kept as a version with author and date, with "Roll back"; the bot and the FAQ page use the published entries right away
+- Knowledge base: FAQ, office, event, club, teacher and campus place entries with search, Add / Edit / Archive; events, clubs and teachers have their own fields (date and time, place from the campus map, contact person, courses, office, office hours), and a place outside the map, an email not of the form name@university.demo or a phone number blocks publishing; an entry is published only when the question and the answer are filled in English, Kazakh and Russian; every change is kept as a version with author and date, with "Roll back"; the bot and the FAQ page use the published entries right away
 - Staff sections open by address (for example `#analytics`); students and visitors see "Access denied" and no data
 - Housing requests: every dormitory request with number, student, dormitory, room, type, description and last update; changing the status notifies the student
 - Announcements: publish or unpublish a notice shown to students
@@ -93,10 +95,10 @@ Password for every account: `demo123`
 
 | Login | Role | Notes |
 |---|---|---|
-| `249900001` | Student | Tuition with an unpaid balance, library hold on registration (2 library books, one overdue); GPA 3.12, 128 credits; Dormitory 1, room 312 |
+| `249900001` | Student | Tuition with an unpaid balance, library hold on registration (2 library books, one overdue); GPA 3.12, 128 credits; Student House, Block 1, room 312 |
 | `249900002` | Student | Studies on a state grant, no balance, no holds; GPA 3.67, 134 credits; 4 of 6 absences in INF451 (absence warning); does not live in a dormitory |
-| `249900003` | Student | Tuition paid in full, no holds; GPA 2.85, 121 credits; Dormitory 2, room 105 (repair request in progress) |
-| `249900004` | Student | Tuition with an unpaid balance, no holds; GPA 3.40, 126 credits; Dormitory 2, room 418 |
+| `249900003` | Student | Tuition paid in full, no holds; GPA 2.85, 121 credits; Student House, Block 2, room 105 (repair request in progress) |
+| `249900004` | Student | Tuition with an unpaid balance, no holds; GPA 3.40, 126 credits; Student House, Block 2, room 418 |
 | `staff` | Staff | Ticket board, review queue, analytics, knowledge base, announcements, attendance (demo), housing requests |
 
 The login screen also lists these accounts; click one to fill in the login. **Continue as visitor** opens the chat without an account.
@@ -115,7 +117,7 @@ Notes:
 
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 210 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 225 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
 
 ## Project structure
 

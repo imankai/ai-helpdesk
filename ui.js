@@ -54,66 +54,108 @@ function sync(){
   renderStaff();renderReview();renderAnalytics();renderKb();renderFaq();renderBell();renderAnn();renderAtt();renderHousing();renderBanners();renderCampus();
 }
 
-/* ---------- campus map page: schematic SVG, colours by room type, selection highlights building / barrel and floor ---------- */
-let campus={b:null,room:null,f:null,nf:null};
+/* ---------- campus map page: our own simplified drawing of the real layout (north at the top, not to scale).
+   The main corridor runs south to north with blocks I → D and the Library on its east side; across it (west) are the barrels B, C,
+   the services opposite F and G and the Main exit; the Medical point is in the corridor between G and H; Student House, SDU Life
+   and the Journalism school (with barrels A1, A2) are separate buildings. A click on a block, barrel or place opens its card. ---------- */
+let campus={b:null,room:null,f:null,nf:null,svc:null};
 function campusSelect(id){
+  if(PLACES.includes(id)){campus={b:null,room:null,f:null,nf:null,svc:id};return}
   const r=CAMPUS.get(id);
-  campus=r?{b:r.b,room:id,f:r.f,nf:null}:{b:null,room:null,f:null,nf:id};
+  campus=r?{b:r.b,room:id,f:r.f,nf:null,svc:null}:{b:null,room:null,f:null,nf:id,svc:null};
 }
 function openMap(id){
   if(id)campusSelect(id);
-  $('cm-q').value=id||'';
+  $('cm-q').value=id?(PLACES.includes(id)?tr('sv.'+id):id):'';
   renderCampus();show('campus');
 }
+/* centred label, wrapped to two lines when it is long (Kazakh and Russian names) */
+function svgLabel(x,y,text,cls,max){const w=String(text).split(' ');let a=text,b='';
+  if(text.length>max&&w.length>1){let i=1;while(i<w.length&&w.slice(0,i+1).join(' ').length<=max)i++;a=w.slice(0,i).join(' ');b=w.slice(i).join(' ')}
+  return '<text class="'+cls+'" x="'+x+'" y="'+(b?y-7:y)+'" text-anchor="middle">'+esc(a)+(b?'<tspan x="'+x+'" dy="15">'+esc(b)+'</tspan>':'')+'</text>'}
+/* geometry: west column (separate buildings), west side (barrels and services), corridor, blocks */
+const CMG={W:760,H:960,ox:10,ow:140,wx:168,ww:194,cx:368,cw:50,bx:426,bw:324,bh:100,
+  by:{D:178,E:288,F:398,G:508,H:648,I:758}};
 function campusSvg(){
-  const bw=150,bh=146,x0=250,y0=24,gx=170,gy=166;
-  const roomsOf=(b,f)=>[...CAMPUS.values()].filter(r=>r.b===b&&r.f===f);
-  let s='<svg viewBox="0 0 770 350" class="campus" role="img" aria-label="'+esc(tr('cm.title'))+'">';
-  /* barrels */
-  s+='<rect class="zone" x="6" y="6" width="226" height="238" rx="6"/><text class="zt" x="18" y="28">'+tr('cm.barrels')+'</text>';
-  ['A1','A2','B1','B2','C1','C2'].forEach((id,i)=>{
-    const x=16+(i%2)*108,y=44+Math.floor(i/2)*66;
-    s+='<g class="brl'+(campus.room===id?' sel':'')+'" data-r="'+id+'" tabindex="0" role="button" aria-label="'+id+'"><rect class="seg lecture" x="'+x+'" y="'+y+'" width="96" height="54" rx="27"/><text class="bt" x="'+(x+48)+'" y="'+(y+33)+'" text-anchor="middle">'+id+'</text></g>'});
-  /* buildings D–I, three floors each; a band is split into segments by room type */
-  CAMPUS_BLDS.forEach((b,i)=>{
-    const x=x0+(i%3)*gx,y=y0+Math.floor(i/3)*gy,sel=campus.b===b&&!campus.room;
-    s+='<g class="bld'+(campus.b===b?' sel':'')+'" data-b="'+b+'" tabindex="0" role="button" aria-label="'+esc(tr('cm.building'))+' '+b+'"><rect class="frame" x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="6"/>'+
-      '<text class="bl-t" x="'+(x+12)+'" y="'+(y+21)+'">'+b+'</text>';
-    if(b==='H')s+='<rect class="seg lecture" x="'+(x+56)+'" y="'+(y+6)+'" width="86" height="18" rx="3"/><text class="tab-t" x="'+(x+99)+'" y="'+(y+19)+'" text-anchor="middle">H01–H03</text>';
+  const g=CMG,roomsOf=(b,f)=>[...CAMPUS.values()].filter(r=>r.b===b&&r.f===f);
+  const place=(id,x,y,w,h,cls,max)=>'<g class="plc '+cls+(campus.svc===id?' sel':'')+'" data-s="'+id+'" tabindex="0" role="button" aria-label="'+esc(tr('sv.'+id))+'">'+
+    '<rect class="pf" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="5"/>'+svgLabel(x+w/2,y+h/2+5,tr(PLACE_SHORT.includes(id)?'sv.'+id+'.s':'sv.'+id),'pt',max||Math.floor(w/7.5))+'</g>';
+  const barrel=(id,x,y)=>'<g class="brl'+(campus.room===id?' sel':'')+'" data-r="'+id+'" tabindex="0" role="button" aria-label="'+id+'"><rect class="seg lecture" x="'+x+'" y="'+y+'" width="90" height="50" rx="25"/><text class="bt" x="'+(x+45)+'" y="'+(y+31)+'" text-anchor="middle">'+id+'</text></g>';
+  let s='<svg viewBox="0 0 '+g.W+' '+g.H+'" class="campus" role="img" aria-label="'+esc(tr('cm.title'))+'">';
+  /* north arrow and the corridor */
+  s+='<g class="na"><path d="M60 300 l-9 22 l9 -6 l9 6 z"/><text x="60" y="340" text-anchor="middle">'+esc(tr('cm.N'))+'</text></g>';
+  s+='<rect class="corr" x="'+g.cx+'" y="14" width="'+g.cw+'" height="'+(g.by.I+g.bh-14)+'" rx="4"/>';
+  s+='<text class="ct" transform="translate('+(g.cx+g.cw/2+5)+' 120) rotate(90)">'+esc(tr('cm.corr'))+'</text>';
+  /* north end: Journalism school with barrels A1, A2 */
+  s+=place('journalism',g.ox,14,g.ow,70,'oth',17);
+  s+=barrel('A1',g.wx+2,24)+barrel('A2',g.wx+g.ww-92,24);
+  /* Library: a separate three-storey building north of block D */
+  s+=place('library',g.bx,96,g.bw,70,'svc lib');
+  /* blocks D–I, three floors each; a floor band is split into segments by room type */
+  CAMPUS_BLDS.forEach(b=>{
+    const x=g.bx,y=g.by[b],bw=g.bw;
+    s+='<g class="bld'+(campus.b===b?' sel':'')+'" data-b="'+b+'" tabindex="0" role="button" aria-label="'+esc(tr('cm.building'))+' '+b+'"><rect class="frame" x="'+x+'" y="'+y+'" width="'+bw+'" height="'+g.bh+'" rx="6"/>'+
+      '<text class="bl-t" x="'+(x+12)+'" y="'+(y+19)+'">'+b+'</text>';
+    if(b==='H')s+='<rect class="seg lecture" x="'+(x+bw-96)+'" y="'+(y+4)+'" width="90" height="17" rx="3"/><text class="tab-t" x="'+(x+bw-51)+'" y="'+(y+16)+'" text-anchor="middle">H01–H03</text>';
     [3,2,1].forEach((f,k)=>{
-      const fy=y+32+k*38,rooms=roomsOf(b,f);let cx=x+22;const inner=bw-30;
-      s+='<g class="fl'+(campus.b===b&&campus.f===f?' sel':'')+'"><text class="fl-n" x="'+(x+10)+'" y="'+(fy+21)+'">'+f+'</text>';
+      const fy=y+26+k*24,rooms=roomsOf(b,f);let cx=x+24;const inner=bw-32;
+      s+='<g class="fl'+(campus.b===b&&campus.f===f?' sel':'')+'"><text class="fl-n" x="'+(x+10)+'" y="'+(fy+15)+'">'+f+'</text>';
       CAMPUS_TYPES.forEach(t=>{const n=rooms.filter(r=>r.t===t).length;if(!n)return;
-        const w=inner*n/rooms.length;s+='<rect class="seg '+t+'" x="'+cx.toFixed(1)+'" y="'+fy+'" width="'+Math.max(w-2,2).toFixed(1)+'" height="30" rx="3"/>';cx+=w});
-      s+='<rect class="fb" x="'+(x+4)+'" y="'+(fy-3)+'" width="'+(bw-8)+'" height="36" rx="4"/></g>'});
+        const w=inner*n/rooms.length;s+='<rect class="seg '+t+'" x="'+cx.toFixed(1)+'" y="'+fy+'" width="'+Math.max(w-2,2).toFixed(1)+'" height="21" rx="3"/>';cx+=w});
+      s+='<rect class="fb" x="'+(x+4)+'" y="'+(fy-2)+'" width="'+(bw-8)+'" height="25" rx="4"/></g>'});
     s+='</g>'});
+  /* across the corridor: barrels B (opposite D) and C (opposite E) */
+  s+=barrel('B1',g.wx+2,g.by.D+25)+barrel('B2',g.wx+g.ww-92,g.by.D+25);
+  s+=barrel('C1',g.wx+2,g.by.E+25)+barrel('C2',g.wx+g.ww-92,g.by.E+25);
+  /* opposite F: Canteen and Market; opposite G: Print center, Table tennis & chess, Main exit */
+  s+=place('canteen',g.wx,g.by.F+10,118,80,'svc')+place('market',g.wx+124,g.by.F+10,g.ww-124,80,'svc',9);
+  s+=place('print',g.wx,g.by.G+6,95,48,'svc',12)+place('tennis',g.wx+99,g.by.G+6,g.ww-99,48,'svc',12);
+  s+=place('exit',g.wx,g.by.G+60,g.ww,36,'ent');
+  s+='<path class="exa" d="M'+g.wx+' '+(g.by.G+78)+' H'+(g.ox+g.ow-34)+'"/><path class="exh" d="M'+(g.ox+g.ow-34)+' '+(g.by.G+78)+' l12 -8 v16 z"/>'+
+    '<text class="st" x="'+(g.ox+g.ow-40)+'" y="'+(g.by.G+70)+'" text-anchor="end">'+esc(tr('cm.street'))+'</text>';
+  /* Medical point: in the corridor between G and H */
+  const my=g.by.G+g.bh+6;
+  s+='<g class="plc med'+(campus.svc==='medical'?' sel':'')+'" data-s="medical" tabindex="0" role="button" aria-label="'+esc(tr('sv.medical'))+'">'+
+    '<rect class="pf" x="'+(g.cx+3)+'" y="'+my+'" width="'+(g.cw-6)+'" height="28" rx="4"/><path class="cross" d="M'+(g.cx+g.cw/2-3)+' '+(my+6)+'h6v5h5v6h-5v5h-6v-5h-5v-6h5z"/>'+
+    '<text class="mt" x="'+(g.bx+6)+'" y="'+(my+19)+'">'+esc(tr('sv.medical'))+'</text></g>';
+  /* west of the main building: Student House, and SDU Life to the south */
+  s+=place('studenthouse',g.ox,g.by.H-10,g.ow,130,'oth',16);
+  s+=place('sdulife',g.ox,g.by.I+30,g.ow,80,'oth',16);
+  s+='<text class="scale" x="'+(g.W-10)+'" y="'+(g.H-14)+'" text-anchor="end">'+esc(tr('cm.scale'))+'</text>';
   return s+'</svg>'}
+/* places whose map label is a shorter form of the name */
+const PLACE_SHORT=['tennis','journalism'];
 function renderCampus(){
   $('cm-svg').innerHTML=campusSvg();
   const p=$('cm-panel'),chip=r=>'<button type="button" class="rm '+r.t+'" data-r="'+r.id+'">'+esc(r.id)+'</button>';
   const typeName=r=>tr('cm.t.'+r.t)+(r.barrel?' ('+tr('cm.t.barrel')+')':'');
+  if(campus.svc){const id=campus.svc;
+    p.innerHTML='<div class="cmcard svc"><h3>'+esc(tr('sv.'+id))+'</h3><dl><dt>'+tr('cm.where')+'</dt><dd>'+esc(tr('sv.'+id+'.w'))+'</dd></dl><p>'+esc(placeDesc(id,ui))+'</p></div>';return}
   if(campus.nf){p.innerHTML='<div class="cmcard nf"><p>'+esc(tr('cm.nf',{r:campus.nf}))+'</p></div>';return}
   if(campus.room){const r=CAMPUS.get(campus.room);
-    const hint=r.barrel?tr('cm.hint.barrel',{id:r.id}):r.f?tr('cm.hint.floor',{b:r.b,f:r.f,r:floorSummary(r.b,r.f,ui)}):tr('cm.hint.nofloor',{id:r.id,b:r.b});
+    const hint=r.barrel?tr('cm.hint.barrel',{id:r.id,w:tr('cm.br.'+r.id[0])}):r.f?tr('cm.hint.floor',{b:r.b,f:r.f,r:floorSummary(r.b,r.f,ui)}):tr('cm.hint.nofloor',{id:r.id,b:r.b});
     p.innerHTML='<div class="cmcard"><h3>'+esc(r.id)+'</h3><dl>'+
       (r.b?'<dt>'+tr('cm.building')+'</dt><dd>'+r.b+'</dd>':'')+(r.f?'<dt>'+tr('cm.floor')+'</dt><dd>'+r.f+'</dd>':'')+(r.b?'<dt>'+tr('cm.ent')+'</dt><dd>'+tr('cm.ent.'+r.b)+'</dd>':'')+
-      '<dt>'+tr('cm.type')+'</dt><dd><i class="sw '+r.t+'"></i> '+esc(typeName(r))+'</dd></dl><p>'+esc(hint)+'</p></div>';return}
+      '<dt>'+tr('cm.type')+'</dt><dd><i class="sw '+r.t+'"></i> '+esc(typeName(r))+'</dd></dl><p>'+esc(hint)+'</p>'+(r.b&&NEAR[r.b]?'<p>'+esc(tr('cm.near',{l:nearText(r.b,ui)}))+'</p>':'')+'</div>';return}
   if(campus.b){const rooms=[...CAMPUS.values()].filter(r=>r.b===campus.b);
     const nofl=rooms.filter(r=>!r.f);
-    p.innerHTML='<div class="cmcard"><h3>'+tr('cm.building')+' '+campus.b+'</h3><p>'+tr('cm.ent')+': '+tr('cm.ent.'+campus.b)+'</p>'+
+    p.innerHTML='<div class="cmcard"><h3>'+tr('cm.building')+' '+campus.b+'</h3><p>'+tr('cm.ent')+': '+tr('cm.ent.'+campus.b)+'</p>'+(NEAR[campus.b]?'<p>'+esc(tr('cm.near',{l:nearText(campus.b,ui)}))+'</p>':'')+
       [3,2,1].map(f=>{const rs=rooms.filter(r=>r.f===f);return rs.length?'<div class="cmfl"><b>'+tr('cm.fl',{n:f})+'</b><div class="chips">'+rs.map(chip).join('')+'</div></div>':''}).join('')+
       (nofl.length?'<div class="cmfl"><b>'+tr('cm.p.lecture').replace(/^./,c=>c.toUpperCase())+'</b><div class="chips">'+nofl.map(chip).join('')+'</div></div>':'')+'</div>';return}
   p.innerHTML='<div class="cmcard"><p>'+esc(tr('cm.pick'))+'</p></div>';
 }
-$('cm-svg').onclick=e=>{const g=e.target.closest('[data-r],[data-b]');if(!g)return;
-  if(g.dataset.r)campusSelect(g.dataset.r);else campus={b:g.dataset.b,room:null,f:null,nf:null};
-  $('cm-q').value=g.dataset.r||'';renderCampus()};
-$('cm-svg').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.closest&&e.target.closest('[data-r],[data-b]')&&e.target.closest('[data-r],[data-b]').dispatchEvent(new MouseEvent('click',{bubbles:true}))}};
+$('cm-svg').onclick=e=>{const g=e.target.closest('[data-r],[data-b],[data-s]');if(!g)return;
+  if(g.dataset.s)campusSelect(g.dataset.s);
+  else if(g.dataset.r)campusSelect(g.dataset.r);else campus={b:g.dataset.b,room:null,f:null,nf:null,svc:null};
+  $('cm-q').value=g.dataset.s?tr('sv.'+g.dataset.s):g.dataset.r||'';renderCampus()};
+$('cm-svg').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const g=e.target.closest&&e.target.closest('[data-r],[data-b],[data-s]');if(g){e.preventDefault();g.dispatchEvent(new MouseEvent('click',{bubbles:true}))}}};
 $('cm-panel').onclick=e=>{const b=e.target.closest('[data-r]');if(b){campusSelect(b.dataset.r);$('cm-q').value=b.dataset.r;renderCampus()}};
+/* the search field takes a room number or a place name in any language ("F305", "library", "асхана") */
 $('cm-form').onsubmit=e=>{e.preventDefault();
   const v=$('cm-q').value.trim();
-  if(!v){campus={b:null,room:null,f:null,nf:null};renderCampus();return}
-  const t=roomTokens(v,true);campusSelect(t[0]||v.toUpperCase());renderCampus()};
+  if(!v){campus={b:null,room:null,f:null,nf:null,svc:null};renderCampus();return}
+  const t=roomTokens(v,true),pl=PLACES.find(id=>LANGS.some(l=>trL('sv.'+id,l).toLowerCase()===v.toLowerCase()))||placeOf(v);
+  campusSelect(t[0]||pl||v.toUpperCase());renderCampus()};
 
 /* ---------- rating of resolved tickets ---------- */
 function rateBlock(t){
@@ -284,9 +326,9 @@ function renderKb(){
 }
 const LANG_NAME={en:'English',kk:'Қазақша',ru:'Русский'};
 /* events, clubs and teachers (US21, US22) have extra fields (x); office hours and weekdays are typed with English day names */
-const KB_KINDS=['faq','office','event','club','teacher'];
+const KB_KINDS=['faq','office','event','club','teacher','place'];
 const WD_EN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],WD_ORDER=[1,2,3,4,5,6,0];
-const KB_KDEF={event:['life','ev'],club:['life','clubs'],teacher:['acad','fac']};    /* category and source suggested for a new entry of this type */
+const KB_KDEF={event:['life','ev'],club:['life','clubs'],teacher:['acad','fac'],place:['campus','map']};    /* category and source suggested for a new entry of this type */
 const MAIL_RE=/^[a-z0-9._-]+@university\.demo$/i,TIME_RE=/^\d{2}:\d{2}$/,PHONE_RE=/\+?\d[\d ()-]{6,}\d/;
 const ohLine=oh=>oh.map(h=>WD_EN[h.d]+' '+h.a+'-'+h.b).join(', ');
 /* short summary of the extra fields for the entry list and the version history */
@@ -296,7 +338,7 @@ function kbXText(kind,x){
   if(kind==='teacher')return x.courses.join(', ')+' · '+x.room+' · '+x.mail+' · '+ohLine(x.oh);
   return ''}
 function kbXFields(kind,x){const f=(lab,html)=>'<label class="fld inline">'+tr(lab)+html+'</label>',v=s=>' value="'+esc(s||'')+'"';
-  const rooms=t=>[...CAMPUS.values()].filter(r=>!t||r.t===t).map(r=>'<option value="'+r.id+'">').join('');
+  const rooms=t=>[...CAMPUS.values()].filter(r=>!t||r.t===t).map(r=>'<option value="'+r.id+'">').join('')+(t?'':PLACES.map(id=>'<option value="'+id+'">'+esc(tr('sv.'+id))+'</option>').join(''));
   const g=(k,html)=>'<fieldset class="kbxf" data-k="'+k+'"'+(k===kind?'':' hidden')+'><div class="selrow">'+html+'</div></fieldset>';
   const ex=k=>kind===k?x||{}:{};
   return '<datalist id="kb-rooms">'+rooms()+'</datalist><datalist id="kb-offices">'+rooms('office')+'</datalist>'+
@@ -342,15 +384,16 @@ function kbForm(f){const d={kind:f.kind.value,cat:f.cat.value,src:f.src.value,q:
 /* extra fields of an event, club or teacher -> {x} or {err: message key}. Places come from the campus map only; no phone numbers anywhere */
 function kbX(f,d,cur){const k=d.kind,val=n=>f[n].value.trim(),up=n=>val(n).toUpperCase();
   if(LANGS.some(l=>PHONE_RE.test(d.q[l].join(' ')+' '+d.a[l]))||(k==='club'&&PHONE_RE.test(val('x-who'))))return{err:'kb.e.phone'};
-  if(k==='event'){const date=val('x-date'),a=val('x-a'),b=val('x-b'),place=up('x-place');
+  const where=n=>{const v=val(n),l=v.toLowerCase();return PLACES.includes(l)?l:v.toUpperCase()},onMap=id=>CAMPUS.has(id)||PLACES.includes(id);
+  if(k==='event'){const date=val('x-date'),a=val('x-a'),b=val('x-b'),place=where('x-place');
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!TIME_RE.test(a)||!TIME_RE.test(b)||a>=b)return{err:'kb.e.date'};
-    if(!CAMPUS.has(place))return{err:'kb.e.place'};
+    if(!onMap(place))return{err:'kb.e.place'};
     /* a date that was not changed keeps its "relative to today" rule */
     const keep=cur&&cur.x&&!cur.x.date&&isoDay(evDay(cur.x))===date;
     return{x:Object.assign(keep?(cur.x.wd!=null?{wd:cur.x.wd}:{rel:cur.x.rel||0}):{date},{a,b,place})}}
-  if(k==='club'){const a=val('x-ca'),b=val('x-cb'),place=up('x-cplace'),who=val('x-who'),mail=val('x-mail').toLowerCase();
+  if(k==='club'){const a=val('x-ca'),b=val('x-cb'),place=where('x-cplace'),who=val('x-who'),mail=val('x-mail').toLowerCase();
     if(!TIME_RE.test(a)||!TIME_RE.test(b)||a>=b)return{err:'kb.e.time'};
-    if(!CAMPUS.has(place))return{err:'kb.e.place'};
+    if(!onMap(place))return{err:'kb.e.place'};
     if(!who)return{err:'kb.e.who'};
     if(!MAIL_RE.test(mail))return{err:'kb.e.mail'};
     return{x:{wd:+f['x-wd'].value,a,b,place,who,mail}}}
