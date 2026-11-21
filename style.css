@@ -674,3 +674,49 @@ button.primary.danger{background:var(--alert);color:#fff}
 [data-theme="dark"] button.primary.danger{color:#1a0d0b}
 .higuest p{margin:0 0 12px}
 @media (max-width:560px){.hibar .btns{margin-left:0}}
+
+/* ---------- US24: voice input ---------- */
+.mic{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:4px;overflow:hidden;flex:none;background:var(--surface)}
+.micbtn{display:flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--ink);padding:0 12px;cursor:pointer;min-height:44px}
+.micbtn:hover{background:var(--surface2)}
+.micbtn .mict{display:none;font-weight:700}
+.micbtn.rec{background:var(--alert);color:#fff}
+.micbtn.rec .mict{display:inline}
+[data-theme="dark"] .micbtn.rec{color:#1a0d0b}
+#mic-lang{border:0;border-left:1px solid var(--line);background:transparent;padding:0 6px;font-size:13px;font-weight:700;cursor:pointer}
+.micst{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14.5px;color:var(--ink);background:var(--surface2);border-left:4px solid var(--info);padding:7px 10px;border-radius:3px}
+.micst.rec{border-left-color:var(--alert);font-weight:700}
+.micst .dot{width:12px;height:12px;border-radius:50%;background:var(--alert);flex:none;animation:micpulse 1s ease-in-out infinite}
+@keyframes micpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+@media (prefers-reduced-motion:reduce){.micst .dot{animation:none}}
+@media (max-width:560px){form.in{flex-wrap:wrap}form.in input{flex:1 1 100%}form.in .mic{flex:0 0 auto}form.in button[type=submit]{flex:1 1 auto;padding-inline:12px}.micst{font-size:14px;padding:6px 8px}}
+
+/* ---------- US24: accessibility settings ---------- */
+.skip{position:absolute;left:12px;top:-60px;z-index:100;background:var(--accent);color:var(--on-accent);padding:10px 16px;font-weight:700;border-radius:4px;text-decoration:none}
+.skip:focus{top:12px}
+main:focus{outline:none}
+.a11yfld{gap:6px}
+.a11ysw{display:flex;flex-wrap:wrap;gap:6px}
+.ax{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:4px;padding:6px 10px;cursor:pointer;font-weight:600;font-size:14px}
+.ax .axi{font-weight:800;min-width:1.2em;text-align:center}
+.ax[aria-pressed="true"]{background:var(--navy);color:var(--surface);border-color:var(--navy)}
+[data-theme="dark"] .ax[aria-pressed="true"]{color:#0b1b33}
+.login-ax{margin-bottom:-4px}
+/* Large text: the whole interface at about 125% (CSS zoom keeps the layout reflowing to the screen width) */
+html.a11y-large body{zoom:1.25}
+/* High contrast: black / white with strong borders, in the light and in the dark theme */
+html.a11y-contrast{--bg:#ffffff;--surface:#ffffff;--surface2:#f2f2f2;--line:#000000;--ink:#000000;--muted:#1f1f1f;--navy:#002855;--head-bg:#000000;--head-ink:#ffffff;--head-muted:#ffffff;--head-line:#ffffff;
+  --accent:#e85d04;--on-accent:#000000;--accent-hover:#ff7b1c;--link:#00239c;--focus:#0040ff;--th-bg:#e0e0e0;--alert:#a30000;--alert-soft:#ffe5e5;--warn-soft:#ffe8cc;--warn-ink:#5c2400;
+  --info:#0033cc;--info-soft:#e0e8ff;--info-ink:#001a66;--ok:#00561b;--ok-soft:#ddf5e3;--me:#000000;--on-me:#ffffff;--staff-bub:#fff6d6;--staff-line:#000000}
+html.a11y-contrast[data-theme="dark"]{--bg:#000000;--surface:#000000;--surface2:#161616;--line:#ffffff;--ink:#ffffff;--muted:#f0f0f0;--navy:#a8d1ff;--head-bg:#000000;--head-muted:#ffffff;--head-line:#ffffff;
+  --accent:#ffb000;--on-accent:#000000;--accent-hover:#ffc53d;--link:#a8d8ff;--focus:#ffff00;--th-bg:#222222;--alert:#ff8f85;--alert-soft:#2a0000;--warn-soft:#2a1a00;--warn-ink:#ffd08a;
+  --info:#9cc4ff;--info-soft:#001433;--info-ink:#d6e6ff;--ok:#8cffab;--ok-soft:#002a0f;--me:#ffffff;--on-me:#000000;--staff-bub:#1f1a00;--staff-line:#ffffff}
+html.a11y-contrast :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+html.a11y-contrast .bub,html.a11y-contrast .chip,html.a11y-contrast .ghost2,html.a11y-contrast .acts button,html.a11y-contrast .fb button,html.a11y-contrast .quick button,html.a11y-contrast .sugg button,
+html.a11y-contrast .tile,html.a11y-contrast .stat,html.a11y-contrast .cmcard,html.a11y-contrast .faq,html.a11y-contrast .kbi,html.a11y-contrast .hiitem,html.a11y-contrast .mic{border:1px solid var(--line)}
+html.a11y-contrast .row.me .bub{border-color:var(--ink)}
+html.a11y-contrast .hint,html.a11y-contrast .src,html.a11y-contrast .hiwhen,html.a11y-contrast .demo-note,html.a11y-contrast ::placeholder{color:var(--muted);opacity:1}
+html.a11y-contrast .tabs button{color:#ffffff}
+html.a11y-contrast .tabs button[aria-current="page"]{text-decoration:underline;text-underline-offset:6px}
+html.a11y-contrast button.primary,html.a11y-contrast form.in button[type=submit]{border:2px solid var(--ink)}
+html.a11y-contrast mark{background:#ffff00;color:#000000;outline:1px solid #000}

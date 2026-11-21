@@ -53,6 +53,8 @@ Developed by a student team as part of INF451.
 **General**
 - Interface in English, Kazakh and Russian (English by default; the choice is remembered)
 - Light and dark theme (follows the system by default; the choice is remembered)
+- Voice input: a microphone button next to Send (Web Speech API, no libraries). The recognition language follows the interface language (en-US, kk-KZ, ru-RU) and can be changed at the button. While recording there is a visible indicator and a **Stop** button; the recognised text appears in the question field, where it can be corrected before sending. Without speech recognition in the browser or without microphone access the user gets a clear message and the chat keeps working; a site opened by double-click (as a file) may get no microphone access, and the user is told so
+- Accessibility settings in the user menu and on the sign-in screen: **Large text** (the interface at about 125%) and **High contrast** (black and white with strong borders, in the light and in the dark theme); the choice is remembered. Screen reader support: every button, link and field has a readable name, new bot answers are announced (`aria-live`), visible keyboard focus, a "Skip to main content" link, Esc closes menus and stops the microphone, one `h1` per screen. The bot also explains these settings ("крупный шрифт", "voice input", "үлкен мәтін")
 - About page with the project overview and a sprint board with a burndown chart
 
 ## User stories
@@ -84,7 +86,7 @@ Status is checked against the QA scenarios in [docs/SPRINTS.md](docs/SPRINTS.md)
 | 6 – Campus life and accessibility | US21 Campus Events & Club Announcements | Done | |
 | 6 – Campus life and accessibility | US22 Teacher Contact & Office Hours | Done | |
 | 6 – Campus life and accessibility | US23 Conversation History | Done | |
-| 6 – Campus life and accessibility | US24 Accessibility & Voice Input | Planned | |
+| 6 – Campus life and accessibility | US24 Accessibility & Voice Input | Done | |
 
 ## Sprint backlog
 
@@ -116,9 +118,15 @@ Notes:
 - Because storage is per browser, tickets are not shared between different computers. To see "student writes, staff replies" or "staff marks an absence, the student gets a warning", use two tabs in the same browser.
 - Fonts are loaded from Google Fonts; without internet the page falls back to system fonts.
 
+## Voice input and privacy
+
+Speech recognition is done by the browser, not by this site: in Chrome and Edge the Web Speech API sends the audio to the browser's own recognition service (which needs an internet connection), and other browsers may not support it at all. The site never records or stores audio; it only receives the final text, puts it into the question field and, after the user presses Send, keeps it like any typed question. Browsers allow the microphone only on secure pages, so voice input works on the online version (https); when `index.html` is opened by double-click the browser may block the microphone.
+
 ## Tests
 
-Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 242 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+Open `tests/nlu-test.html` in a browser. It runs the real chat engine on 258 questions in English, Russian and Kazakh (slang, transliteration, typos), on every built-in question, on every word of the earlier keyword rules, on language detection and on the QA scenarios of the finished stories, and shows tables: question → expected topic → where the bot routed it → what the bot answered → result. It does not change the demo data.
+
+Open `tests/a11y-test.html` from the online site (or any web server; browsers do not let a page read a framed page opened from a file). It runs the real site in a frame: conversation history (search "add/drop", open, delete confirmation, visitor, other students), voice input with a simulated speech recogniser (the Russian question "Где библиотека?" goes into the field and gets a Russian answer), Large text + High contrast on a desktop and a 390 px phone screen (no overflow, controls do not overlap and can be clicked, text contrast at least 7:1) and the accessible name of every button, link and field in every section for a student, staff and a visitor. Your demo data and settings are restored afterwards. The same name check can be run on any screen with `a11yAudit()` in the browser console.
 
 ## Project structure
 
@@ -131,6 +139,7 @@ app.js       Demo accounts and data, state, chat engine and answer routing
 ui.js        Views, dashboard, staff board, analytics, notifications, tour, login, theme
 docs/SPRINTS.md   Sprint backlog: all user stories with QA scenarios
 tests/nlu-test.html   Test set for question understanding
+tests/a11y-test.html  Interface and accessibility checks in the real page (history, voice input, Large text and High contrast, accessible names)
 ```
 
 ## Tech

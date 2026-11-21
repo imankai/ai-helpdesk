@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help Desk · Interface and accessibility tests</title>
+<style>
+  body{font:15px/1.45 "Segoe UI",Arial,sans-serif;margin:24px;color:#14213a;background:#f3f5f9}
+  h1{font-size:22px;margin:0 0 4px}h2{font-size:18px;margin:24px 0 8px}
+  p{margin:4px 0 12px;color:#3d4a60}
+  .sum{font-size:17px;font-weight:700;color:#14213a}
+  table{border-collapse:collapse;width:100%;background:#fff}
+  th,td{border:1px solid #d5dce8;padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#e4ebf5}
+  td.ok{color:#1a6b3a;font-weight:700}td.bad{color:#b3341f;font-weight:700}
+  tr.fail{background:#fdeceb}
+  #app{border:1px solid #d5dce8;background:#fff;display:block;margin-top:16px}
+</style>
+</head>
+<body>
+<h1>Interface and accessibility tests</h1>
+<p>Runs the real site in the frame below: conversation history in the interface (US23), voice input with a simulated speech recogniser, Large text and High contrast on a phone-sized screen, and the accessible name of every button, link and field in every section for a student, staff and a visitor (US24).
+Your demo data and settings are saved before the run and restored after it.</p>
+<p>Browsers block access to a framed page opened from a file, so open this page from the online site (https) or a local web server.</p>
+<div id="out" class="sum">Running…</div>
+<iframe id="app" title="Help Desk under test" width="1200" height="820"></iframe>
+<script>
+const KEYS=['hd-state','hd-a11y','hd-ui','hd-tour','hd-theme'],saved={};
+KEYS.forEach(k=>{saved[k]=localStorage.getItem(k)});
+const restore=()=>KEYS.forEach(k=>saved[k]==null?localStorage.removeItem(k):localStorage.setItem(k,saved[k]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const F=document.getElementById('app'),rows=[];
+let w,d;
+const add=(name,ok,detail)=>rows.push({name,ok:ok===true,detail:ok===true?(detail||''):String(detail??ok)});
+function load(){return new Promise(res=>{F.onload=()=>{w=F.contentWindow;d=F.contentDocument;res()};F.src='../index.html?t='+Date.now()})}
+const $=id=>d.getElementById(id);
+async function login(id){if(id==='guest')$('guest-btn').click();else{$('l-name').value=id;$('l-pass').value='demo123';$('login-form').requestSubmit()}await sleep(300)}
+async function logout(){w.toLogin();await sleep(200)}
+const lastBot=()=>{const r=[...d.querySelectorAll('#log .row:not(.me):not(.typing)')];return r.length?r[r.length-1].textContent:''};
+/* relative luminance and contrast ratio of two CSS colours */
+const rgb=c=>(c.match(/[\d.]+/g)||[0,0,0]).slice(0,3).map(Number);
+const lum=c=>{const [r,g,b]=rgb(c).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b};
+const ratio=(a,b)=>{const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+const bgOf=el=>{while(el){const c=w.getComputedStyle(el).backgroundColor;if(c&&!/rgba\(0, 0, 0, 0\)|transparent/.test(c))return c;el=el.parentElement}return'rgb(255,255,255)'};
+/* every button, link and field of the current page needs an accessible name */
+function audit(label){const bad=w.a11yAudit();add('Accessible names: '+label,bad.length===0,bad.join(', '))}
+/* a fake speech recogniser: returns the given text, or keeps listening until stop() */
+function fakeSpeech(text,hold){w.SpeechRecognition=class{start(){this.started=true;if(!hold)setTimeout(()=>this.say(),60)}
+  say(){this.onresult&&this.onresult({resultIndex:0,results:[Object.assign([{transcript:text}],{isFinal:true})]});this.onend&&this.onend()}
+  stop(){this.onend&&this.onend()}}}
+
+async function run(){
+  try{if(!F.contentDocument&&location.protocol==='file:')throw 0}catch(_){}
+  localStorage.removeItem('hd-state');localStorage.setItem('hd-tour','["249900001","249900002","249900003","249900004"]');localStorage.setItem('hd-ui','en');localStorage.removeItem('hd-a11y');localStorage.setItem('hd-theme','light');
+  await load();
+  if(!d){document.getElementById('out').textContent='The frame cannot be read here (page opened from a file). Open this page from the online site or a web server.';restore();return}
+  w.sessionStorage.clear();await logout();
+  audit('sign-in screen');
+  /* ---------- student ---------- */
+  await login('249900002');
+  for(const v of ['home','chat','history','tickets','appts','campus','faq','about']){w.show(v);await sleep(60);audit('student · '+v)}
+  w.show('chat');w.ask('Where is the library?');w.ask('What events are on campus this week?');await sleep(9000);
+  audit('student · chat with answers (cards, Register, Show on map, rating buttons)');
+  /* QA1: History → search add/drop → the conversation of a week ago → opens with all messages */
+  w.openHistory(null,'add/drop');await sleep(80);
+  const items=d.querySelectorAll('.hiitem');
+  add('QA1 History search "add/drop" finds one conversation, highlighted',items.length===1&&!!items[0].querySelector('mark'),items.length+' items');
+  items[0]&&items[0].click();await sleep(80);
+  const msgs=d.querySelectorAll('.hilog .row');
+  add('QA1 the conversation opens with all 4 messages and sources; Continue and Delete are there',msgs.length===4&&d.querySelectorAll('.hilog .src').length===2&&!!d.querySelector('[data-hi="cont"]')&&!!d.querySelector('[data-hi="del"]'),msgs.length+' messages');
+  audit('student · history conversation');
+  d.querySelector('[data-hi="del"]').click();await sleep(50);
+  add('Delete asks for confirmation inside the page',!!d.querySelector('.hiconfirm [data-hi="yes"]'),'no confirmation');
+  audit('student · delete confirmation');
+  d.querySelector('[data-hi="no"]').click();await sleep(50);
+  /* the questions just asked are a new conversation, listed first */
+  w.openHistory(null,'');await sleep(50);
+  add('US23 the chat just written is saved as a new conversation, listed first',(d.querySelector('.hiitem b')||{}).textContent==='Where is the library?',(d.querySelector('.hiitem b')||{}).textContent);
+  /* QA4: voice input, Russian */
+  w.show('chat');w.newChat();$('mic-lang').value='ru';$('mic-lang').dispatchEvent(new Event('change'));
+  fakeSpeech('Где библиотека?');$('mic').click();await sleep(200);
+  add('QA4 recognised Russian text appears in the field and is not sent automatically',$('q').value==='Где библиотека?'&&!d.querySelector('#log .row.me'),$('q').value);
+  add('QA4 after recognition the status says to check and send',/check it and press Send/.test($('mic-st').textContent),$('mic-st').textContent);
+  $('form').requestSubmit();await sleep(2500);
+  add('QA4 the answer is in Russian with the library location',/Библиотека/.test(lastBot())&&/севернее корпуса D/.test(lastBot()),lastBot().slice(0,120));
+  fakeSpeech('',true);$('mic').click();await sleep(50);
+  add('US24 while recording: the button turns into Stop and a visible indicator is shown',$('mic').classList.contains('rec')&&$('mic').getAttribute('aria-pressed')==='true'&&$('mic').getAttribute('aria-label')==='Stop'&&!!d.querySelector('#mic-st .dot')&&!$('mic-st').hidden,$('mic').outerHTML.slice(0,120));
+  audit('student · chat while recording');
+  $('mic').click();await sleep(50);
+  add('US24 Stop ends the recording',!$('mic').classList.contains('rec')&&$('mic').getAttribute('aria-pressed')==='false','still recording');
+  w.SpeechRecognition=undefined;w.webkitSpeechRecognition=undefined;$('mic').click();await sleep(50);
+  add('US24 a browser without speech recognition gets a clear message and the chat still works',/cannot recognize speech/.test($('mic-st').textContent),$('mic-st').textContent);
+  w.SpeechRecognition=class{start(){setTimeout(()=>{this.onerror&&this.onerror({error:'not-allowed'});this.onend&&this.onend()},30)}stop(){}};$('mic').click();await sleep(120);
+  add('US24 no microphone permission → a clear message',/(No access to the microphone|opened as a file)/.test($('mic-st').textContent),$('mic-st').textContent);
+  /* QA5: Large text + High contrast, then a phone-sized screen */
+  const before=d.querySelector('#log .row:not(.me) .bub').getBoundingClientRect().height;
+  w.setA11y('large',true);w.setA11y('contrast',true);await sleep(100);
+  const bub=d.querySelector('#log .row:not(.me) .bub'),cs=w.getComputedStyle(bub),zoom=w.getComputedStyle(d.body).zoom,cr=ratio(cs.color,bgOf(bub));
+  add('QA5 Large text: the interface is shown at 125%',zoom==='1.25'&&bub.getBoundingClientRect().height>=before,'zoom '+zoom);
+  add('QA5 High contrast: answer text contrast is at least 7:1',cr>=7,'contrast '+cr.toFixed(1));
+  add('QA5 settings are remembered',JSON.parse(localStorage.getItem('hd-a11y')||'{}').large===true,localStorage.getItem('hd-a11y'));
+  for(const [wd,label] of [[1200,'desktop'],[390,'phone (390 px)']]){
+    F.width=wd;await sleep(250);
+    for(const v of ['chat','home','history','campus']){w.show(v);await sleep(80);
+      const de=d.documentElement,over=de.scrollWidth-de.clientWidth;
+      const btns=[...d.querySelectorAll('button')].filter(b=>b.offsetParent&&!b.closest('[hidden]')&&!b.closest('.pop')&&!b.closest('.tabs')&&!b.closest('.tour')&&!b.closest('.quick'));   /* quick questions are a sideways-scrolling strip */
+      const vw=d.documentElement.clientWidth,out=btns.filter(b=>{const r=b.getBoundingClientRect();return r.width<8||r.height<8||r.right>vw+1||r.left<-1});
+      add('QA5 Large text + High contrast, '+label+', '+v+': no sideways overflow, every button visible',over<=1&&out.length===0,'overflow '+over+'px; outside: '+out.map(b=>b.id||b.textContent.trim().slice(0,20)).join(', '))}
+    w.show('chat');await sleep(60);
+    const ctl=['q','mic','mic-lang'].map(id=>$(id)).concat([d.querySelector('#form button[type=submit]')]),rs=ctl.map(e=>e.getBoundingClientRect());
+    const overlap=rs.some((a,i)=>rs.some((b,j)=>j>i&&a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1));
+    /* the centre of each control must hit that control (nothing covers it) */
+    const clickable=ctl.slice(1).every(e=>{const r=e.getBoundingClientRect(),hit=d.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return hit&&(hit===e||e.contains(hit))});
+    add('QA5 '+label+': question field, microphone, language and Send do not overlap and can be clicked',!overlap&&clickable,(overlap?'overlap ':'')+(clickable?'':'not clickable'));
+    audit('large text + high contrast, '+label);
+  }
+  F.width=1200;w.setA11y('large',false);w.setA11y('contrast',false);await sleep(100);
+  /* ---------- staff ---------- */
+  await logout();await login('staff');
+  for(const v of ['staff','review','analytics','kb','ann','att','housing','chat','history','campus','faq','about']){w.show(v);await sleep(60);audit('staff · '+v)}
+  w.show('kb');w.kbOpen('ev-hack');await sleep(60);audit('staff · knowledge base editor');w.kbClose();
+  w.show('staff');const tk=d.querySelector('#s-board [data-n]');if(tk){tk.click();await sleep(60);audit('staff · ticket drawer')}
+  /* ---------- visitor ---------- */
+  await logout();await login('guest');
+  w.show('history');await sleep(60);
+  add('QA2 visitor: History explains that it needs a sign-in, shows a Sign in button and no conversations',/only after signing in/.test($('hi').textContent)&&!!d.querySelector('[data-hi="signin"]')&&!d.querySelector('.hiitem'),$('hi').textContent.slice(0,100));
+  for(const v of ['chat','history','campus','faq','about']){w.show(v);await sleep(60);audit('visitor · '+v)}
+  w.show('chat');w.ask('What events are on campus this week?');await sleep(6000);
+  const saved2=JSON.parse(localStorage.getItem('hd-state')||'{}').convs||{};
+  add('QA2 visitor: the chat is not saved to any history',!saved2.guest&&!Object.keys(saved2).includes('null'),Object.keys(saved2).join());
+  /* QA3: one student does not see the other's conversations */
+  await logout();await login('249900003');w.openHistory(null,'Wi-Fi қосылмайды');await sleep(60);
+  const other=d.querySelectorAll('.hiitem').length;w.openHistory(null,'');await sleep(40);
+  const own=[...d.querySelectorAll('.hiitem b')].map(b=>b.textContent);
+  add('QA3 student 249900003 does not see the conversations of 249900002 (or the questions just asked by 249900002)',other===0&&!own.includes('Where is the library?')&&own.length===3,own.join(' | '));
+  /* keyboard: Esc closes the user menu */
+  $('user-btn').click();await sleep(30);const opened=!$('user-menu').hidden;d.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));await sleep(30);
+  add('US24 keyboard: Esc closes the user menu',opened&&$('user-menu').hidden,'menu still open');
+  add('US24 the page has one h1 and the chat log is announced (aria-live)',d.querySelectorAll('h1').length>=1&&$('log').getAttribute('aria-live')==='polite'&&$('log').getAttribute('role')==='log','');
+  restore();show()}
+function show(){const n=rows.filter(r=>r.ok).length;
+  document.getElementById('out').innerHTML='<span id="sum">Interface and accessibility: '+n+' / '+rows.length+' ('+Math.round(100*n/rows.length)+'%)</span>';
+  const t=document.createElement('table');t.innerHTML='<thead><tr><th>#</th><th>Check</th><th>Result</th><th>Details</th></tr></thead><tbody>'+rows.map((r,i)=>'<tr class="'+(r.ok?'':'fail')+'"><td>'+(i+1)+'</td><td>'+r.name.replace(/</g,'&lt;')+'</td><td class="'+(r.ok?'ok':'bad')+'">'+(r.ok?'✓':'✗')+'</td><td>'+r.detail.replace(/</g,'&lt;').slice(0,200)+'</td></tr>').join('')+'</tbody>';
+  document.getElementById('out').after(t)}
+window.addEventListener('error',e=>{document.getElementById('out').textContent='Error: '+e.message;restore()});
+run().catch(e=>{document.getElementById('out').textContent='Error: '+e.message+' · '+(e.stack||'').split('\n')[1];restore()});
+</script>
+</body>
+</html>

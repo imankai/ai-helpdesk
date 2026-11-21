@@ -362,6 +362,10 @@ function rec(c,h){if(!histOn())return;
 function loadChat(){const log=$('log'),cv=histOn()&&curConv&&convGet(U.login,curConv);log.innerHTML='';
   if(!cv)return boot();
   cv.msgs.forEach(m=>{const d=document.createElement('div');d.className=m.c;d.innerHTML=m.h;log.appendChild(d)});scroll()}
+/* ---------- voice input (US24): the browser recognises speech (Web Speech API); the site keeps only the final text, never audio ---------- */
+const SPEECH_LANG={en:'en-US',kk:'kk-KZ',ru:'ru-RU'};
+/* recognised text goes into the question field; the user checks it and presses Send */
+function voiceFill(t){const q=$('q');q.value=t;q.dispatchEvent(new Event('input'));return q.value}
 /* "New chat" and "Continue this chat" */
 function newChat(){curConv=null;try{sessionStorage.removeItem('hd-conv')}catch(_){}chatEpoch++;mode=null;loadChat()}
 function continueConv(id){if(!convGet(U.login,id))return;curConv=id;convKeep(id);chatEpoch++;mode=null;loadChat()}
@@ -402,7 +406,7 @@ let curQ='';                /* the question being answered, saved with a rating 
 function bot(o,L){const e=chatEpoch;if(o.fb&&o.q==null)o.q=curQ;
   botChain=botChain.then(()=>new Promise(res=>{
     if(e!==chatEpoch)return res();
-    const ty=document.createElement('div');ty.className='row typing';
+    const ty=document.createElement('div');ty.className='row typing';ty.setAttribute('aria-hidden','true');   /* not announced: the answer itself is */
     ty.innerHTML='<div class="av">HD</div><div class="bub"><span class="dots"><i></i><i></i><i></i></span><span class="tl">'+esc(tr('typing'))+'</span></div>';put(ty);
     setTimeout(()=>{ty.remove();if(e===chatEpoch)botNow(o,L);res()},600+Math.random()*600)}))}
 /* bot({title,text,list,ol,src,acts:[[label,fn]],fb:true,staff}) */
@@ -724,6 +728,9 @@ const H={
    if(!list.length)return bot({text:q?trL('hi.bnf',L,{q}):trL('hi.bnone',L),src,acts:all,fb:true},L);
    bot({title:q?trL('hi.bfound',L,{q,n:list.length}):trL('hi.blast',L),list:list.slice(0,5).map(c=>dayText(new Date(c.at),L)+' — '+convTitle(c)),src,fb:true,
      acts:list.slice(0,3).map(c=>[convTitle(c).slice(0,48),()=>openHistory(c.id,q)]).concat(all)},L)},
+ /* US24: how to use voice input, Large text and High contrast; the buttons switch the settings right away */
+ a11y:L=>bot({title:trL('ax.title',L),list:[trL('ax.l1',L),trL('ax.l2',L),trL('ax.l3',L)],src:trL('ax.src',L),fb:true,
+   acts:[[trL('ax.large',L),()=>setA11y('large')],[trL('ax.contrast',L),()=>setA11y('contrast')]]},L),
  ticket:L=>startTicket(L),
  human:L=>human(L),
  rooms:L=>bot({text:trL('cm.ask',L),src:trL('cm.src',L),acts:[[trL('cm.map',L),()=>openMap()]],fb:true},L),

@@ -287,7 +287,24 @@ const CASES=[
  ['show my history','history','staff'],
  ['History of Kazakhstan grade','grades'],
  ['оценка по истории','grades'],
- ['when is the add/drop deadline','adddrop']
+ ['when is the add/drop deadline','adddrop'],
+ /* US24 accessibility and voice input; questions as the speech recogniser returns them (no punctuation, "add drop") */
+ ['how can I make the text bigger','a11y'],
+ ['high contrast','a11y'],
+ ['voice input','a11y'],
+ ['крупный шрифт','a11y'],
+ ['как включить высокий контраст','a11y'],
+ ['голосовой ввод','a11y'],
+ ['плохо вижу','a11y'],
+ ['krupnyi shrift','a11y'],
+ ['үлкен мәтін','a11y'],
+ ['дауыспен енгізу','a11y'],
+ ['Где библиотека','campus'],
+ ['где столовая','campus'],
+ ['когда заканчивается add drop','adddrop'],
+ ['кітапхана қайда','campus'],
+ ['where is the library','campus'],
+ ['voice input','a11y','visitor']
 ];
 const label=r=>r.k==='kb'?(r.e.intent||r.e.id):r.k==='h'||r.k==='guest'?(r.k==='guest'?'guest':r.i):r.k==='dym'?'dym: '+r.list.map(e=>e.intent||e.id).join(', '):r.k;
 /* interface functions from ui.js that replies may reference */
@@ -318,7 +335,7 @@ const OLD={human:['human','staff','person','operator','agent','live','опера
 /* a strong topic must beat a weak word */
 const WEAK=[['портал не работает','portal'],['payment deadline','bill'],['Finance office','finance'],['talk to staff','human'],['вайфай не работает','wifi']];
 const LANGT=[['жатақханада кран сынды','kk'],['в общаге не работает свет','ru'],['zhatakhanada kran syndy kerek','kk'],['kitap bar ma','kk'],['кітап бар ма','kk'],['есть ли книга Clean Code','ru'],['my books','en'],['менин багаларым','kk'],['GPA канша','kk'],['какой у меня GPA','ru'],['What is my grade in INF451?','en'],['канша сабак калдырдым','kk'],['сабак босаттым','kk'],['сколько я пропустил по INF451','ru'],['мен грантпын ба','kk'],['сабак кестеси кайда','kk'],['калай тиркелемин','kk'],['мен студентпін','kk'],['где бар','ru'],['мне нужна справка','ru'],['сколько мне платить','ru'],['how much do I owe','en'],
- ['осы аптадағы іс-шаралар','kk'],['osy aptadagy is sharalar','kk'],['что будет в пятницу','ru'],['Is there a programming club?','en'],['консультация кашан','kk'],['INF451 оқытушым','kk'],['oqytushy poshtasy','kk'],['почта преподавателя','ru'],['асхана қайда','kk'],['kitaphana kaida','kk'],['где поесть','ru'],['Where can I print?','en'],['менің сұрақтарым','kk'],['мои прошлые вопросы','ru'],['what did I ask about add/drop','en'],['add/drop туралы не сұрадым','kk']];
+ ['осы аптадағы іс-шаралар','kk'],['osy aptadagy is sharalar','kk'],['что будет в пятницу','ru'],['Is there a programming club?','en'],['консультация кашан','kk'],['INF451 оқытушым','kk'],['oqytushy poshtasy','kk'],['почта преподавателя','ru'],['асхана қайда','kk'],['kitaphana kaida','kk'],['где поесть','ru'],['Where can I print?','en'],['менің сұрақтарым','kk'],['мои прошлые вопросы','ru'],['what did I ask about add/drop','en'],['add/drop туралы не сұрадым','kk'],['Где библиотека','ru'],['үлкен мәтін','kk'],['how can I make the text bigger','en']];
 /* checks of the QA scenarios in docs/SPRINTS.md */
 const at=(y,m,d,h)=>{window.clock=()=>new Date(y,m-1,d,h,0)};
 const has=(s,x)=>s.includes(x);
@@ -535,6 +552,12 @@ const QA=[
    const gone=!convGet('249900001',c.id)&&curConv===null;U=ACCOUNTS['249900002'];return ok&&gone&&!convDelete('249900001','nope')}),
  check('US23 data saved before history: the old chat becomes one earlier conversation',()=>{const s=fresh();delete s.convs;s.chats={'249900004':[{c:'row me',h:userRowHtml(ACCOUNTS['249900004'],'Old question')}]};
    const r=loadSt(s);return !r.chats&&r.convs['249900004'].some(c=>c.id==='old-249900004'&&convTitle(c)==='Old question')&&r.convs['249900004'].length===3}),
+ /* US24 */
+ check('US24 S4 voice: "Где библиотека?" is put into the field, sent, and answered in Russian with the library location',()=>{const t=voiceFill('Где библиотека?'),a=run(t);
+   return t==='Где библиотека?'&&detect(t)==='ru'&&a.r.c&&a.r.c.id==='library'&&has(a.said,'Библиотека')&&has(a.said,'севернее корпуса D')&&lastO.acts[0][0]==='Показать на карте'||a.said}),
+ check('US24 recognition language follows the language: en-US, kk-KZ, ru-RU',()=>SPEECH_LANG.en==='en-US'&&SPEECH_LANG.kk==='kk-KZ'&&SPEECH_LANG.ru==='ru-RU'),
+ check('US24 "крупный шрифт" explains voice input, Large text and High contrast, with buttons that switch them',()=>{window.setA11y=()=>{};const a=run('крупный шрифт').said;
+   return has(a,'Голосовой ввод')&&has(a,'Крупный текст и высокий контраст')&&lastO.acts.map(x=>x[0]).join()==='Крупный текст,Высокий контраст'||a}),
  check('US17 every student has different GPA and credits; INF451 not posted for all',()=>{const v=Object.values(ACAD);return new Set(v.map(a=>a.gpa)).size===v.length&&new Set(v.map(a=>a.cr)).size===v.length&&v.every(a=>a.courses.some(c=>c.c==='INF451'&&c.g===null))}),
 ];
 window.clock=()=>new Date();

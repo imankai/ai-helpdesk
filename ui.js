@@ -581,16 +581,18 @@ function tourEnd(){
 function tourShow(){
   if(tourI<0)return;
   const [sel,key]=TOUR[tourI],bar=document.querySelector('.bar');
-  const narrow=window.innerWidth<=900;
+  const narrow=window.innerWidth<=900||document.body.classList.contains('nav-collapse');   /* the menu is in the hamburger (phones, long labels, Large text) */
   bar.classList.toggle('open',narrow&&tourI<3);
   $('tour-n').textContent=tr('tour.step',{i:tourI+1,n:TOUR.length});
   $('tour-t').textContent=tr(key+'.t');$('tour-p').textContent=tr(key+'.p');
   $('tour-next').textContent=tr(tourI===TOUR.length-1?'tour.done':'tour.next');
   requestAnimationFrame(()=>{
-    const el=document.querySelector(sel),r=el.getBoundingClientRect(),hl=$('tour-hl'),c=$('tour-card');
+    /* with Large text the page is zoomed: the element's position is divided back into the zoomed coordinates */
+    const el=document.querySelector(sel),z=parseFloat(getComputedStyle(document.body).zoom)||1,b=el.getBoundingClientRect(),hl=$('tour-hl'),c=$('tour-card');
+    const r={top:b.top/z,left:b.left/z,width:b.width/z,height:b.height/z,bottom:b.bottom/z};
     hl.style.cssText='top:'+(r.top-6)+'px;left:'+(r.left-6)+'px;width:'+(r.width+12)+'px;height:'+(r.height+12)+'px';
-    const cw=Math.min(340,window.innerWidth-24);c.style.width=cw+'px';
-    c.style.left=Math.max(12,Math.min(r.left,window.innerWidth-cw-12))+'px';
+    const vw=window.innerWidth/z,cw=Math.min(340,vw-24);c.style.width=cw+'px';
+    c.style.left=Math.max(12,Math.min(r.left,vw-cw-12))+'px';
     c.style.top=(r.bottom+16)+'px';
     $('tour-next').focus();
   });
@@ -643,7 +645,7 @@ document.addEventListener('click',e=>{
   const d=e.target.closest('[data-dis]');if(d&&U){(st.dismiss[U.login]=st.dismiss[U.login]||[]).push(+d.dataset.dis);save();renderBanners()}
   if(!e.target.closest('.usermenu'))closeUserMenu();
   if(!e.target.closest('.bellwrap'))closeBell()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(tourI>=0)return tourEnd();closeUserMenu();closeBell();if(sel!==null)closeTicket();if(kbDr)kbClose()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(voice)micStop();if(tourI>=0)return tourEnd();closeUserMenu();closeBell();if(sel!==null)closeTicket();if(kbDr)kbClose()});
 window.addEventListener('hashchange',()=>{if(U)show(location.hash.slice(1))});
 $('den-back').onclick=()=>show(homeView());
 
@@ -675,7 +677,7 @@ const STORIES=[
   {id:'US21',t:'Campus Events & Club Announcements',s:6,p:4,st:'Done'},
   {id:'US22',t:'Teacher Contact & Office Hours',s:6,p:4,st:'Done'},
   {id:'US23',t:'Conversation History',s:6,p:3,st:'Done'},
-  {id:'US24',t:'Accessibility & Voice Input',s:6,p:5,st:'Planned'}];
+  {id:'US24',t:'Accessibility & Voice Input',s:6,p:5,st:'Done'}];
 const TEAM=[['249900004','role.po'],['249900001','role.sm'],['249900002','role.dev'],['249900003','role.dev']];
 let aboutTab='overview';
 const inSprint=n=>STORIES.filter(s=>s.s===n);
@@ -721,6 +723,52 @@ function renderAbout(){
 }
 $('about').onclick=e=>{const b=e.target.closest('[data-tab]');if(b){aboutTab=b.dataset.tab;renderAbout()}};
 
+/* ---------- accessibility (US24): Large text (about 125%) and High contrast, remembered in this browser ---------- */
+let a11y={large:false,contrast:false};
+try{a11y=Object.assign(a11y,JSON.parse(localStorage.getItem('hd-a11y')||'{}'))}catch(_){}
+function applyA11y(){const h=document.documentElement;h.classList.toggle('a11y-large',!!a11y.large);h.classList.toggle('a11y-contrast',!!a11y.contrast);
+  document.querySelectorAll('[data-ax]').forEach(b=>b.setAttribute('aria-pressed',String(!!a11y[b.dataset.ax])));
+  if(typeof fitNav==='function')fitNav()}
+function setA11y(k,on){a11y[k]=on==null?!a11y[k]:!!on;try{localStorage.setItem('hd-a11y',JSON.stringify(a11y))}catch(_){}applyA11y()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-ax]');if(b)setA11y(b.dataset.ax)});
+
+/* ---------- voice input (US24): Web Speech API in the browser, no libraries. The recognition language follows the interface
+   language and can be changed at the button. Interim text appears in the field; nothing is sent automatically and no audio is kept. ---------- */
+let voice=null,micLang=null;
+const micL=()=>micLang||ui;
+function micStatus(key,v,rec){const m=$('mic-st');m.hidden=!key;m.classList.toggle('rec',!!rec);
+  m.innerHTML=key?(rec?'<span class="dot" aria-hidden="true"></span>':'')+'<span>'+esc(tr(key,v))+'</span>':''}
+function micUI(on){const b=$('mic');b.classList.toggle('rec',on);b.setAttribute('aria-pressed',String(on));
+  b.setAttribute('aria-label',tr(on?'mic.stop':'mic.start'));b.title=tr(on?'mic.stop':'mic.start')}
+function micStart(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition,L=micL();
+  if(!SR)return micStatus('mic.nosup');
+  let r;try{r=new SR()}catch(_){return micStatus('mic.nosup')}
+  r.lang=SPEECH_LANG[L];r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
+  let base=$('q').value.trim(),got=false,failed=false;
+  r.onresult=e=>{let fin='',mid='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=t;else mid+=t}
+    if(fin){base=(base?base+' ':'')+fin.trim();got=true}voiceFill((base+(mid?' '+mid.trim():'')).trim())};
+  r.onerror=e=>{failed=true;const er=e&&e.error;
+    micStatus(er==='not-allowed'||er==='service-not-allowed'?(location.protocol==='file:'?'mic.file':'mic.denied'):er==='no-speech'?'mic.nospeech':er==='network'?'mic.net':
+      er==='language-not-supported'?'mic.nolang':er==='aborted'?'':'mic.err',{l:LANG_NAME[L]})};
+  r.onend=()=>{voice=null;micUI(false);if(!failed)micStatus(got||$('q').value.trim()?'mic.done':'mic.nospeech');if(got)$('q').focus()};
+  try{r.start()}catch(_){return micStatus('mic.err')}
+  voice=r;micUI(true);micStatus(location.protocol==='file:'?'mic.onfile':'mic.on',{l:LANG_NAME[L]},true)}
+function micStop(){if(voice)try{voice.stop()}catch(_){}}
+$('mic').onclick=()=>voice?micStop():micStart();
+$('mic-lang').onchange=e=>{micLang=e.target.value===ui?null:e.target.value};
+$('q').addEventListener('keydown',e=>{if(e.key==='Escape'&&voice)micStop()});
+
+/* accessible-name check (US24): every button and link, and every field, must have a name a screen reader can read.
+   Run a11yAudit() in the browser console; tests/a11y-test.html runs it on every section. */
+function a11yName(el){const l=el.getAttribute('aria-label');if(l&&l.trim())return l.trim();
+  const lb=el.getAttribute('aria-labelledby');if(lb){const t=lb.split(' ').map(id=>{const x=document.getElementById(id);return x?x.textContent:''}).join(' ').trim();if(t)return t}
+  if(/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){if(el.id){const f=document.querySelector('label[for="'+el.id+'"]');if(f&&f.textContent.trim())return f.textContent.trim()}
+    const w=el.closest('label');if(w&&w.textContent.trim())return w.textContent.trim();return(el.title||'').trim()}
+  return(el.textContent||'').trim()||(el.title||'').trim()||[...el.querySelectorAll('img[alt]')].map(i=>i.alt).join(' ').trim()}
+function a11yAudit(root){return[...(root||document).querySelectorAll('button,a,[role="button"],input:not([type="hidden"]),select,textarea')].filter(el=>!a11yName(el))
+  .map(el=>el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(el.className&&typeof el.className==='string'?'.'+el.className.split(' ')[0]:''))}
+
 /* ---------- interface language ---------- */
 function buildQuick(){$('quick').innerHTML='';
   tr('quick').forEach(q=>{const b=document.createElement('button');b.type='button';b.textContent=q;b.onclick=()=>ask(q);$('quick').appendChild(b)})}
@@ -736,6 +784,7 @@ function applyUI(){
   document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.placeholder=tr(e.dataset.i18nPh));
   document.querySelectorAll('[data-i18n-aria]').forEach(e=>{const s=tr(e.dataset.i18nAria);e.setAttribute('aria-label',s);e.title=s});
   document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===ui)));
+  $('mic-lang').value=micL();if(!voice)micUI(false);applyA11y();
   buildQuick();renderAbout();fillMenu();sync();fitNav();
 }
 /* staff menu: the main sections stay in the bar, the rest goes into "More ▾"; students and visitors keep their own order */

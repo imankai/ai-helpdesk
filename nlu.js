@@ -116,6 +116,11 @@ const TOPICS={
  offices:{kb:'offices',syn:['which office','what office','who to contact','who should i contact','contact','department',
    'в какой отдел','какой отдел','к кому обратиться','куда обращаться','куда обратиться','отдел',
    'who can help','who should i ask','who can','who should','к кому','қай бөлім','кімге хабарласу','кімге хабарлас','кімге жүгіну','бөлім']},
+ /* US24 accessibility: how to make the text bigger, high contrast, voice input, screen reader */
+ a11y:{intent:'a11y',syn:['large text','bigger text','font size','increase font','make text bigger','high contrast','accessibility','screen reader','voice input','speak instead of typing','dictate',
+   'krupnyi shrift','golosovoi vvod',
+   'крупный шрифт','крупный текст','увеличить шрифт','размер шрифта','большой текст','высокий контраст','контрастн','голосовой ввод','голосом','диктовать','экранный диктор','доступность','плохо вижу',
+   'үлкен мәтін','қаріпті үлкейту','қаріп өлшемі','жоғары контраст','дауыспен енгізу','дауыспен','қолжетімділік','нашар көремін']},
  /* US23 history: last in the list; app.js lets a phrase of two words or more win ("what did I ask about add/drop").
    "history" and "история" are exact, so "History of Kazakhstan" and "оценка по истории" stay with their topics */
  history:{intent:'history',syn:['=history','my history','show my history','chat history','conversation history','previous conversations','past conversations','my previous questions','what did i ask','what i asked','old chats',
